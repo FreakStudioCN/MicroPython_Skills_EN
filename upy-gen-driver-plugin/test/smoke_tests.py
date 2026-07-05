@@ -108,6 +108,21 @@ def test_validator_rejects_bad_business_states() -> None:
     )
     expect_invalid(artifact_with_production_key, "write_driver_artifact for unverified driver artifacts")
 
+    missing_file_operation_root = json.loads(json.dumps(sample))
+    del missing_file_operation_root["payload"]["runtime_context"]["file_operation_root"]
+    expect_invalid(missing_file_operation_root, "payload.runtime_context.file_operation_root is required")
+
+    missing_capability_as_no_device = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    missing_capability_as_no_device["payload"]["structured_errors"][0]["details"] = {
+        "missing_capability": "device_command"
+    }
+    expect_invalid(missing_capability_as_no_device, "must use HOST_CAPABILITY_MISSING")
+
+    missing_capability_without_detail = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    missing_capability_without_detail["payload"]["structured_errors"][0]["code"] = "HOST_CAPABILITY_MISSING"
+    missing_capability_without_detail["payload"]["structured_errors"][0]["details"] = {}
+    expect_invalid(missing_capability_without_detail, "details.missing_capability is required")
+
 
 def test_validator_rejects_foreign_phase_identity() -> None:
     validator = ROOT / "scripts" / "validate_phase_complete.py"
@@ -403,6 +418,7 @@ def test_validator_rejects_python_static_quality_issues() -> None:
         driver_path.write_text(
             "from micropython import const\n"
             "_I2C_ADDR = const(0x1E)\n"
+            "SCALE = const(1.5)\n"
             "MODE_IDLE = const(3)\n"
             "class Demo:\n"
             "    def __init__(self, i2c):\n"
@@ -520,6 +536,7 @@ def test_validator_rejects_python_static_quality_issues() -> None:
         assert_ok("method call arity mismatch" in result.stdout, result.stdout)
         assert_ok("I2C capability check missing methods" in result.stdout, result.stdout)
         assert_ok("uses const(...)" in result.stdout, result.stdout)
+        assert_ok("non-integer literal" in result.stdout, result.stdout)
 
 
 def test_session_state() -> None:

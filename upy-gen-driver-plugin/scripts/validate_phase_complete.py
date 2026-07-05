@@ -362,6 +362,7 @@ class DriverStaticVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.i2c_methods_used: set[str] = set()
         self.hasattr_checks: set[str] = set()
+        self.non_integer_consts: list[int] = []
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         if node.attr in I2C_RW_METHODS:
@@ -373,6 +374,10 @@ class DriverStaticVisitor(ast.NodeVisitor):
             value = node.args[1]
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
                 self.hasattr_checks.add(value.value)
+        if isinstance(node.func, ast.Name) and node.func.id == "const" and node.args:
+            value = node.args[0]
+            if isinstance(value, ast.Constant) and not isinstance(value.value, int):
+                self.non_integer_consts.append(node.lineno)
         self.generic_visit(node)
 
 
@@ -444,6 +449,9 @@ def validate_python_static(text: str, path: Path, role: str, errors: list[str]) 
             errors.append(
                 f"{role} I2C capability check missing methods used later: {', '.join(missing_checks)}"
             )
+    if role in {"debug_driver", "production_driver", "test"} and static_visitor.non_integer_consts:
+        lines = ", ".join(str(line) for line in static_visitor.non_integer_consts)
+        errors.append(f"{role} uses const(...) with non-integer literal at line(s): {lines}")
     if role == "test" and "const(" in text and "const" not in module_defs:
         errors.append("test uses const(...) but does not import or define const")
 
@@ -528,7 +536,7 @@ def validate(
     if not isinstance(runtime, dict):
         errors.append("payload.runtime_context must be an object")
     else:
-        for field in ("artifact_root", "session_root", "resource_root"):
+        for field in ("artifact_root", "session_root", "project_root", "file_operation_root", "resource_root"):
             if not runtime.get(field):
                 errors.append(f"payload.runtime_context.{field} is required")
         for field in ("session_root", "project_root", "file_operation_root"):
@@ -611,6 +619,14 @@ def validate(
             for field in ("code", "severity", "phase_step", "retryable", "message", "details", "next_action"):
                 if field not in item:
                     errors.append(f"structured_errors[{index}].{field} is required")
+            details = item.get("details")
+            if item.get("code") == "DEVICE_NOT_FOUND" and isinstance(details, dict) and details.get("missing_capability"):
+                errors.append(
+                    f"structured_errors[{index}] must use HOST_CAPABILITY_MISSING when details.missing_capability is present"
+                )
+            if item.get("code") == "HOST_CAPABILITY_MISSING":
+                if not isinstance(details, dict) or not details.get("missing_capability"):
+                    errors.append(f"structured_errors[{index}].details.missing_capability is required for HOST_CAPABILITY_MISSING")
     if payload.get("result") == "success" and structured:
         errors.append("success must not contain structured_errors")
     if payload.get("result") in {"partial", "failed"} and not structured:

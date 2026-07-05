@@ -32,7 +32,9 @@ The same envelope applies to plugin-host execution and local mock execution. Loc
 
 ## Runtime Context
 
-`runtime_context.session_root` owns the workflow state. `project_root` owns generated project files. `resource_root` points at the skill resources. Official artifact paths must be relative and POSIX-style.
+`runtime_context.session_root` owns the workflow state. `project_root` owns generated project files. `file_operation_root` is the maximum root allowed for file writes. `resource_root` points at the skill resources. Official artifact paths must be relative and POSIX-style.
+
+Required fields: `artifact_root`, `session_root`, `project_root`, `file_operation_root`, and `resource_root`.
 
 ## Capability Negotiation
 
@@ -48,6 +50,8 @@ The same envelope applies to plugin-host execution and local mock execution. Loc
 | `cancellation` | user cancellation | Still expose save/cancel approval actions. |
 
 Start every run by checking required capabilities for the selected mode. Do not defer a missing required capability until after files have been generated unless the capability is optional for the current path.
+
+Use `HOST_CAPABILITY_MISSING` when a required host capability is absent, and record `details.missing_capability`. Use `DEVICE_NOT_FOUND` only after device scan/run capability exists, permission was granted, and the scan/run actually failed to find the target device.
 
 ## Checkpoints
 
@@ -181,6 +185,7 @@ Before emitting `phase_complete`, validate generated Python artifacts without wr
 - Reject helper method arity mismatches such as calling `_read_reg(reg, buf)` when `_read_reg` only accepts `reg`.
 - Reject I2C duck-typing checks that do not include the exact methods used later.
 - Reject test scripts that use `const(...)` without importing `const` from `micropython` or defining a fallback.
+- Reject `const(...)` calls with non-integer literal arguments. Keep float scale factors as normal variables.
 
 ## Structured Errors
 
