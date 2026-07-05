@@ -1,0 +1,62 @@
+{
+  "type": "phase_complete",
+  "payload": {
+    "phase": "analyze",
+    "result": "success",
+    "summary": "Device analysis completed: No ready-made driver found for the user-specified device, marked as cold-driver path",
+    "next_phase": "select-hw",
+    "next_skill": "/upy-select-hw-plugin",
+    "manifest_content": {
+      "schema_version": "1.0",
+      "phase": "analyze",
+      "project_name": "Plant Assistant",
+      "requirements": {
+        "description": "Read soil temperature and humidity, support touch interaction and voice dialogue",
+        "scene": "indoor",
+        "power": "usb",
+        "network": "none",
+        "sample_rate": "normal_1hz",
+        "precision": "normal",
+        "response_time": "1s",
+        "temp_range": "normal_0_40",
+        "size_constraint": "none",
+        "budget_yuan": "medium_50",
+        "experience": "beginner",
+        "output": [
+          "serial"
+        ],
+        "existing_hardware": [],
+        "special_requirements": [
+          "none"
+        ],
+        "mcu_specified": "ESP32-S3-WROOM-1"
+      },
+      "devices": [
+        {
+          "name": "Soil Moisture Sensor",
+          "type": "soil_moisture_sensor",
+          "interface": "ADC",
+          "source": "user_specified",
+          "quantity": 1,
+          "driver": {
+            "source": "cold-driver"
+          }
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "type": "table",
+        "title": "Device Driver Status",
+        "headers": ["Device", "Interface", "Driver Source", "Status"],
+        "rows": [
+          ["Soil Moisture Sensor", "ADC", "cold-driver", "Requires subsequent cold-driver generation and verification"]
+        ]
+      }
+    ],
+    "warnings": [
+      "No ready-made driver for the user-specified device, proceed to cold-driver generation and verification process"
+    ],
+    "errors": []
+  }
+}

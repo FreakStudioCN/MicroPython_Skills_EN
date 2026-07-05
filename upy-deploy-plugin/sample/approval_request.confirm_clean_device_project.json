@@ -1,0 +1,40 @@
+{
+  "type": "approval_request",
+  "phase": "upy-deploy-plugin",
+  "payload": {
+    "phase": "upy-deploy-plugin",
+    "approval_id": "confirm_clean_device_project",
+    "header": "Confirm Clean Old Project Files",
+    "question": "The following device-side project files will be deleted, and then the current build result will be uploaded. Please confirm whether to continue.",
+    "summary": {
+      "strategy": "clean_then_upload",
+      "delete_count": 4,
+      "port": "COM3",
+      "dry_run_script": "scripts/clean_device_project.py --mode project_files --dry-run"
+    },
+    "items": [
+      {"id": "main.py", "name": ":main.py"},
+      {"id": "conf.py", "name": ":conf.py"},
+      {"id": "lib/logger/logging.py", "name": ":lib/logger/logging.py"},
+      {"id": "drivers/sht30_driver/__init__.py", "name": ":drivers/sht30_driver/__init__.py"}
+    ],
+    "warnings": [
+      "clean_then_upload only cleans project files and business directories, and does not delete user data directories such as data/, secrets/, etc."
+    ],
+    "actions": [
+      {
+        "label": "Confirm Clean and Upload",
+        "value": "confirm_clean",
+        "primary": true
+      },
+      {
+        "label": "Upload Only",
+        "value": "use_upload_only"
+      },
+      {
+        "label": "Cancel",
+        "value": "cancel"
+      }
+    ]
+  }
+}

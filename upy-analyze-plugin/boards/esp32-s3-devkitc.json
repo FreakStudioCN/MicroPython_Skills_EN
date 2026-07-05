@@ -1,0 +1,80 @@
+{
+  "id": "esp32-s3-devkitc",
+  "display_name": "ESP32-S3-DevKitC-1",
+  "mcu": "ESP32-S3-WROOM-1",
+  "chip_family": "esp32s3",
+  "firmware": {
+    "url": "https://micropython.org/download/ESP32_GENERIC_S3/",
+    "port": "esp32",
+    "board_name": "ESP32_GENERIC_S3",
+    "latest_version": "1.24.1"
+  },
+  "specs": {
+    "flash_mb": 16,
+    "psram_mb": 8,
+    "gpio": 45,
+    "adc": 20,
+    "dac": 0,
+    "i2c": 2,
+    "spi": 4,
+    "uart": 3,
+    "pwm": 8,
+    "touch": 14,
+    "wifi": true,
+    "ble": true,
+    "usb_otg": true
+  },
+  "typical_use_cases": ["AI voice", "Camera", "Display", "USB device", "High-performance computing"],
+  "beginner_friendly": false,
+  "price_yuan": 45,
+  "notes": "Comes with 8MB PSRAM, suitable for large memory applications. USB-OTG can directly emulate keyboard/mouse/USB drive. Onboard RGB LED",
+
+  "onboard_peripherals": [
+    {
+      "name": "RGB LED (WS2812)",
+      "type": "led_rgb",
+      "interface": "GPIO",
+      "occupied_pins": { "data": 48 },
+      "always_used": false,
+      "notes": "Programmable RGB LED. GPIO48 can be freed when not in use"
+    },
+    {
+      "name": "BOOT Button",
+      "type": "button",
+      "interface": "GPIO",
+      "occupied_pins": { "boot": 0 },
+      "always_used": true,
+      "notes": "Boot button, pulls GPIO0 low when pressed. Cannot be used for other functions"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "flexible",
+    "default_bus_pins": {
+      "i2c0": { "sda": 5, "scl": 6 },
+      "i2c1": { "sda": 43, "scl": 44 },
+      "spi0": { "mosi": 11, "miso": 13, "clk": 12, "cs": 10 },
+      "spi1": { "mosi": 35, "miso": 37, "clk": 36, "cs": 38 },
+      "uart0": { "tx": 43, "rx": 44 },
+      "uart1": { "tx": 17, "rx": 18 },
+      "i2s": { "bck": 9, "ws": 45, "data_out": 8, "data_in": 6 }
+    },
+    "restricted_gpio": {
+      "input_only": [],
+      "strapping": [0, 3, 45, 46],
+      "flash_psram_occupied": [26, 27, 28, 29, 30, 31, 32],
+      "adc2_wifi_conflict": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+      "usb_otg_pins": [19, 20]
+    },
+    "pin_options": {},
+    "notes": [
+      "All I2C/SPI/UART can be remapped to any free GPIO via GPIO Matrix",
+      "GPIO 0 is a strapping pin (Boot button), cannot change function",
+      "GPIO 3 is JTAG strapping, recommended to keep",
+      "GPIO 45/46 are strapping pins, affect startup voltage",
+      "GPIO 26-32 are occupied by Octal PSRAM (WROOM-1 module), cannot be used externally",
+      "GPIO 19/20 are dedicated to USB OTG; using them as regular GPIO will lose USB functionality",
+      "ADC2 conflicts with WiFi, prefer ADC1 (GPIO 1-10)"
+    ]
+  }
+}

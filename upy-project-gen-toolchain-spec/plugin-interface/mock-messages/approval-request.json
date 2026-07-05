@@ -1,0 +1,54 @@
+{
+  "msg_id": "s2p-approval-001",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "phase": "analyze",
+  "timestamp": "2026-06-17T10:30:00Z",
+  "type": "approval_request",
+  "payload": {
+    "approval_id": "device_confirm_001",
+    "header": "Confirm Project Plan",
+    "question": "Please confirm whether the following devices are correct",
+    "summary": {
+      "project_name": "Temperature and Humidity Monitoring Alarm",
+      "description": "Periodically collect temperature and humidity → display on screen → buzzer alarm when threshold is exceeded",
+      "board": {
+        "status": "selected",
+        "display_name": "ESP32 DevKit V1",
+        "mcu": "ESP32-WROOM-32"
+      }
+    },
+    "items": [
+      {
+        "id": "d1",
+        "name": "SHT30",
+        "subtitle": "I2C Temperature and Humidity Sensor (0x44)",
+        "meta": "User Specified",
+        "selectable": true,
+        "selected": true
+      },
+      {
+        "id": "d2",
+        "name": "SSD1306 OLED",
+        "subtitle": "I2C Display (0x3C)",
+        "meta": "System Recommended",
+        "selectable": true,
+        "selected": true
+      },
+      {
+        "id": "d3",
+        "name": "Buzzer",
+        "subtitle": "GPIO Actuator",
+        "meta": "System Recommended",
+        "selectable": true,
+        "selected": true
+      }
+    ],
+    "allow_add": true,
+    "allow_remove": true,
+    "multi_select": true,
+    "actions": [
+      { "label": "Confirm, Start Searching for Drivers", "value": "confirm", "primary": true },
+      { "label": "Modify Device List", "value": "modify" }
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "id": "raspberry-pi-pico",
+  "display_name": "Raspberry Pi Pico",
+  "mcu": "RP2040",
+  "chip_family": "rp2",
+  "firmware": {
+    "url": "https://micropython.org/download/RPI_PICO/",
+    "port": "rp2",
+    "board_name": "RPI_PICO",
+    "latest_version": "1.24.1"
+  },
+  "specs": {
+    "flash_mb": 2,
+    "psram_mb": 0,
+    "gpio": 26,
+    "adc": 3,
+    "dac": 0,
+    "i2c": 2,
+    "spi": 2,
+    "uart": 2,
+    "pwm": 16,
+    "touch": 0,
+    "wifi": false,
+    "ble": false,
+    "usb_otg": false
+  },
+  "typical_use_cases": ["Pure GPIO control", "Motor driving", "Education and learning", "Low-budget projects"],
+  "beginner_friendly": true,
+  "price_yuan": 20,
+  "notes": "USB drag-and-drop flashing, extremely easy to get started. No WiFi/BLE, choose Pico W if networking is needed",
+
+  "onboard_peripherals": [
+    {
+      "name": "LED",
+      "type": "led",
+      "interface": "GPIO",
+      "occupied_pins": { "led": 25 },
+      "always_used": false,
+      "notes": "Onboard indicator LED. Most projects don't need to control it, GPIO25 can be freed"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "fixed",
+    "default_bus_pins": {
+      "i2c0": { "sda": 4, "scl": 5 },
+      "i2c1": { "sda": 2, "scl": 3 },
+      "spi0": { "mosi": 3, "miso": 0, "clk": 2, "cs": 1 },
+      "spi1": { "mosi": 11, "miso": 8, "clk": 10, "cs": 9 },
+      "uart0": { "tx": 0, "rx": 1 },
+      "uart1": { "tx": 4, "rx": 5 }
+    },
+    "restricted_gpio": {
+      "adc_only": [26, 27, 28],
+      "other": []
+    },
+    "pin_options": {
+      "i2c0_sda": [0, 4, 8, 12, 16, 20],
+      "i2c0_scl": [1, 5, 9, 13, 17, 21],
+      "i2c1_sda": [2, 6, 10, 14, 18, 26],
+      "i2c1_scl": [3, 7, 11, 15, 19, 27],
+      "spi0_mosi": [3, 7, 11, 15, 19, 23],
+      "spi0_miso": [0, 4, 8, 12, 16, 20],
+      "spi0_clk":  [2, 6, 10, 14, 18, 22],
+      "spi0_cs":   [1, 5, 9, 13, 17, 21],
+      "spi1_mosi": [11, 15, 19, 23, 27],
+      "spi1_miso": [8, 12, 16, 20, 24],
+      "spi1_clk":  [10, 14, 18, 22, 26],
+      "spi1_cs":   [9, 13, 17, 21, 25],
+      "uart0_tx":  [0, 12, 16, 28],
+      "uart0_rx":  [1, 13, 17, 29],
+      "uart1_tx":  [4, 8, 20, 24],
+      "uart1_rx":  [5, 9, 21, 25]
+    },
+    "notes": [
+      "RP2040 peripherals are fixedly bound to GPIOs. Each function can only be selected from the set of pins listed in pin_options",
+      "I2C0/I2C1: choose 1 out of 6 pairs (sda and scl must be from the same pair)",
+      "SPI0/SPI1: choose 1 out of 4-6, each pin comes from a fixed GPIO group",
+      "UART0/UART1: choose 1 out of 4-5",
+      "PWM: every GPIO can do PWM (8 slices total, 2 channels per slice)",
+      "ADC: only GPIO 26/27/28 can be used, GPIO 29 is ADC reference or input (varies by board)",
+      "GPIO 23 is SMPS control, generally not used",
+      "GPIO 24 is VBUS detection, generally not used",
+      "GPIO 25 is the onboard LED, usable but recommended not to repurpose",
+      "Default I2C0 (GPIO4/5) is the most commonly used, be careful not to conflict with UART1 (default TX=4/RX=5)"
+    ]
+  }
+}

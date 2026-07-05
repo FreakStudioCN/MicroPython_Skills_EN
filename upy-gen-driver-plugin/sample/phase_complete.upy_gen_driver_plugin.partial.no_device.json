@@ -1,0 +1,106 @@
+{
+  "protocol_version": "1.0",
+  "msg_id": "msg-partial-no-device",
+  "session_id": "sample-standalone",
+  "phase": "upy-gen-driver-plugin",
+  "timestamp": "2026-07-04T00:10:00Z",
+  "type": "phase_complete",
+  "idempotency_key": "upy-gen-driver-plugin:sample-standalone:phase_complete:no_device:v1",
+  "retry_of": null,
+  "payload": {
+    "phase": "gen-driver",
+    "domain_phase": "gen-driver",
+    "result": "partial",
+    "summary": "Debug driver was generated but no MicroPython device was detected. Progress is saved for resume.",
+    "next_phase": null,
+    "runtime_context": {
+      "artifact_root": ".",
+      "artifact_root_mode": "cwd",
+      "session_root": "sessions/sample-standalone",
+      "project_root": "sessions/sample-standalone/project",
+      "file_operation_root": "sessions/sample-standalone/project",
+      "resource_root": "upy-gen-driver-plugin"
+    },
+    "checkpoint": {
+      "checkpoint_id": "upy-gen-driver-plugin:sample-standalone:hardware_verify_ready",
+      "resume_phase": "upy-gen-driver-plugin",
+      "resume_step": "hardware_verify",
+      "state_file": "sessions/sample-standalone/session_state.upy_gen_driver_plugin.json"
+    },
+    "permissions": [
+      {
+        "permission_id": "file_write_sht30_debug",
+        "operation": "file_write",
+        "reason": "Write debug driver artifact before hardware verification.",
+        "paths": [
+          "sessions/sample-standalone/project/firmware/drivers/sht30_driver/sht30_debug.py"
+        ],
+        "timeout_ms": 30000,
+        "idempotency_key": "upy-gen-driver-plugin:sample-standalone:file_write:sht30:debug:v1",
+        "result": "granted"
+      },
+      {
+        "permission_id": "device_scan_sht30_scan",
+        "operation": "device_scan",
+        "reason": "Scan for a MicroPython device before running the debug driver.",
+        "timeout_ms": 5000,
+        "idempotency_key": "upy-gen-driver-plugin:sample-standalone:device_scan:sht30:scan:v1",
+        "result": "granted"
+      }
+    ],
+    "file_manifest": {
+      "root": ".",
+      "files": [
+        {
+          "path": "sessions/sample-standalone/session_state.upy_gen_driver_plugin.json",
+          "status": "created",
+          "role": "state",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "sessions/sample-standalone/project/firmware/drivers/sht30_driver/sht30_debug.py",
+          "status": "created",
+          "role": "debug_driver",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "type": "file_list",
+        "title": "Generated so far",
+        "files": [
+          {
+            "path": "sessions/sample-standalone/project/firmware/drivers/sht30_driver/sht30_debug.py",
+            "status": "created",
+            "description": "Debug driver awaiting hardware verification"
+          },
+          {
+            "path": "sessions/sample-standalone/session_state.upy_gen_driver_plugin.json",
+            "status": "created",
+            "description": "Resume checkpoint"
+          }
+        ]
+      }
+    ],
+    "warnings": [],
+    "structured_errors": [
+      {
+        "code": "DEVICE_NOT_FOUND",
+        "severity": "warning",
+        "phase_step": "hardware_verify",
+        "retryable": true,
+        "message": "No MicroPython device was detected.",
+        "details": {
+          "action": "device_scan"
+        },
+        "next_action": "connect_device_and_resume"
+      }
+    ],
+    "hardware_verified": false,
+    "verification_mode": "none",
+    "manifest_content": null
+  }
+}

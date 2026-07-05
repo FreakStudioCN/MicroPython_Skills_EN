@@ -1,13 +1,13 @@
 ---
 name: upy-analyze-plugin
-description: Plugin-based V0 analyze phase. Reads a one-sentence hardware project requirement and plugin context, completes requirement parsing, device confirmation, driver search, alternative recommendations or cold-driver marking, and outputs a complete envelope with phase_complete + manifest_content. Triggered by: plugin start_phase(analyze), user description "make a / I want to build / help me write a" MicroPython hardware project, or when a project manifest needs to be generated.
+description: Plugin-based V0 analyze phase. Reads a one-sentence hardware project requirement and plugin context, completes requirement parsing, device confirmation, driver search, alternative recommendations or cold-driver marking, and outputs a complete envelope with phase_complete + manifest_content. Triggered by: plugin start_phase(analyze), user description "make a / I want to / help me write a" MicroPython hardware project, or when a project manifest needs to be generated.
 ---
 
 # upy-analyze
 
 ## Responsibilities
 
-Converts a user's one-sentence hardware requirement into an analyze manifest that can be handed over to `upy-select-hw`.
+Convert a user's one-sentence hardware requirement into an analyze manifest that can be handed over to `upy-select-hw`.
 
 Only does:
 
@@ -15,9 +15,9 @@ Only does:
 - Generate and confirm a device list.
 - Search for built-in runtime capabilities and specific device drivers.
 - Mark alternative recommendations or cold-driver paths.
-- Output `phase_complete`, where `payload.manifest_content` is the sole primary handover item for downstream.
+- Output `phase_complete`, where `payload.manifest_content` is the sole handover artifact for downstream.
 
-Does not:
+Does NOT:
 
 - Select MCU or board.
 - Assign pins.
@@ -25,13 +25,13 @@ Does not:
 - Flash devices.
 - Write plugin-side UI or device log parsing logic into the plugin.
 
-## Operation Modes
+## Operating Modes
 
 ## Protocol Field Description
 
-First, follow the execution flow in this file. When constructing or inspecting specific message fields, read `references/v0-protocol.md`; it defines the field meanings and enums for envelope, `start_phase`, `approval_request`, `status_update`, `script_run`, manifest, `phase_complete`, checkpoint, structured errors, and artifacts.
+Follow the execution flow in this file first. When constructing or inspecting specific message fields, read `references/v0-protocol.md`; it defines the field meanings and enums for envelope, `start_phase`, `approval_request`, `status_update`, `script_run`, manifest, `phase_complete`, checkpoint, structured errors, and artifacts.
 
-When outputting JSON, prioritize the shapes in `templates/*.json` and `mock-messages/analyze/*.json`; do not invent field names.
+When outputting JSON, prefer the shapes in `templates/*.json` and `mock-messages/analyze/*.json`; do not invent field names.
 
 ### Formal Plugin Mode
 
@@ -46,7 +46,7 @@ The plugin starts via `start_phase`:
   "timestamp": "2026-06-21T00:00:00Z",
   "type": "start_phase",
   "payload": {
-    "user_description": "Build a temperature and humidity monitor that triggers a buzzer alarm when thresholds are exceeded",
+    "user_description": "Make a temperature and humidity monitor, buzzer alarm when threshold exceeded",
     "pre_selected_board": null,
     "preferences": { "mode": "beginner", "locale": "zh" },
     "existing_hardware": []
@@ -65,12 +65,12 @@ In formal mode:
 
 | Field | Required | Source | Meaning |
 |-------|----------|--------|---------|
-| `protocol_version` | Yes | Plugin | Fixed to `"1.0"` |
+| `protocol_version` | Yes | Plugin | Fixed `"1.0"` |
 | `msg_id` | Yes | Plugin | UUID for the current message |
-| `session_id` | Yes | Plugin | UUID for the current workflow session, remains unchanged throughout the process |
-| `phase` | Yes | Plugin | Fixed to `"analyze"` |
+| `session_id` | Yes | Plugin | UUID for the current workflow session, remains unchanged throughout |
+| `phase` | Yes | Plugin | Fixed `"analyze"` |
 | `timestamp` | Yes | Plugin | ISO 8601 timestamp |
-| `type` | Yes | Plugin | Fixed to `"start_phase"` |
+| `type` | Yes | Plugin | Fixed `"start_phase"` |
 | `payload.user_description` | Yes | User input | One-sentence hardware requirement |
 | `payload.pre_selected_board` | No | Plugin UI | Pre-selected board; analyze only records, does not verify |
 | `payload.preferences.mode` | No | Plugin settings | `beginner` or `custom`, default `beginner` |
@@ -81,7 +81,7 @@ In formal mode:
 
 When there is no real plugin host, debug artifacts can be written, but these files do not replace `phase_complete.payload.manifest_content`.
 
-If the input lacks `session_id`, the direct test mode must generate a UUID and force the use of a session-isolated directory:
+If the input lacks `session_id`, direct test mode must generate a UUID and force the use of a session-isolated directory:
 
 ```text
 {test_root}/sessions/{session_id}/
@@ -99,7 +99,7 @@ python {skill_dir}/scripts/init_manifest.py --input {session_dir}/manifest_draft
 python {skill_dir}/scripts/init_manifest.py --validate-phase-complete --input {session_dir}/phase_complete.analyze.json --compare-manifest {session_dir}/manifest_validated.json
 ```
 
-If either validation fails, analyze success must not be claimed.
+If either validation fails, analyze success must not be declared.
 
 ## V0 Protocol Hard Rules
 
@@ -124,13 +124,13 @@ Requirements:
 - `protocol_version` is fixed to `"1.0"`.
 - `msg_id` uses a UUID string.
 - `session_id` uses a UUID string.
-- The top-level `phase` and `payload.phase` are both retained and must be consistent.
+- Top-level `phase` and `payload.phase` are both retained and must be consistent.
 
 Envelope field quick reference:
 
 | Field | Required | Generated By | Rule |
 |-------|----------|--------------|------|
-| `protocol_version` | Yes | Sender | Fixed to `"1.0"` |
+| `protocol_version` | Yes | Sender | Fixed `"1.0"` |
 | `msg_id` | Yes | Sender | A new UUID for each message |
 | `session_id` | Yes | Plugin | Unchanged within the same workflow |
 | `phase` | Yes | Sender | Fixed to `"analyze"` during the analyze phase |
@@ -144,9 +144,9 @@ Envelope field quick reference:
 
 | result | Meaning | next_phase | checkpoint |
 |--------|---------|------------|------------|
-| `success` | Analyze completed successfully, can proceed downstream | `select-hw` | Not required |
-| `partial` | User cancelled, interrupted, timed out, missing input, or only partially completed search | `null` | Required |
-| `failed` | Cannot produce a usable manifest, or protocol/format validation failed | `null` | Optional |
+| `success` | Analyze fully successful, can proceed downstream | `select-hw` | Not required |
+| `partial` | User cancelled, interrupted, timed out, missing input, or only partial search completed | `null` | Required |
+| `failed` | Unable to produce a usable manifest, or protocol/format validation failed | `null` | Optional |
 
 `partial` must include:
 
@@ -160,7 +160,7 @@ Envelope field quick reference:
 }
 ```
 
-V0 only defines the checkpoint/resume structure, does not implement a full resume runtime.
+V0 only defines the checkpoint/resume structure; it does not implement a full resume runtime.
 
 ### errors and structured_errors
 
@@ -179,7 +179,7 @@ Keep `errors: string[]` for human reading, while also outputting `structured_err
 
 `severity` only allows `info / warning / error / fatal`.
 
-### artifact Unified Model
+### Unified Artifact Model
 
 `artifacts` must be an array. Debug file paths use the `file_list` artifact; do not write them as an object map.
 
@@ -205,7 +205,7 @@ Recommended file item:
 
 ## Permission Strategy
 
-Adopts a long-flow strategy where "the first session prompts for overall permissions once, and subsequent sessions reuse them."
+Adopt a long-flow strategy where "the first session prompts for overall permission once, and subsequent sessions reuse it."
 
 After authorization in the analyze phase, the following are allowed:
 
@@ -243,7 +243,7 @@ Read `start_phase.payload`:
 | `preferences.locale` | No | `zh` | Default Chinese |
 | `existing_hardware` | No | `[]` | User's existing hardware |
 
-If a field is missing, fill in with the default value; if `user_description` is missing or empty, output `phase_complete(result="failed")` and do not proceed to guess the requirement.
+If a field is missing, fill in with the default value; if `user_description` is missing or empty, output `phase_complete(result="failed")` and do not continue guessing the requirement.
 
 Send:
 
@@ -270,7 +270,7 @@ Extract from natural language:
 - Interface types.
 - User-specified devices vs. system-recommended devices.
 
-Major device categories must first break down implementation families. For example, soil-type devices must distinguish between `ADC / RS485 Modbus / I2C/SPI / Combined solution`.
+Major device categories must first be broken down into implementation families. For example, soil-type devices must distinguish between `ADC / RS485 Modbus / I2C/SPI / Combined solutions`.
 
 Only one mandatory confirmation point is retained: `approval_request(device_confirm)`.
 
@@ -280,10 +280,10 @@ Only one mandatory confirmation point is retained: `approval_request(device_conf
   "payload": {
     "approval_id": "device_confirm",
     "header": "Confirm Project Plan",
-    "question": "Please confirm the device plan; for soil-type devices, you can switch to ADC / RS485 Modbus / I2C plan here.",
+    "question": "Please confirm the device plan; for soil-type devices, you can change to ADC / RS485 Modbus / I2C plan here.",
     "summary": {
       "project_name": "Temperature and Humidity Monitoring Alarm",
-      "description": "Periodically collect temperature and humidity, trigger buzzer alarm when thresholds are exceeded",
+      "description": "Periodically collect temperature and humidity, buzzer alarm when threshold exceeded",
       "board": { "status": "none" }
     },
     "items": [],
@@ -298,11 +298,11 @@ Only one mandatory confirmation point is retained: `approval_request(device_conf
 }
 ```
 
-After sending `approval_request`, you must wait for the user's response; do not pretend it has been confirmed.
+After issuing `approval_request`, you must wait for the user's response; do not pretend it has been confirmed.
 
 ### Step 3: Supplement Requirements
 
-`beginner` mode fills in requirements by default. For `custom` mode or when information is clearly insufficient, send at most one `approval_request(requirement_supplement)`.
+`beginner` mode fills in requirements by default. For `custom` mode or when information is clearly insufficient, issue at most one `approval_request(requirement_supplement)`.
 
 Default values:
 
@@ -323,13 +323,13 @@ Default values:
 | `special_requirements` | `["none"]` |
 | `mcu_specified` | `null` |
 
-Content that cannot be fully expressed by schemas such as voice, cloud, audio output, etc., should be recorded in `description`, `special_requirements`, device notes, and warnings. Do not fail directly due to insufficient output enumeration.
+Content that cannot be fully expressed by schemas such as voice, cloud, or audio output should be recorded in `description`, `special_requirements`, device notes, and warnings; do not fail directly due to insufficient output enums.
 
 ### Step 4: Driver Search
 
 For each confirmed device, evaluate at two levels:
 
-1. Low-level runtime capabilities:
+1. Underlying runtime capabilities:
    - `machine.ADC`
    - `machine.Pin`
    - `machine.I2C`
@@ -350,7 +350,7 @@ Note:
 - `builtin_runtime` only indicates that the underlying API is available; it does not mean a specific I2C/SPI/UART device driver has been found.
 - For specific I2C/SPI/UART devices, `upypi` should still be checked first.
 - `micropython_lib` is only used for official ecosystem general-purpose libraries/middleware, not as a default source for common sensor drivers.
-- `driver.source="none"` is only used when it is clearly not a built-in runtime capability and all driver sources return no results.
+- `driver.source="none"` is only used when it is clearly not a built-in runtime capability and all driver sources yield no results.
 
 Send a `status_update` for each device search process.
 
@@ -395,7 +395,7 @@ Validation failure:
 
 ### Step 7: Output phase_complete
 
-On success, output a complete envelope:
+On success, output the complete envelope:
 
 ```json
 {
@@ -467,17 +467,17 @@ On success, output a complete envelope:
 | `artifacts` | Yes | Array | Array | Array |
 | `warnings` | Yes | String array | String array | String array |
 | `errors` | Yes | Empty array or error summary | Empty array or error summary | Error summary |
-| `structured_errors` | Yes | Empty array | Optional structured errors | Must describe the primary failure |
+| `structured_errors` | Yes | Empty array | Optional structured errors | Must describe the main failure |
 
-Direct test mode recommends additionally writing `analyze_phase_log.md`, but it is not a mandatory deliverable in the formal protocol; it can be declared in `file_list`.
+Direct test mode recommends additionally writing `analyze_phase_log.md`, but it is not a mandatory deliverable in the formal protocol; it can be declared in the `file_list`.
 
-After writing `phase_complete.analyze.json`, must call:
+After writing `phase_complete.analyze.json`, you must call:
 
 ```bash
 python {skill_dir}/scripts/init_manifest.py --validate-phase-complete --input phase_complete.analyze.json --compare-manifest manifest_validated.json
 ```
 
-If validation fails, completion must not be claimed.
+If validation fails, do not declare completion.
 
 ## Deliverable Files
 
@@ -491,7 +491,7 @@ Formal plugin mode relies on messages. Claude Code direct test mode writes the f
 
 ## Templates and Mocks
 
-Use the resources bundled with this skill:
+Use the resources provided with this skill:
 
 - `templates/envelope.phase_complete.json`
 - `templates/checkpoint.json`
@@ -500,14 +500,14 @@ Use the resources bundled with this skill:
 - `mock-messages/analyze/*.json`
 - `references/v0-protocol.md`
 
-After modifying templates, enums, or output formats, the validation script and smoke tests must be updated.
+After modifying templates, enums, or output formats, you must update the validation script and smoke tests.
 
 ## Hard Constraints
 
 - Protocol format, required fields, invalid enums, and core manifest structure errors must be treated as errors.
 - Business semantic issues should be warnings first, e.g., TouchPad board compatibility, incomplete voice output schema.
-- `phase_complete.payload.manifest_content` is the sole primary handover item for downstream.
-- `manifest_validated.json` and `phase_complete.payload.manifest_content` must have consistent core fields; timestamp fields are not strictly compared.
+- `phase_complete.payload.manifest_content` is the sole handover artifact for downstream.
+- `manifest_validated.json` and `phase_complete.payload.manifest_content` must have consistent core fields; timestamp fields are not subject to strict comparison.
 - `phase_complete.artifacts` must be an array.
 - `errors` must be a string array, `structured_errors` must be an object array.
 - `partial` must have `next_phase=null` and include a checkpoint.

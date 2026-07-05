@@ -8,13 +8,13 @@
   "payload": {
     "phase": "analyze",
     "result": "partial",
-    "summary": "The user cancelled during the device confirmation phase. The current requirement analysis checkpoint has been saved.",
+    "summary": "User cancelled during device confirmation phase, current requirement analysis checkpoint has been saved.",
     "next_phase": null,
     "checkpoint": {
       "checkpoint_id": "b8f23d64-1b77-42ab-b7df-36f0d7e2a010",
       "resume_phase": "analyze",
       "resume_step": "device_confirm",
-      "resume_label": "Continue confirming the analyze device list",
+      "resume_label": "Continue confirming analyze device list",
       "reason": "user_cancelled"
     },
     "manifest_content": {
@@ -22,7 +22,7 @@
       "phase": "analyze",
       "project_name": "Temperature and Humidity Monitoring Alarm",
       "requirements": {
-        "description": "Periodically collect temperature and humidity, trigger buzzer alarm when threshold is exceeded",
+        "description": "Periodically collect temperature and humidity, buzzer alarm when threshold is exceeded",
         "scene": "indoor",
         "power": "usb",
         "network": "none",
@@ -62,7 +62,7 @@
     },
     "artifacts": [],
     "warnings": [
-      "Did not enter select-hw after user cancellation."
+      "User cancelled and did not enter select-hw."
     ],
     "errors": [],
     "structured_errors": []

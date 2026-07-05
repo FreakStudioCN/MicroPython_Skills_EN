@@ -27,7 +27,7 @@
   "typical_use_cases": ["Ultra-low budget WiFi projects", "Simple switch control", "WiFi transparent transmission"],
   "beginner_friendly": true,
   "price_yuan": 10,
-  "notes": "Extremely low price, MicroPython firmware has stopped active updates (last version 1.22.2). Only recommended for simple WiFi projects with extremely limited budget",
+  "notes": "Extremely low price, MicroPython firmware has stopped active updates (last version 1.22.2). Only recommended for simple WiFi projects with extremely limited budgets",
 
   "onboard_peripherals": [
     {
@@ -57,7 +57,7 @@
     "pin_options": {},
     "notes": [
       "I2C/SPI can be mapped via software (all GPIOs can be used), but only 1 hardware channel",
-      "GPIO 0/2/15 are strapping pins, their level at startup affects the working mode",
+      "GPIO 0/2/15 are strapping pins, their level at startup affects the operating mode",
       "GPIO 6-11 are occupied by internal Flash, cannot be used externally",
       "GPIO 16 is a special wake-up pin, only usable during Deep Sleep",
       "GPIO 1/3 are UART0 (serial debug), avoid repurposing them",

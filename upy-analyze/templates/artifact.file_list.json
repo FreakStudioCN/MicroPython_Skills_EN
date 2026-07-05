@@ -14,7 +14,7 @@
       "status": "created",
       "kind": "manifest",
       "mime_type": "application/json",
-      "description": "Validated and normalized analyze manifest"
+      "description": "Normalized analyze manifest after validation"
     },
     {
       "path": "phase_complete.analyze.json",

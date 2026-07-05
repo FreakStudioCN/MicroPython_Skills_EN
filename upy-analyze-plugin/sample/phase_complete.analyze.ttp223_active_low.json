@@ -1,0 +1,86 @@
+{
+  "type": "phase_complete",
+  "payload": {
+    "phase": "analyze",
+    "result": "success",
+    "summary": "Device analysis completed, 2 devices identified",
+    "next_phase": "select-hw",
+    "next_skill": "/upy-select-hw-plugin",
+    "manifest_content": {
+      "schema_version": "1.0",
+      "phase": "analyze",
+      "project_name": "Touch Control Light",
+      "requirements": {
+        "description": "Make a touch control light, use TTP223 for touch button, output low level when pressed",
+        "scene": "indoor",
+        "power": "usb",
+        "network": "none",
+        "sample_rate": "triggered",
+        "precision": "normal",
+        "response_time": "ms_level",
+        "temp_range": "normal_0_40",
+        "size_constraint": "none",
+        "budget_yuan": "low_30",
+        "experience": "beginner",
+        "output": [
+          "led"
+        ],
+        "existing_hardware": [],
+        "special_requirements": [
+          "button_control"
+        ],
+        "mcu_specified": null
+      },
+      "devices": [
+        {
+          "name": "TTP223",
+          "type": "touch_sensor",
+          "interface": "GPIO",
+          "source": "user_specified",
+          "quantity": 1,
+          "notes": "User specified touch button using TTP223, output low level when pressed",
+          "behavior": {
+            "role": "touch_button",
+            "event": "pressed",
+            "active_level": "low",
+            "idle_level": "high"
+          },
+          "driver": {
+            "source": "builtin_runtime",
+            "module": "machine.Pin",
+            "search_provider": "builtin_runtime_classifier",
+            "search_required": false,
+            "notes": "GPIO input; low level when pressed, should be handled as active-low during code generation"
+          }
+        },
+        {
+          "name": "LED",
+          "type": "led",
+          "interface": "GPIO",
+          "source": "system_recommended",
+          "quantity": 1,
+          "driver": {
+            "source": "builtin_runtime",
+            "module": "machine.Pin",
+            "search_provider": "builtin_runtime_classifier",
+            "search_required": false,
+            "notes": "GPIO output"
+          }
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "type": "table",
+        "title": "Device Driver Status",
+        "headers": ["Device", "Interface", "Driver Source", "Status"],
+        "rows": [
+          ["TTP223", "GPIO", "builtin_runtime", "OK"],
+          ["LED", "GPIO", "builtin_runtime", "OK"]
+        ]
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  }
+}

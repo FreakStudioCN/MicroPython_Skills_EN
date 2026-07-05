@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "description": "Board selection scoring rules. LLM triggers corresponding rules based on user requirements to boost or exclude chip_family. The two boards with the highest scores are recommended.",
+  "rules": [
+    {
+      "id": "wifi_required",
+      "trigger": "User requirement involves WiFi networking",
+      "action": "boost",
+      "chip_families": ["esp32", "esp32s3", "esp32c3", "rp2", "esp8266"],
+      "note": "rp2 refers to Pico W (Pico has no WiFi, secondary filtering by specs.wifi)"
+    },
+    {
+      "id": "ble_required",
+      "trigger": "User requirement involves Bluetooth/BLE",
+      "action": "boost",
+      "chip_families": ["esp32", "esp32s3", "esp32c3", "rp2"]
+    },
+    {
+      "id": "low_power_battery",
+      "trigger": "Battery powered + low power requirement",
+      "action": "boost",
+      "chip_families": ["esp32c3", "rp2"]
+    },
+    {
+      "id": "display_lcd_required",
+      "trigger": "Need to drive LCD/OLED display",
+      "action": "boost",
+      "chip_families": ["esp32s3", "esp32"]
+    },
+    {
+      "id": "usb_otg_required",
+      "trigger": "Need USB device mode (simulate keyboard/mouse/USB drive)",
+      "action": "boost",
+      "chip_families": ["esp32s3"]
+    },
+    {
+      "id": "extreme_budget",
+      "trigger": "Extreme budget (below ¥20)",
+      "action": "boost",
+      "chip_families": ["esp8266", "rp2", "esp32c3"]
+    },
+    {
+      "id": "beginner_user",
+      "trigger": "Beginner user (experience=beginner)",
+      "action": "boost",
+      "chip_families": ["esp32", "rp2", "esp32"]
+    },
+    {
+      "id": "multiple_i2c_devices",
+      "trigger": "≥2 I2C devices requiring independent hardware I2C bus",
+      "action": "exclude",
+      "chip_families": ["esp8266", "esp32c3"]
+    },
+    {
+      "id": "high_gpio_count",
+      "trigger": "Need a large number of GPIOs (≥10 external devices or motors)",
+      "action": "boost",
+      "chip_families": ["esp32", "esp32s3", "rp2"]
+    },
+    {
+      "id": "psram_required",
+      "trigger": "Need large memory (camera/AI/large display)",
+      "action": "boost",
+      "chip_families": ["esp32s3"]
+    }
+  ]
+}

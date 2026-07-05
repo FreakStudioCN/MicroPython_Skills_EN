@@ -1,0 +1,86 @@
+{
+  "protocol_version": "1.0",
+  "msg_id": "74d14303-8f90-4bb0-8d3f-0e9f85fc42b0",
+  "session_id": "022ad742-3269-42e9-ac20-c14f477ecdf2",
+  "phase": "select-hw",
+  "timestamp": "2026-06-21T06:51:20Z",
+  "type": "approval_request",
+  "idempotency_key": "select-hw:022ad742-3269-42e9-ac20-c14f477ecdf2:board-unavailable:v1",
+  "retry_of": null,
+  "payload": {
+    "approval_id": "board_unavailable",
+    "header": "Specified board not in current board library",
+    "question": "The specified board was not found in the current board library. Please choose how to proceed.",
+    "summary": {
+      "project_name": "Voice Dialogue Assistant",
+      "requested_board": "ESP32-C3 SuperMini",
+      "requested_mcu_or_module": "ESP32-C3",
+      "board_library": "upy-analyze-plugin/boards",
+      "reason": "board_not_found"
+    },
+    "recommended_similar_board": {
+      "id": "esp32-c3-devkitm",
+      "name": "ESP32-C3-DevKitM-1",
+      "subtitle": "Also ESP32-C3, WiFi/BLE, MicroPython ESP32_GENERIC_C3",
+      "meta": "Same series and board library includes pin_layout, can continue automatic pin assignment",
+      "selected": true
+    },
+    "known_board_options": [
+      {
+        "id": "esp32-c3-devkitm",
+        "name": "ESP32-C3-DevKitM-1",
+        "subtitle": "ESP32-C3 same series alternative",
+        "selected": true
+      },
+      {
+        "id": "esp32-devkit-v1",
+        "name": "ESP32 DevKit V1",
+        "subtitle": "ESP32 general WiFi/BLE, more GPIOs",
+        "selected": false
+      },
+      {
+        "id": "raspberry-pi-pico-w",
+        "name": "Raspberry Pi Pico W",
+        "subtitle": "Pico W, WiFi/BLE, beginner-friendly",
+        "selected": false
+      }
+    ],
+    "manual_wiring_schema": {
+      "description": "Manually describe each connection, format: MCU pin -> device pin.",
+      "fields": [
+        {"name": "mcu_pin", "required": true, "example": "GPIO21"},
+        {"name": "device", "required": true, "example": "AHT20"},
+        {"name": "device_pin", "required": true, "example": "SDA"},
+        {"name": "signal", "required": true, "example": "i2c_data"},
+        {"name": "voltage", "required": false, "example": "3.3V"},
+        {"name": "notes", "required": false, "example": "Shared bus with other I2C devices"}
+      ],
+      "examples": [
+        {"mcu_pin": "GPIO21", "device": "AHT20", "device_pin": "SDA", "signal": "i2c_data", "voltage": "3.3V"},
+        {"mcu_pin": "GPIO22", "device": "AHT20", "device_pin": "SCL", "signal": "i2c_clock", "voltage": "3.3V"},
+        {"mcu_pin": "3V3", "device": "AHT20", "device_pin": "VCC", "signal": "power_3v3", "voltage": "3.3V"},
+        {"mcu_pin": "GND", "device": "AHT20", "device_pin": "GND", "signal": "gnd", "voltage": "0V"}
+      ]
+    },
+    "multi_select": false,
+    "actions": [
+      {
+        "label": "Use similar board",
+        "value": "use_recommended_similar",
+        "primary": true
+      },
+      {
+        "label": "Select from known boards",
+        "value": "select_known_board"
+      },
+      {
+        "label": "Describe wiring manually",
+        "value": "manual_wiring_description"
+      },
+      {
+        "label": "Continue later",
+        "value": "save_partial"
+      }
+    ]
+  }
+}

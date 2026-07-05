@@ -1,0 +1,25 @@
+{
+  "protocol_version": "1.0",
+  "type": "approval_request",
+  "phase": "upy-diagram-plugin",
+  "session_id": "demo-session",
+  "msg_id": "msg-diagram-complexity",
+  "timestamp": "2026-07-02T00:00:01Z",
+  "idempotency_key": "upy-diagram-plugin:demo-session:complexity:v1",
+  "payload": {
+    "approval_id": "diagram_complexity",
+    "header": "Architecture Diagram Complexity",
+    "question": "Select the level of detail for the diagram",
+    "items": [
+      {"id": "simple", "name": "Simple", "subtitle": "≤6 modules, ≤5 steps, highly streamlined", "selected": false},
+      {"id": "medium", "name": "Medium (Recommended)", "subtitle": "≤10 modules, ≤8 steps, balanced information", "selected": true},
+      {"id": "full", "name": "Detailed", "subtitle": "≤16 modules, ≤14 steps, fully expanded", "selected": false}
+    ],
+    "allow_add": false,
+    "allow_remove": false,
+    "multi_select": false,
+    "actions": [
+      {"label": "Confirm", "value": "confirm", "primary": true}
+    ]
+  }
+}

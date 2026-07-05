@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://upy-toolchain/diagnostic_bundle/v1",
+  "title": "Diagnostic Bundle",
+  "description": "Diagnostic bundle generated after 3 failed troubleshooting attempts, for combined human + LLM analysis",
+  "type": "object",
+  "required": ["bundle_id", "generated_at", "project", "error_summary", "attempts", "llm_analysis"],
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "description": "Unique ID, format diag_YYYYMMDDTHHmmss"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 generation time"
+    },
+    "project": {
+      "type": "object",
+      "required": ["name", "mcu", "chip_family"],
+      "properties": {
+        "name": { "type": "string", "description": "Project name" },
+        "mcu": { "type": "string", "description": "MCU model" },
+        "chip_family": { "type": "string", "description": "Chip family" },
+        "firmware": { "type": "string", "description": "MicroPython firmware version" },
+        "com_port": { "type": "string", "description": "COM port number" }
+      }
+    },
+    "error_summary": {
+      "type": "object",
+      "required": ["primary_error", "persistent", "across_attempts"],
+      "properties": {
+        "primary_error": { "type": "string", "description": "Primary error type enumeration" },
+        "persistent": { "type": "boolean", "description": "Whether it persists" },
+        "across_attempts": { "type": "integer", "minimum": 1 },
+        "first_seen_at": { "type": "string", "format": "date-time" },
+        "last_seen_at": { "type": "string", "format": "date-time" },
+        "symptom_description": { "type": "string" }
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["attempt_number", "strategy", "result"],
+        "properties": {
+          "attempt_number": { "type": "integer", "minimum": 1 },
+          "strategy": { "type": "string", "description": "Fix strategy description" },
+          "skill_delegated": { "type": "string", "description": "Delegated skill name" },
+          "reasoning": { "type": "string", "description": "Why this strategy was chosen" },
+          "files_changed": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "code_diff": {
+            "type": "object",
+            "properties": {
+              "file_path": { "type": "string" },
+              "changes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "line_start": { "type": "integer" },
+                    "line_end": { "type": "integer" },
+                    "old_text": { "type": "string" },
+                    "new_text": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "hardware_sanity_result": {
+            "type": "object",
+            "description": "Hardware signal verification result (if any)",
+            "properties": {
+              "tests": { "type": "array" },
+              "summary": { "type": "object" }
+            }
+          },
+          "deploy_result": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", null]
+          },
+          "repl_output_snippet": { "type": "string" },
+          "user_observation": { "type": "string" },
+          "analysis": { "type": "string", "description": "LLM analysis for this attempt" }
+        }
+      }
+    },
+    "hardware_context": {
+      "type": "object",
+      "description": "Hardware detection history",
+      "properties": {
+        "i2c_scan_history": {
+          "type": "array",
+          "items": { "type": "array", "items": { "type": "string" } }
+        },
+        "i2c_ok": { "type": "boolean" },
+        "board_led_ok": { "type": "boolean" },
+        "devices_in_manifest": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "interface": { "type": "string" },
+              "address": { "type": "string" },
+              "status": { "type": "string", "enum": ["found", "not_found", "unknown"] }
+            }
+          }
+        }
+      }
+    },
+    "code_snapshot": {
+      "type": "object",
+      "description": "Current code snapshot, key=file path, value=file content",
+      "additionalProperties": { "type": "string" }
+    },
+    "logs": {
+      "type": "object",
+      "description": "Complete logs for each deploy, key=deploy_N, value={log_filename: content}",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "llm_analysis": {
+      "type": "object",
+      "required": ["root_cause_assessment", "eliminated_causes", "suspected_causes", "knowledge_gap"],
+      "properties": {
+        "root_cause_assessment": { "type": "string", "description": "Overall root cause assessment" },
+        "eliminated_causes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of eliminated causes (most important — to avoid redundant work)"
+        },
+        "suspected_causes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cause": { "type": "string" },
+              "probability": { "type": "string", "enum": ["high", "medium", "low"] },
+              "test_method": { "type": "string" }
+            }
+          }
+        },
+        "knowledge_gap": { "type": "string", "description": "Blind spots acknowledged by LLM" },
+        "recommended_next_step": { "type": "string" }
+      }
+    },
+    "user_context": {
+      "type": "object",
+      "properties": {
+        "user_notes": { "type": "string" },
+        "user_observations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "user_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "type": "approval_request",
+  "payload": {
+    "approval_id": "alternative_device",
+    "header": "Temperature and Humidity Sensor: Recommended Alternative Devices",
+    "question": "No ready-made driver for the current device. The following alternative devices are recommended:",
+    "items": [
+      {
+        "id": "alt1",
+        "name": "HDC1080",
+        "subtitle": "Higher accuracy, upypi driver available",
+        "meta": "Recommended",
+        "selected": false
+      },
+      {
+        "id": "alt2",
+        "name": "AHT20",
+        "subtitle": "Lower cost, upypi driver available",
+        "meta": "Alternative",
+        "selected": false
+      }
+    ],
+    "allow_add": false,
+    "allow_remove": false,
+    "multi_select": false,
+    "actions": [
+      {
+        "label": "Use HDC1080 (Recommended)",
+        "value": "accept_alt1",
+        "primary": true
+      },
+      {
+        "label": "Use AHT20",
+        "value": "accept_alt2"
+      },
+      {
+        "label": "Stick with original device, use niche driver",
+        "value": "cold_driver"
+      }
+    ]
+  }
+}

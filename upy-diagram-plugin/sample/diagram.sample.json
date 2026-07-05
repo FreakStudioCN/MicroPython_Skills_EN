@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "project": "demo_temp_monitor",
+    "mode": "timer",
+    "generated_at": "2026-07-02T00:00:00Z",
+    "source_phase": "generate",
+    "mcu": "Raspberry Pi Pico"
+  },
+  "architecture": {
+    "layers": [
+      {
+        "id": "board",
+        "label": "Board Layer",
+        "modules": [
+          {
+            "name": "board",
+            "path": "firmware/board.py",
+            "role": "Pin Mapping",
+            "provides": ["SDA_PIN", "SCL_PIN", "BUZZER_PIN"],
+            "depends_on": [],
+            "depends_on_machine": false,
+            "has_mock": false,
+            "is_generated": true,
+            "is_template": true,
+            "source": "scaffold_template"
+          }
+        ]
+      },
+      {
+        "id": "lib",
+        "label": "Library Layer",
+        "modules": [
+          {
+            "name": "lib.scheduler",
+            "path": "firmware/lib/scheduler.py",
+            "role": "Timer Scheduling",
+            "provides": ["Scheduler"],
+            "depends_on": [],
+            "depends_on_machine": false,
+            "has_mock": false,
+            "is_generated": true,
+            "is_template": true,
+            "source": "scaffold_template"
+          }
+        ]
+      },
+      {
+        "id": "driver",
+        "label": "Driver Layer",
+        "modules": [
+          {
+            "name": "drivers.sht30_driver",
+            "path": "firmware/drivers/sht30_driver/__init__.py",
+            "role": "Temperature and Humidity Driver",
+            "provides": ["create_sht30"],
+            "depends_on": ["board"],
+            "depends_on_machine": false,
+            "has_mock": true,
+            "is_generated": true,
+            "is_template": false,
+            "source": "llm_generated"
+          }
+        ]
+      },
+      {
+        "id": "task",
+        "label": "Task Layer",
+        "modules": [
+          {
+            "name": "tasks.monitor_task",
+            "path": "firmware/tasks/monitor_task.py",
+            "role": "Data Collection and Alarm",
+            "provides": ["monitor_tick"],
+            "depends_on": ["drivers.sht30_driver"],
+            "depends_on_machine": false,
+            "has_mock": false,
+            "is_generated": true,
+            "is_template": false,
+            "source": "llm_generated"
+          }
+        ]
+      },
+      {
+        "id": "entry",
+        "label": "Entry Layer",
+        "modules": [
+          {
+            "name": "main",
+            "path": "firmware/main.py",
+            "role": "Assembly and Execution",
+            "provides": ["main"],
+            "depends_on": ["board", "lib.scheduler", "drivers.sht30_driver", "tasks.monitor_task"],
+            "depends_on_machine": true,
+            "has_mock": false,
+            "is_generated": true,
+            "is_template": false,
+            "source": "llm_generated"
+          }
+        ]
+      }
+    ],
+    "cross_layer_deps": [
+      {"from": "main", "to": "board", "label": "Import", "style": "solid"},
+      {"from": "main", "to": "lib.scheduler", "label": "Schedule", "style": "solid"},
+      {"from": "main", "to": "drivers.sht30_driver", "label": "Create", "style": "dashed"},
+      {"from": "main", "to": "tasks.monitor_task", "label": "Register", "style": "dashed"},
+      {"from": "tasks.monitor_task", "to": "drivers.sht30_driver", "label": "Read", "style": "solid"}
+    ]
+  },
+  "flow": [
+    {"seq": 1, "phase": "boot", "action": "Boot", "detail": "boot.py", "source_line": 1, "on_error": "fatal"},
+    {"seq": 2, "phase": "init", "action": "Initialize I2C", "detail": "GP4/GP5", "source_line": 12, "on_error": "fatal"},
+    {"seq": 3, "phase": "scan", "action": "Scan SHT30", "detail": "0x44", "source_line": 18, "depends_on_step": 2, "on_error": "skip_device", "is_conditional": true, "branches": [{"condition": "found", "goto_step": 4}, {"condition": "missing", "goto_step": 6}]},
+    {"seq": 4, "phase": "create", "action": "Create Driver", "detail": "SHT30", "source_line": 25, "depends_on_step": 3, "on_error": "fatal"},
+    {"seq": 5, "phase": "assembly", "action": "Register Task", "detail": "monitor", "source_line": 32, "depends_on_step": 4, "on_error": "fatal"},
+    {"seq": 6, "phase": "run", "action": "Run Scheduler", "detail": "1000ms", "source_line": 38, "depends_on_step": 5, "on_error": "retry"}
+  ],
+  "data_flow": [
+    {"from": "drivers.sht30_driver.read", "to": "tasks.monitor_task", "data": "Temperature and Humidity", "channel": "function_return", "rate": "1Hz"},
+    {"from": "tasks.monitor_task", "to": "main.buzzer", "data": "Alarm Status", "channel": "callback_param", "rate": "on_change"}
+  ],
+  "task_registry": [
+    {"name": "monitor", "callback": "monitor_tick", "interval_ms": 1000, "mode": "periodic"}
+  ],
+  "diagnostics": {
+    "total_modules": 5,
+    "total_dependencies": 5,
+    "max_depth": 4,
+    "circular_deps": [],
+    "orphan_modules": [],
+    "machine_direct_access": ["main"]
+  }
+}

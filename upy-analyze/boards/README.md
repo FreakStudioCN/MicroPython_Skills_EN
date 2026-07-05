@@ -11,7 +11,7 @@
 ```
 G:\MicroPython_Skills\upy-analyze\boards\
 ├── README.md               ← This file
-├── _template.json          ← Template for adding a new board (copy and fill)
+├── _template.json          ← Template for adding new boards (copy and fill)
 ├── matching-rules.json     ← Board selection scoring rules
 ├── esp32-devkit-v1.json    ← ESP32 DevKit V1
 ├── esp32-s3-devkitc.json   ← ESP32-S3-DevKitC-1
@@ -28,11 +28,11 @@ G:\MicroPython_Skills\upy-analyze\boards\
 
 ## 2. How to Use the Template
 
-Copy `_template.json`, rename it to `{board_id}.json`, and fill in each field according to the instructions below. The template already lists all fields; leave empty ones blank, do not delete them.
+Copy `_template.json`, rename it to `{board_id}.json`, and fill in each field according to the instructions below. The template already lists all fields; leave empty fields as-is, do not delete them.
 
-Two parts of the template are optional:
+Two sections in the template are optional:
 - `onboard_peripherals`: What peripherals the board comes with. For pure GPIO development boards (like ESP32 DevKit), use an empty array `[]`
-- `pin_layout.pin_options`: Only fill this for chips where pins and peripherals are fixedly bound, like the RP2040/Pico. Leave as an empty object `{}` for ESP32 series.
+- `pin_layout.pin_options`: Only fill this for chips where pins and peripherals are fixedly bound, like the RP2040/Pico. Leave as an empty object `{}` for ESP32 series
 
 ---
 
@@ -56,7 +56,7 @@ Two parts of the template are optional:
 | `firmware.board_name` | string | Board target name used during compilation, e.g., `ESP32_GENERIC_S3` |
 | `firmware.latest_version` | string | Known latest firmware version number |
 
-Once a board is selected, the firmware URL is fixed. `upy-select-hw` will no longer search for firmware online.
+Once a board is selected, the firmware URL is determined. `upy-select-hw` will no longer search for firmware online.
 
 ### 3.3 Hardware Specifications (Required for Every Board)
 
@@ -71,16 +71,16 @@ There are 13 fields in specs. They are divided into three tiers based on how fre
 | `gpio` | number | Many peripherals + few GPIOs → AI will warn about insufficient pins |
 | `i2c` | number | Many I2C devices but few controllers → suggests software I2C |
 | `spi` | number | Many SPI devices but few controllers → suggests sharing the bus |
-| `wifi` | boolean | Matches networking requirements against board capabilities |
-| `ble` | boolean | Matches Bluetooth requirements against board capabilities |
+| `wifi` | boolean | Matches networking requirements vs board capabilities |
+| `ble` | boolean | Matches Bluetooth requirements vs board capabilities |
 
-**★★ Referenced during pin assignment, fill as accurately as possible:**
+**★★ Referenced during pin allocation, fill as accurately as possible:**
 
 | Field | Type | How AI Uses It |
 |------|------|---------|
 | `pwm` | number | Servo/LED dimming requires PWM channels |
 
-**★ Displayed on the board details page; better to fill, but not filling doesn't affect AI decisions:**
+**★ Displayed on the board details page; filling it is better, but not filling it does not affect AI decisions:**
 
 | Field | Type | Description |
 |------|------|------|
@@ -94,28 +94,28 @@ There are 13 fields in specs. They are divided into three tiers based on how fre
 
 | Field | Type | Description |
 |------|------|------|
-| `typical_use_cases` | string[] | Typical uses. Used by the plugin as filter tags, by the LLM for selection matching |
-| `beginner_friendly` | boolean | Whether it's suitable for beginners. `upy-analyze` prioritizes these in beginner mode |
+| `typical_use_cases` | string[] | Typical use cases. Used by the plugin as filter tags, by the LLM for selection matching |
+| `beginner_friendly` | boolean | Whether it is suitable for beginners. `upy-analyze` prioritizes recommending these in beginner mode |
 | `price_yuan` | number | Reference price (CNY), for display |
 | `notes` | string | Notes for the user. **The LLM also reads this section for decision-making.** Write key technical limitations, compatibility warnings, and key differences from other boards |
 
 ### 3.5 Onboard Peripherals `onboard_peripherals` (Optional)
 
-**When to fill:** When the board has built-in peripherals like screens, sensors, buttons (not just indicator LEDs).
+**When to fill:** When the board comes with peripherals like screens, sensors, buttons, etc. (not just indicator LEDs).
 
-**When to use an empty array:** For pure GPIO development boards, e.g., ESP32 DevKit only has one onboard LED; write one entry or use an empty array.
+**When to use an empty array:** For pure GPIO development boards, e.g., an ESP32 DevKit only has one onboard LED; write one entry or use an empty array directly.
 
 Fields for each peripheral:
 
 | Field | Type | Required | Description |
 |------|------|------|------|
 | `name` | string | Yes | Peripheral name, e.g., "ILI9342C LCD" |
-| `type` | string | Yes | Category. Allowed: `display` / `sensor` / `imu` / `button` / `led` / `led_rgb` / `speaker` / `storage` / `power_mgmt` / `wifi_module` / `usb_uart` |
+| `type` | string | Yes | Category. Allowed values: `display` / `sensor` / `imu` / `button` / `led` / `led_rgb` / `speaker` / `storage` / `power_mgmt` / `wifi_module` / `usb_uart` |
 | `interface` | string | Yes | I2C / SPI / GPIO / I2S / UART |
 | `occupied_pins` | object | Yes | Which pins are occupied. Key = function name, value = GPIO number. -1 means no GPIO is occupied |
 | `i2c_addr` | string | Required for I2C devices | I2C address, e.g., "0x68" |
 | `driver` | object? | Fill if a known driver exists | Driver information (see table below) |
-| `always_used` | boolean | Yes | true = this pin is definitely occupied, skip it during pin assignment. false = the user can disable this peripheral, freeing the pin |
+| `always_used` | boolean | Yes | true = this pin is definitely occupied, skip during pin allocation. false = the user can disable this peripheral, freeing the pin |
 | `notes` | string | No | Supplementary notes |
 
 Driver object (fill if a known driver exists):
@@ -127,11 +127,11 @@ Driver object (fill if a known driver exists):
 | `url` | Driver page or API link |
 | `install_cmd` | mpremote installation command |
 
-**Note:** Do not fill in uncertain drivers. Only fill driver information if it has been verified and confirmed to work with this peripheral on this board. Otherwise, leave it blank and let the AI search.
+**Note:** Do not fill in uncertain drivers. Only fill in driver information after verification that the driver works with this peripheral on this board. Otherwise, leave it blank and let the AI search for it.
 
 ### 3.6 Pin Layout `pin_layout` (Required for Every Board)
 
-Different chips have completely different pin assignment methods. First, look at the `model` field:
+Different chips have completely different pin allocation methods. First, look at the `model` field:
 
 | model | Applicable Chips | Meaning |
 |-------|---------|------|
@@ -140,7 +140,7 @@ Different chips have completely different pin assignment methods. First, look at
 
 #### flexible model
 
-**Equivalent to "tell the AI to avoid the minefield, the rest is free to assign."**
+**Equivalent to "tell the AI to avoid the minefield, the rest is free to allocate."**
 
 `default_bus_pins`: A set of default pins for each bus. The AI prioritizes these, and switches if they don't work. Format:
 
@@ -156,13 +156,13 @@ Different chips have completely different pin assignment methods. First, look at
 
 | Category | Meaning | Example |
 |------|------|------|
-| `input_only` | Can only be used as input, cannot output or use pull-up/down | ESP32 GPIO 34-39 |
-| `strapping` | Determines the operating mode at startup; improper connection may prevent the board from booting | ESP32 GPIO 0/2/5/12/15 |
+| `input_only` | Can only be used as input, cannot output or use pull-up/pull-down | ESP32 GPIO 34-39 |
+| `strapping` | Determines the operating mode at startup; incorrect connections may prevent the board from booting | ESP32 GPIO 0/2/5/12/15 |
 | `flash_psram_occupied` | Internally occupied by Flash/PSRAM, not visible externally | ESP32 GPIO 6-11 |
 | `adc2_wifi_conflict` | ADC2 is unreliable when WiFi is on | Most ESP32 ADC2 channels |
 | `usb_otg_pins` | Dedicated to USB OTG; repurposing them loses USB functionality | ESP32-S3 GPIO 19/20 |
 | `usb_serial_pins` | USB serial pins, used for debugging and flashing | ESP32-C3 GPIO 18/19 |
-| `boot_fail_risk` | May not necessarily cause boot failure, but historically problematic | ESP8266 GPIO 0/1/2/3/9/10 |
+| `boot_fail_risk` | May not necessarily cause boot failure, but historically people have had issues | ESP8266 GPIO 0/1/2/3/9/10 |
 | `wifi_chip_occupied` | Internally occupied by the WiFi module | Pico W GPIO 23/24/25 |
 | `onboard_occupied` | Summary: list of all pins occupied by onboard peripherals | M5Stack various peripheral pins |
 
@@ -198,16 +198,16 @@ Scoring rules used by the LLM for board selection. Each rule contains:
 | Field | Description |
 |------|------|
 | `id` | Rule ID |
-| `trigger` | Trigger condition (human-readable; the LLM determines if it triggers) |
+| `trigger` | Trigger condition (for human reading; the LLM determines if it triggers) |
 | `action` | `boost` (add points) or `exclude` (eliminate) |
-| `chip_families` | Which chip_families this rule applies to |
+| `chip_families` | Which chip_families this applies to |
 | `note` | Supplementary notes |
 
 Usage:
 1. The LLM reads the user's requirements and determines which rules are triggered
-2. For each board: a boost rule matching the chip_family → add points; an exclude rule matching → eliminate
+2. For each board: boost rules matching the chip_family → add points; exclude rules matching → eliminate
 3. The two boards with the highest scores are recommended
-4. An excluded board isn't necessarily bad; it may just be unsuitable for the current scenario (e.g., excluding a board with only 1 I2C bus when multiple I2C devices are needed)
+4. An excluded board is not necessarily bad; it may just be unsuitable for the current scenario (e.g., excluding a board with only 1 I2C bus when multiple I2C devices are needed)
 
 ---
 
@@ -233,7 +233,7 @@ The plugin uses these fields when rendering the board selector in the sidebar:
 |---------|------|
 | Card title | `display_name` |
 | Chip model | `mcu` |
-| Key specs | `specs.wifi`, `specs.ble`, `specs.gpio`, `specs.i2c`, `specs.spi` |
+| Key specifications | `specs.wifi`, `specs.ble`, `specs.gpio`, `specs.i2c`, `specs.spi` |
 | Beginner badge | `beginner_friendly` → "Beginner Recommended" badge |
 | Price tag | `price_yuan` |
 | Use case tags | `typical_use_cases` (clickable for filtering) |
@@ -241,7 +241,7 @@ The plugin uses these fields when rendering the board selector in the sidebar:
 
 ### 5.3 After the User Selects a Board
 
-The plugin puts a simplified version of the selected board's information into the request:
+The plugin puts a simplified version of the selected board into the request:
 
 ```json
 {
@@ -255,7 +255,7 @@ The plugin puts a simplified version of the selected board's information into th
 }
 ```
 
-Only these 5 fields are sent. The full specs and pin_layout are read from the complete JSON on the server side when the Skill needs them.
+Only these 5 fields are sent. The full specs and pin_layout are read from the server-side complete JSON when the Skill needs them.
 
 ---
 
@@ -264,7 +264,7 @@ Only these 5 fields are sent. The full specs and pin_layout are read from the co
 | Field | Update Frequency | Who Updates |
 |------|---------|---------|
 | `firmware.latest_version` | When MicroPython releases a new version | Server CI automatically checks and updates |
-| `firmware.url` | When MicroPython changes the download URL (rare) | Manual update |
+| `firmware.url` | When MicroPython changes the download URL (very rare) | Manual update |
 | `price_yuan` | Market fluctuations | Manual maintenance, check every six months |
 | `specs` values | Will not change (determined at chip manufacture) | No update needed |
 | `driver` information | When upypi packages are updated or renamed | Update after manual verification |
@@ -276,11 +276,11 @@ Only these 5 fields are sent. The full specs and pin_layout are read from the co
 1. Copy `_template.json`, rename it to `{board_id}.json`
 2. Fill in basic information (id / display_name / mcu / chip_family)
 3. Fill in firmware (go to micropython.org/download to find the corresponding board_name and URL)
-4. Fill in specs (consult the chip datasheet, fill in all 13 items based on actual conditions)
+4. Fill in specs (consult the chip datasheet, fill in all 13 items according to the actual situation)
 5. Fill in typical_use_cases / beginner_friendly / price_yuan / notes
 6. Fill in onboard_peripherals:
    - Board only has one LED → write one entry or use an empty array
-   - Board has a screen/sensor/buttons → write occupied_pins and whether there are driver links for each peripheral
+   - Board has a screen/sensor/button → write occupied_pins for each peripheral, and whether there is a driver link
 7. Fill in pin_layout:
    - ESP32/ESP8266 → model: "flexible", fill in default_bus_pins + restricted_gpio, leave pin_options empty
    - RP2040/Pico → model: "fixed", fill in all fields including pin_options

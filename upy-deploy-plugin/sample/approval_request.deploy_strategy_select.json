@@ -1,0 +1,38 @@
+{
+  "type": "approval_request",
+  "phase": "upy-deploy-plugin",
+  "payload": {
+    "approval_id": "deploy_strategy_select",
+    "header": "Deployment Method",
+    "question": "Please select how to handle old files on the device before uploading",
+    "items": [
+      {
+        "id": "clean_then_upload",
+        "name": "Clean old project then upload",
+        "subtitle": "Recommended: Delete old main/lib/drivers/tasks and other project files",
+        "selected": true
+      },
+      {
+        "id": "upload_only",
+        "name": "Upload directly",
+        "subtitle": "Keep existing files on the device"
+      },
+      {
+        "id": "erase_then_upload",
+        "name": "Full cleanup then upload",
+        "subtitle": "Will display all files to be deleted and require secondary confirmation"
+      }
+    ],
+    "actions": [
+      {
+        "label": "Continue",
+        "value": "confirm",
+        "primary": true
+      },
+      {
+        "label": "Continue later",
+        "value": "save_partial"
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "approval_request",
+  "phase": "upy-generate-plugin",
+  "payload": {
+    "approval_id": "generate_behavior_detail",
+    "header": "Supplement Device Behavior",
+    "question": "Before generating business code, you can supplement sampling period, thresholds, alarms, display, network, logs, and simulation scenarios.",
+    "allow_text": true,
+    "items": [
+      {"id": "next_deploy", "name": "Deploy after generation", "group": "next_phase", "selected": true},
+      {"id": "next_simulate", "name": "Simulate business logic first", "group": "next_phase"},
+      {"id": "next_stop", "name": "Generate code only", "group": "next_phase"},
+      {"id": "doc_diagram", "name": "Generate architecture diagram/data flow diagram", "group": "optional_outputs"},
+      {"id": "doc_wiring", "name": "Generate wiring diagram/pin table", "group": "optional_outputs"}
+    ],
+    "item_groups": {
+      "next_phase": {"multi_select": false, "label": "Next Phase"},
+      "optional_outputs": {"multi_select": true, "label": "Additional Outputs"}
+    }
+  }
+}

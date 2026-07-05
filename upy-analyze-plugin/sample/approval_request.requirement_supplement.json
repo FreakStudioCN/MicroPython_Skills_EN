@@ -1,0 +1,51 @@
+{
+  "type": "approval_request",
+  "payload": {
+    "approval_id": "requirement_supplement",
+    "header": "Supplement Requirement Information",
+    "question": "Please supplement the scene, power supply, performance, and output requirements",
+    "summary": {
+      "project_name": "Plant Assistant"
+    },
+    "items": [
+      {
+        "id": "scene_indoor",
+        "name": "Indoor Desktop Scene",
+        "subtitle": "Default Recommendation",
+        "meta": "scene=indoor",
+        "selected": true
+      },
+      {
+        "id": "power_usb",
+        "name": "USB Power Supply",
+        "subtitle": "Default Recommendation",
+        "meta": "power=usb",
+        "selected": true
+      },
+      {
+        "id": "perf_normal",
+        "name": "General Performance",
+        "subtitle": "1Hz / Normal Accuracy / 1-second Response",
+        "meta": "sample_rate=normal_1hz",
+        "selected": true
+      },
+      {
+        "id": "output_serial_oled",
+        "name": "Serial + OLED Output",
+        "subtitle": "Default Recommendation",
+        "meta": "output=serial,display_oled,buzzer",
+        "selected": true
+      }
+    ],
+    "allow_add": false,
+    "allow_remove": false,
+    "multi_select": true,
+    "actions": [
+      {
+        "label": "Confirm Supplement Information",
+        "value": "confirm",
+        "primary": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "protocol_version": "1.0",
+  "type": "phase_complete",
+  "phase": "upy-diagram-plugin",
+  "session_id": "demo-session",
+  "payload": {
+    "protocol_version": "1.0",
+    "phase": "upy-diagram-plugin",
+    "result": "cancelled",
+    "checkpoint": "source_read",
+    "session_id": "demo-session",
+    "next_phase": null,
+    "summary": "User cancelled the diagram phase.",
+    "checkpoint_info": {
+      "checkpoint_id": "source_read",
+      "resume_phase": "upy-diagram-plugin",
+      "resume_step": "generate_diagram_json",
+      "resume_label": "Continue generating diagram.json"
+    },
+    "artifacts": [],
+    "file_manifest": {"path": "sessions/demo-session/diagram_file_manifest.json", "files": []},
+    "warnings": [{"code": "DIAGRAM_CANCELLED_BY_USER", "message": "Phase cancelled, diagram.json generation not continued."}],
+    "errors": [
+      {
+        "code": "DIAGRAM_CANCELLED",
+        "message": "User cancelled the diagram phase",
+        "step_id": "source_read",
+        "severity": "info",
+        "retryable": true,
+        "recoverable": true,
+        "suggested_actions": ["Resume from checkpoint", "Re-run the diagram phase"]
+      }
+    ]
+  }
+}

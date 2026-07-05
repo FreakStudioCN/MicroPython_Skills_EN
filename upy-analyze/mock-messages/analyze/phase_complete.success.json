@@ -65,7 +65,7 @@
           "driver": {
             "source": "builtin_runtime",
             "module": "machine.Pin",
-            "notes": "Active buzzer is controlled by outputting high/low levels via GPIO, no external driver required."
+            "notes": "Active buzzer is controlled by outputting high/low level via GPIO, no external driver required."
           }
         }
       ],

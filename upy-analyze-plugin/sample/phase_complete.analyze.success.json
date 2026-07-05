@@ -1,0 +1,72 @@
+{
+  "type": "phase_complete",
+  "payload": {
+    "phase": "analyze",
+    "result": "success",
+    "summary": "Device analysis completed, 6 devices identified",
+    "next_phase": "select-hw",
+    "next_skill": "/upy-select-hw-plugin",
+    "manifest_content": {
+      "schema_version": "1.0",
+      "phase": "analyze",
+      "project_name": "Plant Assistant",
+      "requirements": {
+        "description": "Read soil temperature and humidity, support touch interaction and voice dialogue",
+        "scene": "indoor",
+        "power": "usb",
+        "network": "none",
+        "sample_rate": "normal_1hz",
+        "precision": "normal",
+        "response_time": "1s",
+        "temp_range": "normal_0_40",
+        "size_constraint": "none",
+        "budget_yuan": "medium_50",
+        "experience": "beginner",
+        "output": [
+          "serial"
+        ],
+        "existing_hardware": [],
+        "special_requirements": [
+          "none"
+        ],
+        "mcu_specified": "ESP32-S3-WROOM-1"
+      },
+      "devices": [
+        {
+          "name": "SHT30",
+          "type": "temperature_humidity_sensor",
+          "interface": "I2C",
+          "source": "system_recommended",
+          "quantity": 1,
+          "driver": {
+            "source": "upypi",
+            "package_name": "sht30-driver",
+            "install_cmd": "mpremote mip install sht30-driver",
+            "version": "0.1.0",
+            "search_provider": "upy-pkg-guide",
+            "search_mode": "real",
+            "query": "SHT30 I2C temperature_humidity_sensor MicroPython driver",
+            "evidence": [
+              {
+                "source": "upypi",
+                "package_name": "sht30-driver"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "type": "table",
+        "title": "Device Driver Status",
+        "headers": ["Device", "Interface", "Driver Source", "Status"],
+        "rows": [
+          ["SHT30", "I2C", "upypi", "OK"]
+        ]
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  }
+}

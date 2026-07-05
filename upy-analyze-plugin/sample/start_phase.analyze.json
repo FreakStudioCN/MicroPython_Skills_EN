@@ -1,0 +1,14 @@
+{
+  "type": "start_phase",
+  "phase": "analyze",
+  "session_id": "demo-session-001",
+  "payload": {
+    "user_description": "Make a temperature and humidity monitor, with a buzzer alarm when exceeding the threshold, and display data on OLED",
+    "pre_selected_board": null,
+    "preferences": {
+      "mode": "beginner",
+      "locale": "zh"
+    },
+    "existing_hardware": []
+  }
+}

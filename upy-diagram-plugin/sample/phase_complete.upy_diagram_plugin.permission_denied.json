@@ -1,0 +1,46 @@
+{
+  "protocol_version": "1.0",
+  "type": "phase_complete",
+  "phase": "upy-diagram-plugin",
+  "session_id": "demo-session",
+  "payload": {
+    "protocol_version": "1.0",
+    "phase": "upy-diagram-plugin",
+    "result": "partial",
+    "checkpoint": "diagram_json_validated",
+    "session_id": "demo-session",
+    "next_phase": null,
+    "summary": "User denied network rendering permission, recoverable checkpoint retained.",
+    "artifacts": [
+      {"type": "diagram_json", "path": "docs/diagram.json", "required": true}
+    ],
+    "file_manifest": {
+      "path": "sessions/demo-session/diagram_file_manifest.json",
+      "files": [
+        {"path": "docs/diagram.json", "type": "diagram_json", "required": true, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bytes": 8192, "source": "llm_generated", "checkpoint": "diagram_json_validated"}
+      ]
+    },
+    "network_permission": {
+      "domain": "mermaid.ink",
+      "decision": "deny"
+    },
+    "checkpoint_info": {
+      "checkpoint_id": "diagram_json_validated",
+      "resume_phase": "upy-diagram-plugin",
+      "resume_step": "render",
+      "resume_label": "Continue rendering SVG/PNG after authorization"
+    },
+    "warnings": [],
+    "errors": [
+      {
+        "code": "DIAGRAM_PERMISSION_DENIED",
+        "message": "User denied access to mermaid.ink",
+        "step_id": "permission",
+        "severity": "warn",
+        "retryable": true,
+        "recoverable": true,
+        "suggested_actions": ["Re-authorize network rendering", "Keep only Markdown/HTML output"]
+      }
+    ]
+  }
+}

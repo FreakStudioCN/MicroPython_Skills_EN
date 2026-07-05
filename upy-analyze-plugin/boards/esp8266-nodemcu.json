@@ -1,0 +1,69 @@
+{
+  "id": "esp8266-nodemcu",
+  "display_name": "ESP8266 NodeMCU V3",
+  "mcu": "ESP8266EX",
+  "chip_family": "esp8266",
+  "firmware": {
+    "url": "https://micropython.org/download/ESP8266_GENERIC/",
+    "port": "esp8266",
+    "board_name": "ESP8266_GENERIC",
+    "latest_version": "1.22.2"
+  },
+  "specs": {
+    "flash_mb": 4,
+    "psram_mb": 0,
+    "gpio": 17,
+    "adc": 1,
+    "dac": 0,
+    "i2c": 1,
+    "spi": 1,
+    "uart": 1,
+    "pwm": 8,
+    "touch": 0,
+    "wifi": true,
+    "ble": false,
+    "usb_otg": false
+  },
+  "typical_use_cases": ["Ultra-low budget WiFi projects", "Simple switch control", "WiFi transparent transmission"],
+  "beginner_friendly": true,
+  "price_yuan": 10,
+  "notes": "Extremely low price, MicroPython firmware has stopped active updates (last version 1.22.2). Only recommended for simple WiFi projects with extremely limited budgets",
+
+  "onboard_peripherals": [
+    {
+      "name": "LED",
+      "type": "led",
+      "interface": "GPIO",
+      "occupied_pins": { "led": 2 },
+      "always_used": false,
+      "notes": "Onboard indicator light (D4/GPIO2), lights up at low level. Can be freed in most projects"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "flexible",
+    "default_bus_pins": {
+      "i2c0": { "sda": 5, "scl": 4 },
+      "spi0": { "mosi": 13, "miso": 12, "clk": 14, "cs": 15 },
+      "uart0": { "tx": 1, "rx": 3 }
+    },
+    "restricted_gpio": {
+      "input_only": [],
+      "strapping": [0, 2, 15],
+      "flash_psram_occupied": [6, 7, 8, 9, 10, 11],
+      "adc2_wifi_conflict": [],
+      "boot_fail_risk": [0, 1, 2, 3, 9, 10]
+    },
+    "pin_options": {},
+    "notes": [
+      "I2C/SPI can be mapped via software (all GPIOs can be used), but only 1 hardware channel",
+      "GPIO 0/2/15 are strapping pins, their level at startup affects the working mode",
+      "GPIO 6-11 are occupied by internal Flash, cannot be used externally",
+      "GPIO 16 is a special wake-up pin, only usable during Deep Sleep",
+      "GPIO 1/3 are UART0 (serial debug), avoid repurposing them",
+      "Analog input is only on GPIO0 (A0), range 0-1V (after internal 100k/220k voltage divider, approximately 0-3.3V)",
+      "All GPIOs can only output 12mA at high level (ESP32 is 40mA), driving LEDs requires a resistor",
+      "WiFi and GPIO share internal resources, try not to perform GPIO operations simultaneously under heavy WiFi load"
+    ]
+  }
+}

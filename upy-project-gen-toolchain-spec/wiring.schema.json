@@ -1,0 +1,256 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wiring Diagram Intermediate JSON",
+  "description": "Intermediate representation of wiring diagram, generated from pinout/mcu/devices/bom in project-manifest.json, consumed by any renderer. Independent of specific drawing tools.",
+  "type": "object",
+  "required": ["meta", "mcu", "buses", "standalone", "power", "alerts"],
+  "properties": {
+
+    "meta": {
+      "type": "object",
+      "description": "Metadata",
+      "required": ["project", "generated_at", "source_phase"],
+      "properties": {
+        "project": { "type": "string", "description": "Project name" },
+        "mcu_model": { "type": "string", "description": "MCU model, e.g., Raspberry Pi Pico" },
+        "generated_at": { "type": "string", "description": "ISO 8601 timestamp" },
+        "source_phase": { "type": "string", "enum": ["select-hw", "scaffold", "generate"], "description": "Which phase's manifest it was generated from" }
+      }
+    },
+
+    "mcu": {
+      "type": "object",
+      "description": "MCU package information + geometric layout of used pins",
+      "required": ["name", "package", "pins"],
+      "properties": {
+        "name": { "type": "string", "description": "Chip model" },
+        "package": { "type": "string", "description": "Package type: DIP-40, QFN-56, etc." },
+        "pin_count": { "type": "integer", "description": "Total number of pins" },
+        "orientation": { "type": "string", "enum": ["horizontal", "vertical"], "default": "vertical", "description": "Orientation of the chip on the canvas" },
+        "pins": {
+          "type": "array",
+          "description": "List of pins actually used in this project",
+          "items": {
+            "type": "object",
+            "required": ["gpio", "side", "label", "type"],
+            "properties": {
+              "gpio": { "type": "string", "description": "Pin number, e.g., GP4, GP5, 3V3" },
+              "physical_pin": { "type": "integer", "description": "Physical pin position number (for DIP package, e.g., Pico's pin 6 = GP4)" },
+              "side": { "type": "string", "enum": ["left", "right", "top", "bottom"], "description": "Which side of the chip the pin is on" },
+              "pos": { "type": "integer", "description": "Sequential position on the side (0-based or 1-based)" },
+              "label": { "type": "string", "description": "Pin function label, e.g., I2C0 SDA, Buzzer" },
+              "type": {
+                "type": "string",
+                "enum": ["power_3v3", "power_5v", "gnd", "i2c_data", "i2c_clock",
+                         "spi_mosi", "spi_miso", "spi_sck", "spi_cs",
+                         "uart_tx", "uart_rx", "gpio_out", "gpio_in", "gpio_in_pullup",
+                         "adc", "pwm", "i2s", "special"],
+                "description": "Pin electrical type, determines rendering color and icon"
+              },
+              "conflict": { "type": "string", "description": "Conflict description (e.g., 'Startup sensitive, avoid using')" }
+            }
+          }
+        }
+      }
+    },
+
+    "buses": {
+      "type": "array",
+      "description": "List of shared communication buses. One bus = a set of shared physical lines + all devices attached to it",
+      "items": {
+        "type": "object",
+        "required": ["type", "id", "signals", "devices"],
+        "properties": {
+          "type": { "type": "string", "enum": ["i2c", "spi", "uart", "onewire", "can", "i2s"], "description": "Bus protocol type" },
+          "id": { "type": "string", "description": "Bus number, e.g., I2C0, SPI1, UART1" },
+          "frequency_hz": { "type": "integer", "description": "Communication frequency" },
+          "signals": {
+            "type": "array",
+            "description": "Physical signal lines of this bus",
+            "items": {
+              "type": "object",
+              "required": ["role", "gpio"],
+              "properties": {
+                "role": { "type": "string", "enum": ["SDA", "SCL", "MOSI", "MISO", "SCK", "CS", "TX", "RX", "DQ", "BCK", "BCLK", "WS", "LRC", "LRCLK", "DIN", "DOUT", "SD", "SDIN", "SDOUT", "MCLK"], "description": "Signal role" },
+                "gpio": { "type": "string", "description": "Which MCU pin it corresponds to" }
+              }
+            }
+          },
+          "devices": {
+            "type": "array",
+            "description": "Devices attached to this bus",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": { "type": "string", "description": "Device name" },
+                "type": { "type": "string", "description": "Device category" },
+                "addr": { "type": "string", "pattern": "^0x[0-9a-fA-F]{2}$", "description": "I2C address (required for I2C devices)" },
+                "cs_gpio": { "type": "string", "description": "Chip select pin (required for SPI devices)" },
+                "quantity": { "type": "integer", "default": 1 },
+                "notes": { "type": "string" },
+                "pins": {
+                  "type": "array",
+                  "description": "Device-side pin definitions, used to map bus signals to peripheral pin names",
+                  "items": {
+                    "type": "object",
+                    "required": ["role", "pin"],
+                    "properties": {
+                      "role": { "type": "string", "description": "Signal role, e.g., BCK, WS, DIN, SDA" },
+                      "pin": { "type": "string", "description": "Peripheral-side pin name, e.g., BCLK, LRC, DIN, SCK" },
+                      "notes": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "components": {
+      "type": "array",
+      "description": "Component-level topology nodes. Each actual hardware module should be an independent component, used for rendering component boxes.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$", "description": "Stable component ID, connections reference components via this ID" },
+          "name": { "type": "string", "description": "Display name, e.g., ESP32 DevKit, INMP441 Mic" },
+          "type": { "type": "string", "description": "Component category, e.g., mcu, microphone, audio_amplifier, led, button, sensor" },
+          "model": { "type": "string", "description": "Device model" },
+          "interface": { "type": "string", "description": "Primary interface, e.g., GPIO, I2C, SPI, I2S, UART" },
+          "notes": { "type": "string" },
+          "pins": {
+            "type": "array",
+            "description": "Component pin definitions",
+            "items": {
+              "type": "object",
+              "required": ["pin"],
+              "properties": {
+                "pin": { "type": "string", "description": "Component-side pin name" },
+                "role": { "type": "string", "description": "Signal or electrical role" },
+                "type": { "type": "string", "description": "signal, power, ground, etc." },
+                "notes": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "connections": {
+      "type": "array",
+      "description": "Actual electrical connections between components. Each item represents a signal line, power line, or ground line, and retains the pin names at both ends.",
+      "items": {
+        "type": "object",
+        "required": ["signal", "from", "to"],
+        "properties": {
+          "net": { "type": "string", "description": "Optional net name, for idempotency and deduplication" },
+          "signal": { "type": "string", "description": "Line name or signal name, e.g., I2S1 BCK, 3V3, GND" },
+          "kind": { "type": "string", "enum": ["signal", "power", "ground"], "default": "signal", "description": "Connection category" },
+          "protocol": { "type": "string", "description": "Protocol or electrical group, e.g., I2S, I2C, GPIO" },
+          "direction": { "type": "string", "enum": ["mcu_to_device", "device_to_mcu", "bidirectional", "power", "ground"], "description": "Signal direction" },
+          "from": { "$ref": "#/definitions/endpoint" },
+          "to": { "$ref": "#/definitions/endpoint" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+
+    "standalone": {
+      "type": "array",
+      "description": "Independent GPIO devices not attached to any bus (LEDs/buzzers/buttons/relays, etc.)",
+      "items": {
+        "type": "object",
+        "required": ["name", "pin", "type"],
+        "properties": {
+          "name": { "type": "string" },
+          "pin": { "type": "string", "description": "Connected GPIO number" },
+          "type": { "type": "string", "enum": ["gpio_out", "gpio_in", "gpio_in_pullup", "pwm", "adc"] },
+          "active_level": { "type": "string", "enum": ["high", "low"], "default": "high", "description": "Active level" },
+          "external_components": { "type": "string", "description": "External components, e.g., 'Series 220Ω current limiting resistor'" },
+          "quantity": { "type": "integer", "default": 1 }
+        }
+      }
+    },
+
+    "power": {
+      "type": "array",
+      "description": "Power distribution scheme",
+      "items": {
+        "type": "object",
+        "required": ["rail", "source_pins", "consumers"],
+        "properties": {
+          "rail": { "type": "string", "enum": ["3.3V", "5V", "Vin", "GND"], "description": "Power rail" },
+          "source_pins": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of MCU pins for this power rail"
+          },
+          "consumers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of device names drawing power from this rail"
+          }
+        }
+      }
+    },
+
+    "canvas": {
+      "type": "object",
+      "description": "Layout coordinates (populated by layout algorithm, renderer uses this as reference)",
+      "properties": {
+        "width_px": { "type": "integer", "description": "Canvas width" },
+        "height_px": { "type": "integer", "description": "Canvas height" },
+        "mcu_position": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "integer" }, "y": { "type": "integer" },
+            "w": { "type": "integer" }, "h": { "type": "integer" }
+          }
+        },
+        "device_positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "x": { "type": "integer" }, "y": { "type": "integer" },
+              "w": { "type": "integer" }, "h": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+
+    "alerts": {
+      "type": "array",
+      "description": "Auto-generated notes (produced by rule engine, LLM does not participate)",
+      "items": {
+        "type": "object",
+        "required": ["level", "msg"],
+        "properties": {
+          "level": { "type": "string", "enum": ["info", "warning", "danger"], "description": "Severity level" },
+          "msg": { "type": "string", "description": "Note text (English)" },
+          "category": { "type": "string", "enum": ["pullup", "power", "level_shift", "conflict", "startup", "current_limit", "general"], "description": "Note category" }
+        }
+      }
+    }
+
+  },
+  "definitions": {
+    "endpoint": {
+      "type": "object",
+      "required": ["component", "pin"],
+      "properties": {
+        "component": { "type": "string", "description": "Component id or name" },
+        "pin": { "type": "string", "description": "Pin name on this component side, e.g., GPIO14, BCLK, VCC" },
+        "role": { "type": "string", "description": "Functional role on this pin, e.g., I2S1 BCK, DIN, 3V3" },
+        "label": { "type": "string", "description": "Display label; if present, takes priority for rendering" },
+        "gpio": { "type": "string", "description": "If this end is an MCU GPIO, can additionally record the GPIO number" }
+      }
+    }
+  }
+}

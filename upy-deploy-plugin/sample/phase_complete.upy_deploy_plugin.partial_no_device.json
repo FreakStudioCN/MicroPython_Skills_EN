@@ -1,0 +1,45 @@
+{
+  "protocol_version": "1.0",
+  "type": "phase_complete",
+  "phase": "upy-deploy-plugin",
+  "session_id": "demo-session",
+  "payload": {
+    "phase": "upy-deploy-plugin",
+    "result": "partial",
+    "summary": "No available MicroPython device detected, deployment checkpoint saved.",
+    "next_phase": null,
+    "deploy_result": {
+      "status": "PARTIAL",
+      "strategy": "clean_then_upload",
+      "port": null,
+      "errors": [
+        {
+          "code": "serial_port_missing",
+          "message": "No available serial port selected"
+        }
+      ],
+      "warnings": []
+    },
+    "checkpoint": {
+      "resume_phase": "upy-deploy-plugin",
+      "resume_step": "deploy_port_select",
+      "state_file": "sessions/demo-session/deploy_state.json"
+    },
+    "artifacts": [
+      {
+        "type": "file_list",
+        "title": "Deployment checkpoint",
+        "files": [
+          {"path": "sessions/demo-session/deploy_state.json", "status": "new"}
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "code": "serial_port_missing",
+        "message": "No available MicroPython device detected"
+      }
+    ],
+    "warnings": []
+  }
+}
