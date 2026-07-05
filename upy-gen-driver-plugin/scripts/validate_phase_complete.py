@@ -17,6 +17,8 @@ from typing import Any
 
 PHASE = "upy-gen-driver-plugin"
 DOMAIN_PHASE = "gen-driver"
+PHASE_COMPLETE_FILE = "phase_complete.upy_gen_driver_plugin.json"
+STATE_FILE = "session_state.upy_gen_driver_plugin.json"
 RESULTS = {"success", "partial", "failed"}
 FILE_STATUSES = {"created", "updated", "unchanged", "skipped", "error"}
 HASHED_FILE_STATUSES = {"created", "updated", "unchanged"}
@@ -65,6 +67,7 @@ CHECKPOINT_NAMES = {
     "verification_exhausted",
 }
 VERIFICATION_MODES = {"hardware", "mock", "skipped", "none"}
+PHASE_COMPLETE_SAMPLE_RE = re.compile(r"^phase_complete\.upy_gen_driver_plugin\.[A-Za-z0-9_.-]+\.json$")
 
 
 def is_relative_path(value: str) -> bool:
@@ -79,6 +82,44 @@ def load(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("phase_complete must be a JSON object")
     return data
+
+
+def validate_input_filename(path: Path | None, errors: list[str]) -> None:
+    if path is None:
+        return
+    name = path.name
+    if name == PHASE_COMPLETE_FILE or PHASE_COMPLETE_SAMPLE_RE.fullmatch(name):
+        return
+    if name.startswith("phase_complete."):
+        errors.append(
+            f"input filename must be {PHASE_COMPLETE_FILE}; sample fixtures may use phase_complete.upy_gen_driver_plugin.<case>.json"
+        )
+
+
+def validate_phase_scoped_id(path: str, value: Any, session_id: Any, errors: list[str]) -> None:
+    if not isinstance(value, str) or not value:
+        errors.append(f"{path} must be a non-empty string")
+        return
+    prefix = f"{PHASE}:"
+    if not value.startswith(prefix):
+        errors.append(f"{path} must start with {prefix}")
+        return
+    parts = value.split(":")
+    if len(parts) >= 2 and isinstance(session_id, str) and parts[1] != session_id:
+        errors.append(f"{path} session id must match envelope session_id")
+
+
+def validate_nested_idempotency_keys(value: Any, path: str, session_id: Any, errors: list[str]) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            if key == "idempotency_key":
+                validate_phase_scoped_id(child_path, child, session_id, errors)
+            else:
+                validate_nested_idempotency_keys(child, child_path, session_id, errors)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            validate_nested_idempotency_keys(child, f"{path}[{index}]", session_id, errors)
 
 
 def sha256_file(path: Path) -> str:
@@ -124,6 +165,9 @@ def text_contains_unverified_production_label(value: Any) -> bool:
 
 
 def validate_artifacts(artifacts: Any, result: Any, hardware_verified: Any, errors: list[str]) -> None:
+    if isinstance(artifacts, dict):
+        errors.append("payload.artifacts must be an array; use a file_list artifact object, not a file_list map")
+        return
     if not isinstance(artifacts, list):
         errors.append("payload.artifacts must be an array")
         return
@@ -439,6 +483,8 @@ def validate_session_state(
         errors.append("session_state.session_id does not match phase_complete")
     if state.get("phase") != PHASE:
         errors.append(f"session_state.phase must be {PHASE}")
+    if state_path.name != STATE_FILE:
+        errors.append(f"session_state file must be named {STATE_FILE}")
     expected_checkpoint = checkpoint_name(checkpoint)
     if state.get("checkpoint") != expected_checkpoint:
         errors.append(f"session_state.checkpoint must match phase_complete checkpoint: {expected_checkpoint}")
@@ -450,9 +496,11 @@ def validate(
     data: dict[str, Any],
     artifact_root: Path | None = None,
     session_state_path: Path | None = None,
+    input_path: Path | None = None,
 ) -> tuple[bool, list[str]]:
     errors: list[str] = []
-    for field in ("protocol_version", "msg_id", "session_id", "phase", "timestamp", "type", "payload"):
+    validate_input_filename(input_path, errors)
+    for field in ("protocol_version", "msg_id", "session_id", "phase", "timestamp", "type", "idempotency_key", "payload"):
         if field not in data:
             errors.append(f"missing envelope field {field}")
     if data.get("protocol_version") != "1.0":
@@ -461,10 +509,13 @@ def validate(
         errors.append(f"phase must be {PHASE}")
     if data.get("type") != "phase_complete":
         errors.append("type must be phase_complete")
+    if "idempotency_key" in data:
+        validate_phase_scoped_id("idempotency_key", data.get("idempotency_key"), data.get("session_id"), errors)
     payload = data.get("payload")
     if not isinstance(payload, dict):
         errors.append("payload must be an object")
         return False, errors
+    validate_nested_idempotency_keys(payload, "payload", data.get("session_id"), errors)
     if payload.get("phase") != DOMAIN_PHASE:
         errors.append(f"payload.phase must be {DOMAIN_PHASE}")
     if payload.get("domain_phase") != DOMAIN_PHASE:
@@ -497,6 +548,8 @@ def validate(
         state_file = checkpoint.get("state_file")
         if state_file and not is_relative_path(str(state_file)):
             errors.append("payload.checkpoint.state_file must be relative")
+        if isinstance(state_file, str) and Path(state_file).name != STATE_FILE:
+            errors.append(f"payload.checkpoint.state_file must be named {STATE_FILE}")
     file_manifest = payload.get("file_manifest")
     has_driver = False
     if not isinstance(file_manifest, dict):
@@ -515,6 +568,8 @@ def validate(
                     errors.append(f"file_manifest.files[{index}].path must be relative")
                     path = ""
                 role = item.get("role")
+                if role == "state" and isinstance(path, str) and Path(path).name != STATE_FILE:
+                    errors.append(f"file_manifest.files[{index}].state path must be named {STATE_FILE}")
                 if role == "production_driver":
                     has_driver = True
                 if not role:
@@ -575,7 +630,11 @@ def validate(
                 errors.append(f"permissions[{index}].operation is not recognized")
             if "timeout_ms" in item and not isinstance(item.get("timeout_ms"), int):
                 errors.append(f"permissions[{index}].timeout_ms must be an integer")
-            for path in item.get("paths", []) or []:
+            paths = item.get("paths", [])
+            if paths is not None and not isinstance(paths, list):
+                errors.append(f"permissions[{index}].paths must be an array")
+                paths = []
+            for path in paths or []:
                 if not isinstance(path, str) or not is_relative_path(path):
                     errors.append(f"permissions[{index}].paths must be relative")
             retry_of = item.get("retry_of")
@@ -625,7 +684,7 @@ def validate(
         if hardware_verified is not True and not verification_skipped and not mock_verification:
             errors.append("success must set hardware_verified=true, verification_skipped_by_user=true, or verification_mode=mock")
     if payload.get("result") == "partial":
-        if not checkpoint or checkpoint.get("resume_phase") != PHASE:
+        if not isinstance(checkpoint, dict) or checkpoint.get("resume_phase") != PHASE:
             errors.append("partial must include a resumable checkpoint")
         has_trusted_file = False
         if isinstance(file_manifest, dict) and isinstance(file_manifest.get("files"), list):
@@ -650,10 +709,11 @@ def main() -> int:
     parser.add_argument("--session-state")
     args = parser.parse_args()
     try:
-        data = load(Path(args.input))
+        input_path = Path(args.input)
+        data = load(input_path)
         artifact_root = Path(args.artifact_root) if args.artifact_root else None
         session_state_path = Path(args.session_state) if args.session_state else None
-        ok, errors = validate(data, artifact_root=artifact_root, session_state_path=session_state_path)
+        ok, errors = validate(data, artifact_root=artifact_root, session_state_path=session_state_path, input_path=input_path)
     except Exception as exc:
         ok, errors = False, [str(exc)]
     print(json.dumps({"ok": ok, "errors": errors}, ensure_ascii=False, indent=2))

@@ -2,9 +2,9 @@
 
 GraftSense MicroPython Skill collection, containing **25 dedicated Skills**, divided into two major systems:
 
-**A. One-Sentence Hardware Creation — AI Embedded Code Generation Pipeline (10 skills)**: Starting from natural language requirements, automatically complete the full closed loop of hardware selection, code generation, PC simulation, deployment, and error fixing.
+**A. One-Sentence Hardware Building — AI Embedded Code Generation Pipeline (10 skills)**: Starting from natural language requirements, automatically complete the full closed loop of hardware selection, code generation, PC simulation, deployment, and error fixing.
 
-**B. Driver Development Standardization (15 skills)**: Based on the complete writing specification (22 chapters, 2200+ lines) of the [GraftSense-Drivers-MicroPython](https://github.com/FreakStudioCN/GraftSense-Drivers-MicroPython) repository, covering driver standardization, test file generation, README generation, performance optimization, memory optimization, packaging, and device deployment.
+**B. Driver Development Standardization (15 skills)**: Based on the complete writing specification (22 chapters, 2200+ lines) from the [GraftSense-Drivers-MicroPython](https://github.com/FreakStudioCN/GraftSense-Drivers-MicroPython) repository, covering driver standardization, test file generation, README generation, performance optimization, memory optimization, packaging, and device deployment.
 
 ---
 
@@ -15,13 +15,13 @@ This repository contains the following core documents. It is recommended to read
 | Document | Description | Use Case |
 |---|---|---|
 | [README.md](README.md) | This document, Skill installation and usage guide | Quick start, installing Skills |
-| [upy_driver_dev_spec_summary.md](upy_driver_dev_spec_summary.md) | **Complete GraftSense Driver Writing Specification** (22 chapters, 2200+ lines), covering file structure, class design, docstring, type annotations, parameter validation, exception handling, ISR specification, and all other rules | In-depth understanding of specification details, reference when writing drivers manually |
+| [upy_driver_dev_spec_summary.md](upy_driver_dev_spec_summary.md) | **Complete GraftSense Driver Development Specification** (22 chapters, 2200+ lines), covering file structure, class design, docstring, type annotations, parameter validation, exception handling, ISR specifications, and all other rules | In-depth understanding of specification details, reference when manually writing drivers |
 | [MicroPython_Performance_Optimization_Guide.md](MicroPython_Performance_Optimization_Guide.md) | **MicroPython Performance Optimization Guide**, detailing `@viper`, `@native`, `const()`, pre-allocated buffers, `memoryview`, pointer access, and other optimization techniques, with measured data and code examples | Optimizing driver execution speed, understanding the optimization principles of `upy-opt-driver` |
 | [MicroPython_Memory_Footprint_Minimization_Guide.md](MicroPython_Memory_Footprint_Minimization_Guide.md) | **MicroPython Memory Footprint Minimization Guide**, detailing frozen modules, `.mpy` files, `const()`, buffer reuse, `gc` control, `__slots__`, generators, and other memory optimization techniques, with REPL test code | Reducing driver RAM usage, understanding the optimization principles of `upy-slim-driver` |
 
 **Reading Suggestions**:
-- Beginners: First read this README to install Skills, directly use `/upy-norm-driver` and other commands to standardize code
-- Advanced: Read `upy_driver_dev_spec_summary.md` to understand specification details, manually write drivers that comply with the specification
+- Beginners: First read this README to install the Skills, then directly use commands like `/upy-norm-driver` to standardize code
+- Advanced: Read `upy_driver_dev_spec_summary.md` to understand specification details, manually write compliant drivers
 - Optimization: Read the performance/memory optimization guides to understand the optimization principles of `upy-opt-driver` and `upy-slim-driver`
 
 ---
@@ -29,7 +29,7 @@ This repository contains the following core documents. It is recommended to read
 ## Table of Contents
 
 - [Installation Methods](#installation-methods)
-- [One-Sentence Hardware Creation — AI Embedded Code Generation Pipeline](#one-sentence-hardware-creation--ai-embedded-code-generation-pipeline)
+- [One-Sentence Hardware Building — AI Embedded Code Generation Pipeline](#one-sentence-hardware-building--ai-embedded-code-generation-pipeline)
 - [Driver Development Standardization Skill List](#skill-list)
   - [upy-norm-driver](#upy-norm-driver--driver-file-standardization)
   - [upy-norm-main](#upy-norm-main--test-file-standardization)
@@ -56,7 +56,7 @@ This repository contains the following core documents. It is recommended to read
 
 ## Installation Methods
 
-> **Network restricted?** We recommend the "Local Installation" method below. No network required; simply clone the repository and copy.
+> **Network restricted?** It is recommended to use the "Local Installation" method below. No network required; simply clone the repository and copy.
 
 ### Method 1: Local Installation (Recommended, No Network Required)
 
@@ -68,9 +68,9 @@ This repository contains the following core documents. It is recommended to read
 git clone https://github.com/FreakStudioCN/MicroPython_Skills.git
 ```
 
-**Step 2**: Copy the skill directory to Claude Code's skills directory
+**Step 2**: Copy the skill directories to Claude Code's skills directory
 
-The skills directory is fixed at `~/.claude/skills/`, expanded by operating system as follows:
+The skills directory is fixed at `~/.claude/skills/`. It expands as follows depending on the operating system:
 
 | System | Actual Path |
 |---|---|
@@ -142,9 +142,9 @@ done
 
 ---
 
-## One-Sentence Hardware Creation — AI Embedded Code Generation Pipeline
+## One-Sentence Hardware Building — AI Embedded Code Generation Pipeline
 
-The user only needs to describe the requirement in natural language ("Make a temperature and humidity monitor, buzzer alarm when threshold is exceeded"), and the system automatically completes the entire process from selection, code generation, PC simulation, flashing to error fixing.
+The user only needs to describe the requirement in natural language ("Make a temperature and humidity monitor, buzzer alarm when threshold is exceeded"), and the system automatically completes the entire process from selection, code generation, PC simulation, flashing, to error fixing.
 
 ### Pipeline Overview
 
@@ -155,7 +155,7 @@ Phase 1: upy-analyze    → Requirement analysis + Driver search
 Phase 2: upy-select-hw  → MCU selection + Pin assignment + BOM
 Phase 3: upy-scaffold   → Project skeleton generation
 Phase 4: upy-generate   → Business code generation
-Phase 4.5: upy-simulate → Full PC simulation (no hardware required)
+Phase 4.5: upy-simulate → Full PC-side simulation (no hardware required)
 Phase 5: upy-deploy     → One-click flash and run
 Phase 6: upy-autofix    → Error classification decision + Delegated fix
 Phase 7: upy-wiring     → Wiring diagram generation
@@ -166,20 +166,20 @@ Exception path: upy-gen-driver → Uncommon hardware driver generation
 ### Skill List
 
 | # | Skill | Phase | Status | Description |
-|---|-------|-------|--------|-------------|
+|---|-------|------|------|------|
 | 1 | `upy-analyze` | Phase 1 | Implemented | Natural language → Device list + Driver API reference |
 | 2 | `upy-select-hw` | Phase 2 | Implemented | MCU selection + Firmware verification + Pin assignment + BOM |
 | 3 | `upy-scaffold` | Phase 3 | Implemented | Generate complete firmware/ skeleton (Timer/asyncio/Thread) |
 | 4 | `upy-generate` | Phase 4 | Implemented | Driver download + DI architecture business code + Mock + unittest |
-| 5 | `upy-simulate` | Phase 4.5 | Implemented | PC CLI+rich full simulation (data generator + multiple scenarios) |
-| 6 | `upy-deploy` | Phase 5 | Implemented | mpremote upload + Flash + Persistent session + Initial PASS/FAIL judgment |
-| 7 | `upy-autofix` | Phase 6 | Implemented | Orchestration coordination layer: triage.py collection → LLM tiered decision → Delegate upstream skill |
+| 5 | `upy-simulate` | Phase 4.5 | Implemented | Full PC-side CLI+rich simulation (data generator + multiple scenarios) |
+| 6 | `upy-deploy` | Phase 5 | Implemented | mpremote upload + flash + persistent session + initial PASS/FAIL judgment |
+| 7 | `upy-autofix` | Phase 6 | Implemented | Orchestration coordination layer: triage.py collects → LLM hierarchical decision → delegates to upstream skill |
 | 8 | `upy-wiring` | Phase 7 | Implemented | Wiring diagram generation (Mermaid .md + SVG + PNG + HTML) |
 | 9 | `upy-diagram` | Phase 7 | Implemented | Architecture diagram + Flowchart + Data flow diagram (Mermaid .md + SVG + PNG + HTML) |
 | 10 | `upy-gen-driver` | Exception path | Implemented | PDF/Arduino → Debug version driver → Hardware verification loop → Standardized MPY driver |
 
 **Supporting Tools:**
-- `upy-project-gen-toolchain-spec` — Overall architecture document + manifest/schema definition
+- `upy-project-gen-toolchain-spec` — Overall architecture document + manifest/schema definitions
 - `upy-pkg-guide` — Device driver usage query (called by upy-analyze)
 - `fetch-doc` — URL content fetching (called by upy-pkg-guide)
 
@@ -187,53 +187,53 @@ Exception path: upy-gen-driver → Uncommon hardware driver generation
 
 #### `/upy-analyze` — Requirement Analysis + Driver Search
 
-Input user natural language description, LLM decomposes intent → Multi-keyword parallel search upypi + awesome-micropython → Extract driver API reference → Output `project-manifest.json` (phase: analyze).
+Takes user natural language description, LLM decomposes intent → multi-keyword parallel search on upypi + awesome-micropython → extracts driver API reference → outputs `project-manifest.json` (phase: analyze).
 
 #### `/upy-select-hw` — MCU Selection + Pin Assignment
 
-Read manifest → Recommend MCU based on scenario/power consumption/network requirements → I2C address conflict detection → Generate pin assignment table (including electrical type enumeration + physical pin number) → Output BOM bill of materials.
+Reads manifest → recommends MCU based on scenario/power consumption/network requirements → I2C address conflict detection → generates pin assignment table (with electrical type enumeration + physical pin numbers) → outputs BOM bill of materials.
 
 #### `/upy-scaffold` — Project Skeleton Generation
 
-Read manifest → AskUserQuestion to select scheduling mode (Timer/asyncio/_thread) and optional modules → Call `init_scaffold.py` to generate complete `firmware/` skeleton (board.py, conf.py, boot.py, main.py, drivers/*, tasks/*, lib/*, tools/*).
+Reads manifest → AskUserQuestion to select scheduling mode (Timer/asyncio/_thread) and optional modules → calls `init_scaffold.py` to generate complete `firmware/` skeleton (board.py, conf.py, boot.py, main.py, drivers/*, tasks/*, lib/*, tools/*).
 
 #### `/upy-generate` — Business Code Generation
 
-Read firmware/ skeleton + Driver API reference → Download driver → upy-norm-driver standardization → Generate DI architecture task code + conf.py + main.py + Mock layer + unittest → black + flake8 + pylint validation.
+Reads firmware/ skeleton + driver API reference → downloads driver → upy-norm-driver standardizes → generates DI architecture task code + conf.py + main.py + Mock layer + unittest → black + flake8 + pylint validation.
 
-#### `/upy-simulate` — Full PC Simulation
+#### `/upy-simulate` — Full PC-side Simulation
 
-LLM reads all firmware/ code → Self-design: scheduling scheme + data generator `gen_xxx(tick)` + visualization (CLI+rich preferred) + multi-scenario coverage → Generate `test/pc/sim_main.py` → flake8 + pylint validation → Run. **No real hardware required to verify business logic.**
+LLM reads all firmware/ code → autonomously designs: scheduling scheme + data generator `gen_xxx(tick)` + visualization (CLI+rich preferred) + multi-scenario coverage → generates `test/pc/sim_main.py` → flake8 + pylint validation → runs. **No real hardware needed to verify business logic.**
 
-#### `/upy-deploy` — One-Click Flash and Run
+#### `/upy-deploy` — One-click Flash and Run
 
-mpremote upload firmware/ → Verify file integrity → Soft reset + Reconnect wait → Persistent session output collection → Device-side log capture → Local rule initial PASS/FAIL judgment.
+mpremote uploads firmware/ → verifies file integrity → soft reset + reconnection wait → persistent session collects output → device-side log capture → local rule-based initial PASS/FAIL judgment.
 
 #### `/upy-autofix` — Orchestration Coordination Layer
 
-Automatically enters after deploy failure. `triage.py` collects structured data (error parsing + I2C hardware detection + git management) → LLM reads JSON + raw logs → Tiered decision (P0~P3) → Delegate upstream skill to fix (generate/select-hw/analyze) → Optional PC verification → Redeploy. Maximum 3 attempts.
+Automatically enters after deploy fails. `triage.py` collects structured data (error parsing + I2C hardware detection + git management) → LLM reads JSON + raw logs → hierarchical decision (P0~P3) → delegates to upstream skill for fix (generate/select-hw/analyze) → optional PC verification → redeploy. Maximum 3 attempts.
 
 #### `/upy-wiring` — Wiring Diagram Generation
 
-Read all firmware/ .py source code to extract actual pins/addresses/buses → Cross-verify with manifest → LLM generates intermediate JSON → Script renders Mermaid wiring diagram .md + SVG + PNG + self-contained HTML (double-click browser to view) + Pin cross-reference table.
+Reads all .py source code in firmware/ to extract actual pins/addresses/buses → cross-validates with manifest → LLM generates intermediate JSON → script renders Mermaid wiring diagram .md + SVG + PNG + self-contained HTML (double-click browser to view) + pin cross-reference table.
 
 #### `/upy-diagram` — Architecture Diagram + Flowchart
 
-Scan firmware/ code structure + manifest → LLM generates intermediate JSON → Script renders Mermaid architecture diagram + flowchart + data flow diagram, each output .md + SVG + PNG + self-contained HTML (Tabs switch between diagram/source code, dark mode adaptive). Supports simple/medium/detailed three levels of complexity.
+Scans firmware/ code structure + manifest → LLM generates intermediate JSON → script renders Mermaid architecture diagram + flowchart + data flow diagram, each outputting .md + SVG + PNG + self-contained HTML (Tabs to switch between diagram/source code, dark mode adaptive). Supports simple/medium/detailed three levels of complexity.
 
 #### `/upy-gen-driver` — Driver Code Generation (Exception Path)
 
-Triggered when no driver is found on upypi or GitHub. Extract information from PDF datasheet or Arduino code → LLM generates debug version single-file driver (with full self-check logic) → `mpremote resume run` hardware verification loop (up to 10 rounds) → Remove debug code → `upy-norm-driver` standardization. Can be called by `upy-analyze`, `upy-autofix`, or directly by the user.
+Triggered when no driver is found on upypi or GitHub. Extracts information from PDF datasheet or Arduino code → LLM generates debug version single-file driver (with full self-check logic) → `mpremote resume run` hardware verification loop (up to 10 rounds) → remove debug → `upy-norm-driver` standardizes. Can be called by `upy-analyze`, `upy-autofix`, or directly by the user.
 
 ---
 
 ### `/upy-norm-driver` — Driver File Standardization
 
-**Purpose**: Rewrite a functional but non-standard MicroPython driver `.py` file (not `main.py`) according to the GraftSense specification, outputting a fully standardized file.
+**Purpose**: Rewrite a functional but non-standard MicroPython driver `.py` file (not `main.py`) according to the GraftSense specification, outputting the complete standardized file.
 
 **Input**: Existing driver `.py` file path
 
-**Output**: Standardized complete `.py` file + Rewrite description table
+**Output**: Standardized complete `.py` file + rewrite description table
 
 **Covered Rules**: P0 mandatory 38 items, P2 optional 7 items, including:
 
@@ -241,11 +241,11 @@ Triggered when no driver is found on upypi or GitHub. Extract information from P
 |---|---|
 | File Structure | File header 7-line comment, 4 module global variables, 6 section markers, section content specification |
 | Class Design | Class structure layout, `__slots__` optimization, avoid multiple inheritance, explicit dependency injection, constant specification |
-| docstring | Class-level Chinese/English bilingual (including Attributes/Methods/Notes), method-level Chinese/English bilingual, ISR-safe annotation, side-effect annotation |
+| docstring | Class-level bilingual (Chinese/English) (including Attributes/Methods/Notes), method-level bilingual (Chinese/English), ISR-safe annotation, side-effect annotation |
 | Type Annotations | `__init__` parameter annotations, public method return value annotations, callback uses `callable` |
 | Parameter Validation | Three modes: `isinstance`/`hasattr`/value range, `__init__` two-step validation |
-| Exception Handling | Exception type standardization, `OSError` wrapping re-raise (preserve `from e`), retry mechanism |
-| ISR Specification | Prohibit memory allocation/blocking IO/raising exceptions, `micropython.schedule`, concurrency protection |
+| Exception Handling | Exception type standardization, `OSError` wrapping and re-raising (preserve `from e`), retry mechanism |
+| ISR Specification | Prohibit memory allocation/blocking I/O/raising exceptions, `micropython.schedule`, concurrency protection |
 | Function Design | Naming conventions, return value design, `debug` log switch |
 
 **Core Constraint**: Do not modify external API names, method signature semantics, business logic, or hardware communication timing.
@@ -274,7 +274,7 @@ Triggered when no driver is found on upypi or GitHub. Extract information from P
 | 3 | Initialization configuration section must have `time.sleep(3)` |
 | 4 | Initialization configuration section must have `print("FreakStudio: ...")` |
 | 5 | Global variable section prohibits instantiation, move to initialization configuration section |
-| 6 | `while` loop only allowed in main program section |
+| 6 | `while` loop only allowed in the main program section |
 | 7 | `raise`/`print` strings all in English |
 | 8 | Main program section wrapped with `try/except KeyboardInterrupt/OSError/Exception/finally` |
 | 9 | `finally` calls `close()`/`deinit()`, `del` hardware objects, prints exit prompt |
@@ -291,7 +291,7 @@ Triggered when no driver is found on upypi or GitHub. Extract information from P
 
 ### `/upy-gen-main` — Generate Test File from Scratch
 
-**Purpose**: Given a driver `.py` file, analyze all its public APIs, generate a complete `main.py` from scratch that complies with the specification.
+**Purpose**: Given a driver `.py` file, analyze all its public APIs, and generate a complete `main.py` from scratch that conforms to the specification.
 
 **Input**: Driver `.py` file path
 
@@ -311,7 +311,7 @@ Classify all APIs by chip type functional dimensions:
 
 Cover three types of test scenarios: normal parameters, boundary parameters (hardware limit values), abnormal parameters (verify exceptions are correctly raised).
 
-API handling method: Low-frequency APIs execute automatically, high-frequency/mode-switching APIs call with comments (for REPL manual triggering).
+API handling method: Low-frequency APIs are executed automatically; high-frequency/mode-switching APIs are called via comments (for REPL manual triggering).
 
 **Usage Example**:
 ```
@@ -322,7 +322,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 ### `/upy-gen-readme` — Generate README from Scratch
 
-**Purpose**: Given a driver `.py` file, analyze its functionality and APIs, generate a complete `README.md` from scratch.
+**Purpose**: Given a driver `.py` file, analyze its functionality and APIs, and generate a complete `README.md` from scratch.
 
 **Input**: Driver `.py` file path (optional: existing README as reference)
 
@@ -333,7 +333,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 | # | Section | Content |
 |---|---|---|
 | 1 | Title | `# [Chip Name] MicroPython Driver` |
-| 2 | Table of Contents | Anchor links to all sections |
+| 2 | Table of Contents | Anchor links for all sections |
 | 3 | Introduction | Driver purpose, functionality, applicable scenarios |
 | 4 | Key Features | List of feature highlights |
 | 5 | Hardware Requirements | Recommended hardware + pin description table |
@@ -355,7 +355,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 ### `/upy-norm-pkg` — Full Driver Package Standardization
 
-**Purpose**: For an existing verified driver file, execute the complete standardization process on the entire driver package directory as an Orchestrator Skill.
+**Purpose**: For an already verified driver file, perform the complete standardization workflow on the entire driver package directory. This is an Orchestrator Skill.
 
 **Input**: Driver package directory path
 
@@ -365,7 +365,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 | Step | Operation |
 |---|---|
-| 0 | Scan directory, classify driver files and `main.py`; list multiple driver files and ask user to confirm scope |
+| 0 | Scan directory, classify driver files and `main.py`; for multiple driver files, list them and ask user to confirm the scope |
 | 1 | Execute `/upy-norm-driver` for each driver file sequentially, pause for confirmation after each file |
 | 2 | Execute `/upy-norm-main` (if `main.py` exists) or `/upy-gen-main` (if no `main.py`) |
 | 3 | Execute `/upy-gen-readme` |
@@ -384,24 +384,24 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 ### `/upy-deploy-test` — Device Deployment and Verification
 
-**Purpose**: After `upy-norm-pkg` completes, upload the standardized driver files and `main.py` to the MicroPython device, run and verify the output.
+**Purpose**: After `upy-norm-pkg` completes, upload the standardized driver files and `main.py` to the MicroPython device, run them, and verify the output.
 
 **Input**: Standardized `code/` directory path + user-confirmed COM port
 
-**Output**: Upload progress + Verification report (success/failure + error analysis)
+**Output**: Upload progress + verification report (success/failure + error analysis)
 
 **Execution Flow (6 Steps)**:
 
 | Step | Operation |
 |---|---|
-| 0 | Ask and confirm COM port (can execute `mpremote connect list` for assistance) |
+| 0 | Ask and confirm the COM port (can execute `mpremote connect list` for assistance) |
 | 1 | Scan files to upload (`.py` files + sub-package directories) |
 | 2 | Upload files one by one (`mpremote connect <COM> resume fs cp`) |
 | 3 | Verify device file integrity (`fs ls`) |
 | 4 | Run `main.py` (`mpremote resume run main.py`) |
 | 5 | Analyze output, output verification report |
 
-**Failure Diagnosis**: `ImportError` → Missing file; `OSError -110` → I2C wiring; `RuntimeError: WiFi` → Check if credential placeholders have been replaced.
+**Failure Diagnosis**: `ImportError` → missing file; `OSError -110` → I2C wiring; `RuntimeError: WiFi` → check if credential placeholders have been replaced.
 
 **mpremote Reference**: `/mpremote-device-interaction`, `/mpremote-file-transfer`, `/mpremote-live-session`, [Official Documentation](https://docs.micropython.org/en/latest/reference/mpremote.html)
 
@@ -418,7 +418,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 **Input**: Driver `.py` file path or directory path (supports batch optimization of multiple files)
 
-**Output**: Optimized complete `.py` file + Optimization description table
+**Output**: Optimized complete `.py` file + optimization description table
 
 **Optimization Priority**:
 
@@ -436,9 +436,9 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 | P2 | SIO register direct write | ~48% (RP2040 specific) |
 | P2 | `array` instead of `list` | Contiguous memory |
 
-**Core Constraints**: `@viper` rewrites must annotate integer overflow risk; `@native` rewrites must annotate limitations (no generators/keyword arguments); SIO registers must annotate "RP2040 specific".
+**Core Constraints**: `@viper` rewrites must annotate integer overflow risk; `@native` must annotate limitations (no generators/keyword arguments); SIO registers must annotate "RP2040 specific".
 
-**Usage Examples**:
+**Usage Example**:
 ```
 /upy-opt-driver sensors/bh1750_driver/code/bh_1750.py
 /upy-opt-driver sensors/bh1750_driver/code/
@@ -452,7 +452,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 **Input**: Driver `.py` file path or directory path (supports batch optimization of multiple files)
 
-**Output**: Optimized complete `.py` file + Optimization description table
+**Output**: Optimized complete `.py` file + optimization description table
 
 **Optimization Priority**:
 
@@ -460,7 +460,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 |---|---|---|
 | P0 | Pre-allocated buffers | Eliminate peak heap allocation |
 | P0 | Private `_CONST` | ~40 bytes/constant |
-| P0 | Avoid loop string `+` | Eliminate temporary objects |
+| P0 | Avoid string concatenation in loops | Eliminate temporary objects |
 | P0 | `bytes`/`bytearray` instead of `list` | ~90% (register tables) |
 | P1 | `gc.collect()` pre-positioning | Reduce randomness |
 | P1 | `gc.disable()`/`gc.enable()` | Prevent GC interruption mid-operation |
@@ -468,9 +468,9 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 | P2 | `__slots__` | 50–200 bytes/instance |
 | P2 | Generator instead of list | Peak RAM O(N)→O(1) |
 
-**Core Constraints**: `_CONST` rewrites only apply to module-internal constants; `gc.disable()` intervals must be short and bounded, prohibiting blocking I/O; overlaps with `upy-opt-driver` P0#1 (pre-allocated buffers), do not execute repeatedly.
+**Core Constraints**: `_CONST` rewrites only apply to module-internal constants; `gc.disable()` intervals must be short and bounded, and must not contain blocking I/O; overlaps with `upy-opt-driver`'s P0#1 (pre-allocated buffers), do not execute redundantly.
 
-**Usage Examples**:
+**Usage Example**:
 ```
 /upy-slim-driver sensors/bh1750_driver/code/bh_1750.py
 /upy-slim-driver sensors/bh1750_driver/code/
@@ -482,7 +482,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 **Purpose**: After other Skills have completed execution, organize the driver file, `main.py`, `README.md`, and `package.json` into a standard driver package directory structure, and generate a `LICENSE` file.
 
-**Input**: Driver `.py` file path (the same directory must already contain `main.py`, `README.md`, `package.json`)
+**Input**: Driver `.py` file path (`main.py`, `README.md`, `package.json` must already exist in the same directory)
 
 **Output**: Standard directory structure:
 ```
@@ -495,7 +495,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 └── LICENSE
 ```
 
-**Core Constraint**: Does not generate any content, only responsible for organizing files; if files are missing, prompts the user to run the corresponding Skill first.
+**Core Constraint**: Does not generate any content, only responsible for organizing files; if files are missing, it will prompt the user to run the corresponding Skill first.
 
 **Usage Example**:
 ```
@@ -506,15 +506,15 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 ### `/upy-pkg-guide` — Device Driver Usage Query
 
-**Purpose**: Given a device name, automatically fetch all files of the corresponding driver package from upypi, analyze comprehensively, and output usage key points.
+**Purpose**: Given a device name, automatically fetch all files of the corresponding driver package from upypi, perform comprehensive analysis, and output usage highlights.
 
 **Input**: Device/chip name (e.g., BMP280, DS18B20, MPR121)
 
 **Output**: Package information, installation command, initialization example, core API table, notes
 
-**Execution Flow**: curl search upypi → Get package.json → Parallel download driver.py + main.py + README.md → Comprehensive output
+**Execution Flow**: curl search upypi → fetch package.json → parallel download driver.py + main.py + README.md → comprehensive output
 
-**Usage Examples**:
+**Usage Example**:
 ```
 /upy-pkg-guide BMP280
 /upy-pkg-guide DS18B20
@@ -528,7 +528,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 **Input**: URL (GitHub blob links are automatically converted to raw URLs)
 
-**Output**: Extract key information based on content type (README summary, driver API table, package.json fields, etc.)
+**Output**: Key information extracted based on content type (README summary, driver API table, package.json fields, etc.)
 
 **Dependency**: Requires Python + requests library (`pip install requests`)
 
@@ -545,14 +545,14 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 **Input**: MicroPython code changes (branch, commit, diff, PR)
 
-**Output**: Semantically matched historical review patterns + Review context suggestions
+**Output**: Semantically searched matching historical review patterns + review context suggestions
 
 **Core Capabilities**:
-- Semantic search of ~19.5K classified review comments to find relevant historical review patterns
-- Supports MCP server (`review_diff`, `search_reviews` and other tools) and CLI methods
-- MCP server keeps embedding model warm, eliminating 2-3s cold start per query
+- Semantic search across ~19.5K classified review comments to find relevant historical review patterns
+- Supports MCP server (`review_diff`, `search_reviews` tools, etc.) and CLI methods
+- MCP server keeps the embedding model warm, eliminating the 2-3s cold start for each query
 
-**Usage Examples**:
+**Usage Example**:
 ```
 /review Review the diff of the current branch against main
 /review Check sensors/bmp280_driver/code/bmp280.py
@@ -562,7 +562,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 
 ### `/upy-project` — MicroPython End-to-End Project Generation
 
-**Purpose**: User describes project requirements, automatically completes the entire process from requirement clarification, device selection, code generation to device debugging.
+**Purpose**: The user describes the project requirements, and the system automatically completes the entire process from requirement clarification, device selection, code generation, to device debugging.
 
 **Input**: Project description (main controller model, sensor list, functional requirements, serial port)
 
@@ -576,7 +576,7 @@ API handling method: Low-frequency APIs execute automatically, high-frequency/mo
 | Phase 0 | Parse GitHub links in user input (call fetch-doc skill) |
 | Phase 1 | List all missing information at once, no multiple rounds of questioning |
 | Phase 2 | Select devices from upypi, call upy-pkg-guide to get API usage |
-| Phase 3 | Generate task file + main.py (unified scheduling) |
+| Phase 3 | Generate task files + main.py (unified scheduling) |
 | Phase 4 | mpremote automatic debugging, up to 3 times, parse output and fix |
 
 **Code Structure**:
@@ -588,18 +588,18 @@ main.py                ← Unified scheduling
 
 **Usage Example**:
 ```
-/upy-project Make a temperature monitor with ESP32 and BMP280, print every 5 seconds, COM3 port
+/upy-project Use ESP32 and BMP280 to make a temperature monitor, print every 5 seconds, COM3 port
 ```
 
 ---
 
 ### `/upy-gen-pkg` — Generate package.json from Scratch
 
-**Purpose**: Given a driver directory or driver file, analyze the structure and dependencies, generate a `package.json` from scratch that complies with the specification.
+**Purpose**: Given a driver directory or driver file, analyze the structure and dependencies, and generate a compliant `package.json` from scratch.
 
 **Input**: Driver directory path or driver `.py` file path
 
-**Output**: Complete `package.json` + Three installation method commands
+**Output**: Complete `package.json` + three installation method commands
 
 **Dependency Handling Three-Step Priority**:
 
@@ -607,8 +607,8 @@ main.py                ← Unified scheduling
 1. MicroPython built-in modules (machine, time, sys, etc.) → Do not write to deps
 2. micropython-lib standard library → Use mip standard format
 3. Other third-party dependencies → Query https://upypi.net/api/search?q={dependency_name}
-   Has result → Write deps with upypi URL
-   No result → Use github: placeholder format, annotate ⚠️ requires manual confirmation
+   If result exists → Write deps using upypi URL
+   If no result → Use github: placeholder format, annotate ⚠️ requires manual confirmation
 ```
 
 **Usage Example**:
@@ -659,8 +659,8 @@ main.py                ← Unified scheduling
 |---|---|
 | Upload file | `mpremote <device> resume fs cp main.py :main.py` |
 | Download file | `mpremote <device> resume fs cp :main.py .` |
-| Recursive sync directory | `mpremote <device> resume fs cp -r utils/ :utils/` |
-| Restart after driver update | `mpremote <device> resume fs cp driver.py :driver.py + soft-reset repl` |
+| Recursively sync directory | `mpremote <device> resume fs cp -r utils/ :utils/` |
+| Restart after updating driver | `mpremote <device> resume fs cp driver.py :driver.py + soft-reset repl` |
 | List files | `mpremote <device> resume fs ls :` |
 | View storage space | `mpremote <device> resume exec "import os; print(os.statvfs('/'))"` |
 
@@ -677,20 +677,20 @@ main.py                ← Unified scheduling
 
 **Platform Support**: Linux/macOS uses PTY solution; Windows uses subprocess pipe alternative (has limitations, see Skill documentation).
 
-**Core Principle**: Repeatedly calling `mpremote resume exec` will send Ctrl+C to asyncio devices, killing the event loop; must use a persistent session instead.
+**Core Principle**: Repeatedly calling `mpremote resume exec` will send Ctrl+C to asyncio devices, killing the event loop; a persistent session must be used instead.
 
 **When to Use**:
 
 | Scenario | Recommended Solution |
 |---|---|
 | Single quick query | `mpremote <device> resume exec "..."` |
-| Multi-command sequence / Monitor output | This Skill (persistent session) |
+| Multi-command sequence / monitoring output | This Skill (persistent session) |
 | Device running asyncio/aiorepl | This Skill (mandatory) |
-| File copy | mpremote-file-transfer |
+| File copying | mpremote-file-transfer |
 
 **Usage Example**:
 ```
-/mpremote-live-session  Establish a persistent connection to /dev/tty.usbmodem1101, query memory every second and log to file
+/mpremote-live-session  Establish a persistent connection to /dev/tty.usbmodem1101, query memory every second and log to a file
 ```
 
 ---
@@ -707,22 +707,22 @@ Each Skill is a `SKILL.md` file containing:
 ### Trigger Flow
 
 ```
-User input /upy-norm-driver xxx.py
+User inputs /upy-norm-driver xxx.py
     ↓
 Claude loads the specification summary and priority table from SKILL.md
     ↓
 Reads the target file, analyzes structure (communication interface type, classes, methods, ISR callbacks, etc.)
     ↓
-Rewrites item by item according to P0→P2 priority (does not change API and business logic)
+Rewrites item by item according to P0→P2 priority (does not change API or business logic)
     ↓
-Outputs the complete standardized file + Rewrite description table
+Outputs complete standardized file + rewrite description table
 ```
 
 ### Why Split into Multiple Skills
 
-The specification document has 22 chapters, 2200+ lines. Embedding the entire specification in a single Skill would lead to excessive context length and reduced rewrite quality. By splitting according to "rewrite target" and "optimization goal", each Skill only embeds the specification summary for its corresponding chapters, keeping the context manageable.
+The specification document has 22 chapters and 2200+ lines. Embedding the entire specification in a single Skill would lead to excessive context length and reduced rewrite quality. By splitting according to "rewrite target" and "optimization goal", each Skill only embeds the specification summary for its corresponding chapters, keeping the context manageable.
 
-**Skill Classification**:
+**Skill Categories**:
 - **AI Code Generation Pipeline** (10): `upy-analyze`, `upy-select-hw`, `upy-scaffold`, `upy-generate`, `upy-simulate`, `upy-deploy`, `upy-autofix`, `upy-wiring`, `upy-diagram`, `upy-gen-driver`
 - **Code Review**: `review` (mpy-review, MPY driver code review)
 - **Standardization**: `upy-norm-driver`, `upy-norm-main`, `upy-norm-pkg` (Orchestrator)
@@ -750,8 +750,8 @@ Full specification: [upy_driver_dev_spec_summary.md](https://github.com/FreakStu
 | v1.3.0 | 2026-04-29 | leezisheng | Added upy-pkg-guide (device usage query), fetch-doc (URL content fetching), upy-project (end-to-end project generation); upy-gen-pkg query logic changed to Bash curl automatic execution |
 | v1.4.0 | 2026-05-04 | leezisheng | Added mpremote-device-interaction, mpremote-file-transfer, mpremote-live-session; based on andrewleech/claude-mpy-marketplace architecture, supplemented Windows (COMn) and macOS platform support |
 | v1.5.0 | 2026-05-14 | leezisheng | Added upy-deploy-test (device deployment and verification); upy-norm-pkg added step 6 calling upy-deploy-test; each skill added middleware library type judgment branch and sensitive data replacement rules |
-| v1.6.0 | 2026-06-02 | leezisheng | Added "One-Sentence Hardware Creation" AI code generation pipeline (10 skills): analyze/select-hw/scaffold/generate/simulate/deploy/autofix/wiring/diagram/cold-driver + overall architecture document. upy-simulate changed to CLI+rich preferred. upy-select-hw added pin electrical type enumeration + physical pin rules. Skill count increased from 15 to 25. |
-| v1.7.0 | 2026-06-03 | leezisheng | upy-cold-driver renamed to upy-gen-driver, positioned as an independently callable skill (not just an exception path). upy-gen-driver process implemented: debug version driver → mpremote hardware verification loop → remove debug code → standardization. upy-wiring + upy-diagram added HTML output (self-contained browser page, Mermaid.js CDN + Tab switching), --format all now outputs all four formats: md + svg + png + html. All 25 skills completed .skillfish.json. |
+| v1.6.0 | 2026-06-02 | leezisheng | Added "One-Sentence Hardware Building" AI code generation pipeline (10 skills): analyze/select-hw/scaffold/generate/simulate/deploy/autofix/wiring/diagram/cold-driver + overall architecture document. upy-simulate changed to CLI+rich preferred. upy-select-hw added pin electrical type enumeration + physical pin rules. Total skills increased from 15 to 25. |
+| v1.7.0 | 2026-06-03 | leezisheng | upy-cold-driver renamed to upy-gen-driver, positioned as an independently callable skill (not just an exception path). upy-gen-driver process implemented: debug version driver → mpremote hardware verification loop → remove debug → standardize. upy-wiring + upy-diagram added HTML output (self-contained browser page, Mermaid.js CDN + Tab switching), `--format all` now outputs all four formats: md + svg + png + html. All 25 skills supplemented with .skillfish.json. |
 | v1.7.1 | 2026-06-03 | leezisheng | README.md installation script supplemented with upy-deploy-test + review skill. Feature planning.md fixed: Module 4 visualization scheme (Pillow→Mermaid), Module 7 gen-driver process supplemented with hardware verification loop, triage.py line count correction, project architecture script name refresh, /cold-driver→/gen-driver. |
 
 ---

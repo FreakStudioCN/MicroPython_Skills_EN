@@ -142,6 +142,9 @@ def check(args: argparse.Namespace) -> dict[str, Any]:
         errors.append("protocol_version must be 1.0")
     if state.get("phase") != PHASE:
         errors.append(f"phase must be {PHASE}")
+    key = state.get("idempotency_key")
+    if isinstance(key, str) and not key.startswith(f"{PHASE}:"):
+        errors.append(f"idempotency_key must start with {PHASE}:")
     if state.get("checkpoint") not in CHECKPOINTS:
         errors.append("checkpoint is not recognized")
     if state.get("status") not in STATUSES:

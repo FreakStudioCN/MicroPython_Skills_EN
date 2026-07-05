@@ -2,6 +2,17 @@
 
 Use this reference when creating or validating `start_phase`, `phase_complete`, checkpoints, permissions, file manifests, and structured errors for `upy-gen-driver-plugin`.
 
+## Protocol Identity Guard
+
+The plugin identity is fixed as `upy-gen-driver-plugin`. Do not rename or alias it to `upy-driver-plugin`, `driver`, `gen-driver-plugin`, or any other phase name.
+
+- Envelope `phase` must be `upy-gen-driver-plugin`.
+- Payload `phase` and `domain_phase` must be `gen-driver`.
+- Final protocol output must be `phase_complete.upy_gen_driver_plugin.json`.
+- Session state must be `session_state.upy_gen_driver_plugin.json`.
+- `idempotency_key`, `checkpoint_id`, `resume_phase`, and permission action keys must use the `upy-gen-driver-plugin` prefix.
+- Existing files with another driver phase name are stale/wrong-phase artifacts; regenerate them with this identity instead of validating or resuming from them.
+
 ## Envelope
 
 Required fields:
