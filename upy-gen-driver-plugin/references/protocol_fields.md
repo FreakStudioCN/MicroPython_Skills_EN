@@ -96,6 +96,8 @@ Use `write_driver_artifact` when `{chip}.py` is emitted with role `artifact` bec
 
 Permission entries must include `permission_id`, `operation`, `reason`, `timeout_ms`, `idempotency_key`, and any relevant `paths`, `command_preview`, or `network_domains`.
 
+For `file_read`, `file_write`, and `manifest_update`, `paths[]` is required. Do not use `target` as a substitute because hosts and local tests need per-file auditability.
+
 Operations: `file_read`, `file_write`, `script_run`, `device_scan`, `device_run`, `network_fetch`, `manifest_update`.
 
 Local mock tests must still write permission entries. If the mock auto-grants permission, set `result="granted"` and include `mock=true` in the entry details.
@@ -156,9 +158,19 @@ Each `file_manifest.files[]` entry should include:
 | `bytes` | UTF-8 byte length or binary file byte length for every existing/generated file. |
 | `overwrite` | True only with explicit approval. |
 
+Build the final manifest after the final `session_state.upy_gen_driver_plugin.json` update. Prefer `scripts/finalize_phase_complete.py` over hand-written hashes:
+
+```bash
+python scripts/finalize_phase_complete.py --input <draft_phase_complete> --output <session_root>/phase_complete.upy_gen_driver_plugin.json --artifact-root <artifact_root> --session-state <session_root>/session_state.upy_gen_driver_plugin.json
+```
+
+Do not modify files listed in `payload.file_manifest.files[]` after this command. If `session_state` or any artifact changes, rerun the command so `sha256` and `bytes` match disk.
+
 `production_driver` may appear only when real hardware verification passed, when the user explicitly skipped verification and the payload records `verification_skipped_by_user=true` with a warning, or when a local mock success records `verification_mode="mock"` with a warning. Mock verification must not set `hardware_verified=true`. A no-device, timeout, cancellation, or unverified partial result must not label `{chip}.py` as `production_driver`.
 
 If an unverified `{chip}.py` is emitted for inspection, use role `artifact` and UI text such as `Driver artifact (unverified)` or `Unverified driver artifact`. Do not display it as `Production driver (unverified)`.
+
+For unverified partial outcomes, no summary, file manifest description, artifact label, permission reason, or other user-facing text should use `production driver` wording.
 
 The idempotency key for that unverified file write must use `write_driver_artifact`, not `write_production_driver`.
 
@@ -186,6 +198,7 @@ Before emitting `phase_complete`, validate generated Python artifacts without wr
 - Reject I2C duck-typing checks that do not include the exact methods used later.
 - Reject test scripts that use `const(...)` without importing `const` from `micropython` or defining a fallback.
 - Reject `const(...)` calls with non-integer literal arguments. Keep float scale factors as normal variables.
+- Reject `__pycache__` directories and `.pyc` files under `artifact_root`.
 
 ## Structured Errors
 
@@ -213,6 +226,8 @@ Known codes: `MISSING_INPUT_SOURCE`, `SOURCE_PREPROCESS_FAILED`, `SOURCE_PREPROC
 - `manifest_content` when a manifest exists
 
 For every `file_list` artifact, include non-empty `files[]` or `items[]`. Do not emit a placeholder file list with only `title`, `label`, or an empty array.
+
+Write `phase_complete` as the last workflow file. It must not include a self-referential `file_manifest` entry for `phase_complete.upy_gen_driver_plugin.json`; host or an external sidecar may audit that envelope separately.
 
 For `result="partial"`:
 

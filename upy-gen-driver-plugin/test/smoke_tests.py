@@ -275,6 +275,151 @@ def test_validator_rejects_checkpoint_mismatch() -> None:
         assert_ok("session_state.checkpoint must match" in result.stdout, result.stdout)
 
 
+def test_validator_rejects_artifact_hygiene_regressions() -> None:
+    validator = ROOT / "scripts" / "validate_phase_complete.py"
+    with tempfile.TemporaryDirectory() as tmp:
+        session_id = "artifact-hygiene"
+        session_dir = Path(tmp) / "sessions" / session_id
+        driver_dir = session_dir / "project" / "firmware" / "drivers" / "demo_driver"
+        state_path = session_dir / "session_state.upy_gen_driver_plugin.json"
+        driver_path = driver_dir / "demo.py"
+        cache_path = driver_dir / "__pycache__" / "demo.cpython-39.pyc"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        driver_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            json.dumps(
+                {
+                    "protocol_version": "1.0",
+                    "session_id": session_id,
+                    "phase": "upy-gen-driver-plugin",
+                    "domain_phase": "gen-driver",
+                    "status": "partial",
+                    "checkpoint": "hardware_verify_ready",
+                }
+            ),
+            encoding="utf-8",
+        )
+        driver_path.write_text(
+            "from micropython import const\n"
+            "_I2C_ADDR = const(0x1E)\n"
+            "class Demo:\n"
+            "    def __init__(self, i2c):\n"
+            "        self._i2c = i2c\n",
+            encoding="utf-8",
+        )
+        cache_path.write_bytes(b"cache")
+        state_rel = f"sessions/{session_id}/session_state.upy_gen_driver_plugin.json"
+        driver_rel = f"sessions/{session_id}/project/firmware/drivers/demo_driver/demo.py"
+        data = {
+            "protocol_version": "1.0",
+            "msg_id": "msg-artifact-hygiene",
+            "session_id": session_id,
+            "phase": "upy-gen-driver-plugin",
+            "timestamp": "2026-07-04T00:00:00Z",
+            "type": "phase_complete",
+            "idempotency_key": f"upy-gen-driver-plugin:{session_id}:phase_complete:hardware_verify_ready:v1",
+            "retry_of": None,
+            "payload": {
+                "phase": "gen-driver",
+                "domain_phase": "gen-driver",
+                "result": "partial",
+                "summary": "Production driver generated but unverified.",
+                "next_phase": None,
+                "runtime_context": {
+                    "artifact_root": ".",
+                    "session_root": f"sessions/{session_id}",
+                    "project_root": f"sessions/{session_id}/project",
+                    "file_operation_root": f"sessions/{session_id}/project",
+                    "resource_root": "upy-gen-driver-plugin",
+                },
+                "checkpoint": {
+                    "checkpoint_id": f"upy-gen-driver-plugin:{session_id}:hardware_verify_ready",
+                    "resume_phase": "upy-gen-driver-plugin",
+                    "resume_step": "hardware_verify",
+                    "state_file": state_rel,
+                },
+                "permissions": [
+                    {
+                        "permission_id": "write_driver",
+                        "operation": "file_write",
+                        "reason": "Write production driver artifact.",
+                        "target": driver_rel,
+                        "timeout_ms": 30000,
+                        "idempotency_key": f"upy-gen-driver-plugin:{session_id}:write_driver_artifact:demo:v1",
+                        "result": "granted",
+                    }
+                ],
+                "file_manifest": {
+                    "root": ".",
+                    "files": [
+                        {
+                            "path": state_rel,
+                            "status": "created",
+                            "role": "state",
+                            "sha256": hashlib.sha256(state_path.read_bytes()).hexdigest(),
+                            "bytes": state_path.stat().st_size,
+                        },
+                        {
+                            "path": driver_rel,
+                            "status": "created",
+                            "role": "artifact",
+                            "sha256": hashlib.sha256(driver_path.read_bytes()).hexdigest(),
+                            "bytes": driver_path.stat().st_size,
+                            "description": "Production driver (unverified).",
+                        },
+                    ],
+                },
+                "artifacts": [
+                    {
+                        "type": "file_list",
+                        "files": [
+                            {
+                                "path": driver_rel,
+                                "role": "Unverified driver artifact",
+                                "description": "Production driver (unverified).",
+                            }
+                        ],
+                    }
+                ],
+                "warnings": [],
+                "structured_errors": [
+                    {
+                        "code": "HOST_CAPABILITY_MISSING",
+                        "severity": "error",
+                        "phase_step": "hardware_verify",
+                        "retryable": True,
+                        "message": "Missing device command.",
+                        "details": {"missing_capability": "device_command"},
+                        "next_action": "connect_device_and_resume",
+                    }
+                ],
+                "hardware_verified": False,
+                "verification_mode": "none",
+                "manifest_content": None,
+            },
+        }
+        pc_path = session_dir / "phase_complete.upy_gen_driver_plugin.json"
+        pc_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        result = run([
+            sys.executable,
+            str(validator),
+            "--input",
+            str(pc_path),
+            "--artifact-root",
+            tmp,
+            "--session-state",
+            str(state_path),
+        ])
+        assert_ok(result.returncode != 0, f"artifact hygiene regressions should fail: {result.stdout}")
+        assert_ok("session_state.step is required" in result.stdout, result.stdout)
+        assert_ok("session_state.idempotency_key is required" in result.stdout, result.stdout)
+        assert_ok("must use paths[], not target" in result.stdout, result.stdout)
+        assert_ok("paths is required for file_write" in result.stdout, result.stdout)
+        assert_ok("production driver wording" in result.stdout, result.stdout)
+        assert_ok("CPython cache artifact" in result.stdout, result.stdout)
+
+
 def test_validator_rejects_i2c_driver_antipatterns() -> None:
     validator = ROOT / "scripts" / "validate_phase_complete.py"
     with tempfile.TemporaryDirectory() as tmp:
@@ -564,6 +709,132 @@ def test_session_state() -> None:
         assert_ok(result.returncode == 0, result.stdout + result.stderr)
 
 
+def test_finalize_phase_complete_refreshes_state_manifest() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        session_id = "finalize-refresh"
+        session_dir = root / "sessions" / session_id
+        session_dir.mkdir(parents=True, exist_ok=True)
+        state_path = session_dir / "session_state.upy_gen_driver_plugin.json"
+        debug_path = session_dir / "project" / "firmware" / "drivers" / "demo_driver" / "demo_debug.py"
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        debug_path.write_text("print('SELF_TEST_PENDING')\n", encoding="utf-8")
+
+        state_v1 = {
+            "protocol_version": "1.0",
+            "session_id": session_id,
+            "phase": "upy-gen-driver-plugin",
+            "domain_phase": "gen-driver",
+            "status": "partial",
+            "checkpoint": "hardware_verify_ready",
+            "step": "hardware_verify",
+            "idempotency_key": f"upy-gen-driver-plugin:{session_id}:hardware_verify:v1",
+        }
+        state_path.write_text(json.dumps(state_v1, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        state_rel = f"sessions/{session_id}/session_state.upy_gen_driver_plugin.json"
+        debug_rel = f"sessions/{session_id}/project/firmware/drivers/demo_driver/demo_debug.py"
+        stale_state_sha = hashlib.sha256(state_path.read_bytes()).hexdigest()
+        stale_state_bytes = state_path.stat().st_size
+
+        state_v2 = dict(state_v1)
+        state_v2["step"] = "phase_complete_written"
+        state_v2["idempotency_key"] = f"upy-gen-driver-plugin:{session_id}:phase_complete:v1"
+        state_path.write_text(json.dumps(state_v2, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        draft = {
+            "protocol_version": "1.0",
+            "msg_id": "msg-finalize-refresh",
+            "session_id": session_id,
+            "phase": "upy-gen-driver-plugin",
+            "timestamp": "2026-07-04T00:00:00Z",
+            "type": "phase_complete",
+            "idempotency_key": f"upy-gen-driver-plugin:{session_id}:phase_complete:hardware_verify_ready:v1",
+            "retry_of": None,
+            "payload": {
+                "phase": "gen-driver",
+                "domain_phase": "gen-driver",
+                "result": "partial",
+                "summary": "No device.",
+                "next_phase": None,
+                "runtime_context": {
+                    "artifact_root": ".",
+                    "session_root": f"sessions/{session_id}",
+                    "project_root": f"sessions/{session_id}/project",
+                    "file_operation_root": f"sessions/{session_id}/project",
+                    "resource_root": "upy-gen-driver-plugin",
+                },
+                "checkpoint": {
+                    "checkpoint_id": f"upy-gen-driver-plugin:{session_id}:hardware_verify_ready",
+                    "resume_phase": "upy-gen-driver-plugin",
+                    "resume_step": "hardware_verify",
+                    "state_file": state_rel,
+                },
+                "permissions": [],
+                "file_manifest": {
+                    "root": ".",
+                    "files": [
+                        {
+                            "path": state_rel,
+                            "status": "created",
+                            "role": "state",
+                            "sha256": stale_state_sha,
+                            "bytes": stale_state_bytes,
+                        },
+                        {
+                            "path": debug_rel,
+                            "status": "created",
+                            "role": "debug_driver",
+                        },
+                    ],
+                },
+                "artifacts": [
+                    {
+                        "type": "file_list",
+                        "files": [
+                            {"path": state_rel, "status": "created"},
+                            {"path": debug_rel, "status": "created"},
+                        ],
+                    }
+                ],
+                "warnings": [],
+                "structured_errors": [
+                    {
+                        "code": "HOST_CAPABILITY_MISSING",
+                        "severity": "warning",
+                        "phase_step": "hardware_verify",
+                        "retryable": True,
+                        "message": "No device command capability.",
+                        "details": {"missing_capability": "device_command"},
+                        "next_action": "connect_device_and_resume",
+                    }
+                ],
+                "hardware_verified": False,
+                "verification_mode": "none",
+                "manifest_content": None,
+            },
+        }
+        draft_path = session_dir / "phase_complete.upy_gen_driver_plugin.draft.json"
+        output_path = session_dir / "phase_complete.upy_gen_driver_plugin.json"
+        draft_path.write_text(json.dumps(draft, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        result = run([
+            sys.executable,
+            str(ROOT / "scripts" / "finalize_phase_complete.py"),
+            "--input",
+            str(draft_path),
+            "--output",
+            str(output_path),
+            "--artifact-root",
+            str(root),
+            "--session-state",
+            str(state_path),
+        ])
+        assert_ok(result.returncode == 0, result.stdout + result.stderr)
+        finalized = json.loads(output_path.read_text(encoding="utf-8"))
+        state_entry = finalized["payload"]["file_manifest"]["files"][0]
+        assert_ok(state_entry["sha256"] == hashlib.sha256(state_path.read_bytes()).hexdigest(), result.stdout)
+        assert_ok(state_entry["bytes"] == state_path.stat().st_size, result.stdout)
+
+
 def test_convert_arduino() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         src = Path(tmp) / "demo.ino"
@@ -635,9 +906,11 @@ def main() -> int:
         test_validator_rejects_bad_business_states,
         test_validator_rejects_foreign_phase_identity,
         test_validator_rejects_checkpoint_mismatch,
+        test_validator_rejects_artifact_hygiene_regressions,
         test_validator_rejects_i2c_driver_antipatterns,
         test_validator_rejects_python_static_quality_issues,
         test_session_state,
+        test_finalize_phase_complete_refreshes_state_manifest,
         test_convert_arduino,
         test_mock_session,
     ]
