@@ -1,0 +1,192 @@
+{
+  "started_at": "2026-07-05T04:14:16.720883+00:00",
+  "model": "deepseek-chat",
+  "files": {
+    ".skillfish.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "SKILL.md": {
+      "status": "done",
+      "input_hash": "c08312550844d445",
+      "tokens_used": {
+        "input": 5009,
+        "output": 4560
+      },
+      "translated_at": "2026-07-05T04:14:49.869853+00:00"
+    },
+    "boards\\README.md": {
+      "status": "done",
+      "input_hash": "a880583b1c11eeb3",
+      "tokens_used": {
+        "input": 4115,
+        "output": 3669
+      },
+      "translated_at": "2026-07-05T04:15:15.808405+00:00"
+    },
+    "boards\\_template.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "boards\\esp32-c3-devkitm.json": {
+      "status": "done",
+      "input_hash": "addb7dd617cd9e5d",
+      "tokens_used": {
+        "input": 932,
+        "output": 833
+      },
+      "translated_at": "2026-07-05T04:15:21.208337+00:00"
+    },
+    "boards\\esp32-devkit-v1.json": {
+      "status": "done",
+      "input_hash": "52ab7ef55799539b",
+      "tokens_used": {
+        "input": 950,
+        "output": 863
+      },
+      "translated_at": "2026-07-05T04:15:26.666058+00:00"
+    },
+    "boards\\esp32-s3-devkitc.json": {
+      "status": "done",
+      "input_hash": "0f377742c20ec59e",
+      "tokens_used": {
+        "input": 1063,
+        "output": 973
+      },
+      "translated_at": "2026-07-05T04:15:32.828073+00:00"
+    },
+    "boards\\esp8266-nodemcu.json": {
+      "status": "done",
+      "input_hash": "9fb9f50acc3d6efa",
+      "tokens_used": {
+        "input": 903,
+        "output": 814
+      },
+      "translated_at": "2026-07-05T04:15:38.678785+00:00"
+    },
+    "boards\\m5stack-core.json": {
+      "status": "done",
+      "input_hash": "4ab7013cb7eb4027",
+      "tokens_used": {
+        "input": 2017,
+        "output": 1906
+      },
+      "translated_at": "2026-07-05T04:15:49.612191+00:00"
+    },
+    "boards\\matching-rules.json": {
+      "status": "done",
+      "input_hash": "80feea62e8a9427d",
+      "tokens_used": {
+        "input": 760,
+        "output": 648
+      },
+      "translated_at": "2026-07-05T04:15:54.003487+00:00"
+    },
+    "boards\\raspberry-pi-pico-w.json": {
+      "status": "done",
+      "input_hash": "f69f86ce463db92d",
+      "tokens_used": {
+        "input": 1401,
+        "output": 1307
+      },
+      "translated_at": "2026-07-05T04:16:03.607238+00:00"
+    },
+    "boards\\raspberry-pi-pico.json": {
+      "status": "done",
+      "input_hash": "0c74107776b413c5",
+      "tokens_used": {
+        "input": 1326,
+        "output": 1232
+      },
+      "translated_at": "2026-07-05T04:16:11.312693+00:00"
+    },
+    "mock-messages\\analyze\\approval_request.device_confirm.json": {
+      "status": "done",
+      "input_hash": "a89fabfe82273cc2",
+      "tokens_used": {
+        "input": 490,
+        "output": 403
+      },
+      "translated_at": "2026-07-05T04:16:14.514166+00:00"
+    },
+    "mock-messages\\analyze\\approval_response.device_confirm.confirm.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "mock-messages\\analyze\\phase_complete.failed.validation.json": {
+      "status": "done",
+      "input_hash": "ef30f9472e263e83",
+      "tokens_used": {
+        "input": 611,
+        "output": 519
+      },
+      "translated_at": "2026-07-05T04:16:18.168319+00:00"
+    },
+    "mock-messages\\analyze\\phase_complete.partial.cancelled.json": {
+      "status": "done",
+      "input_hash": "b94da4345cb57b7e",
+      "tokens_used": {
+        "input": 729,
+        "output": 643
+      },
+      "translated_at": "2026-07-05T04:16:22.466318+00:00"
+    },
+    "mock-messages\\analyze\\phase_complete.success.json": {
+      "status": "done",
+      "input_hash": "c9214603a2bd1b33",
+      "tokens_used": {
+        "input": 1134,
+        "output": 1041
+      },
+      "translated_at": "2026-07-05T04:16:28.820011+00:00"
+    },
+    "mock-messages\\analyze\\script_result.init_manifest.ok.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "mock-messages\\analyze\\script_run.init_manifest.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "mock-messages\\analyze\\start_phase.beginner.json": {
+      "status": "done",
+      "input_hash": "2aa85f875e6ceab6",
+      "tokens_used": {
+        "input": 273,
+        "output": 181
+      },
+      "translated_at": "2026-07-05T04:16:30.669645+00:00"
+    },
+    "references\\v0-protocol.md": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "templates\\artifact.file_list.json": {
+      "status": "done",
+      "input_hash": "dea0abb0d8d21fc6",
+      "tokens_used": {
+        "input": 329,
+        "output": 233
+      },
+      "translated_at": "2026-07-05T04:16:32.829720+00:00"
+    },
+    "templates\\checkpoint.json": {
+      "status": "done",
+      "input_hash": "287aaf130c12b950",
+      "tokens_used": {
+        "input": 174,
+        "output": 79
+      },
+      "translated_at": "2026-07-05T04:16:34.156872+00:00"
+    },
+    "templates\\envelope.phase_complete.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    },
+    "templates\\structured_error.json": {
+      "status": "skipped",
+      "reason": "CN ratio 0.0%"
+    }
+  },
+  "backend": "deepseek"
+}

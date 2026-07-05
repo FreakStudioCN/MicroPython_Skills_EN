@@ -1,0 +1,69 @@
+{
+  "id": "esp32-c3-devkitm",
+  "display_name": "ESP32-C3-DevKitM-1",
+  "mcu": "ESP32-C3-MINI-1",
+  "chip_family": "esp32c3",
+  "firmware": {
+    "url": "https://micropython.org/download/ESP32_GENERIC_C3/",
+    "port": "esp32",
+    "board_name": "ESP32_GENERIC_C3",
+    "latest_version": "1.24.1"
+  },
+  "specs": {
+    "flash_mb": 4,
+    "psram_mb": 0,
+    "gpio": 22,
+    "adc": 6,
+    "dac": 0,
+    "i2c": 1,
+    "spi": 2,
+    "uart": 2,
+    "pwm": 6,
+    "touch": 0,
+    "wifi": true,
+    "ble": true,
+    "usb_otg": false
+  },
+  "typical_use_cases": ["Low-power sensors", "Battery-powered", "Wearables", "Simple IoT nodes"],
+  "beginner_friendly": false,
+  "price_yuan": 15,
+  "notes": "RISC-V core, ultra-low power, low price. Only 1 hardware I2C; multiple I2C devices require software I2C (bitbang)",
+
+  "onboard_peripherals": [
+    {
+      "name": "LED",
+      "type": "led",
+      "interface": "GPIO",
+      "occupied_pins": { "led": 8 },
+      "always_used": false,
+      "notes": "Onboard indicator LED. Most projects don't need to control it; GPIO8 can be freed"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "flexible",
+    "default_bus_pins": {
+      "i2c0": { "sda": 5, "scl": 6 },
+      "spi0": { "mosi": 7, "miso": 2, "clk": 6, "cs": 10 },
+      "uart0": { "tx": 21, "rx": 20 },
+      "uart1": { "tx": 18, "rx": 19 }
+    },
+    "restricted_gpio": {
+      "input_only": [],
+      "strapping": [2, 8, 9],
+      "flash_psram_occupied": [12, 13, 14, 15, 16, 17],
+      "adc2_wifi_conflict": [0, 1, 2, 3, 4, 5],
+      "usb_serial_pins": [18, 19]
+    },
+    "pin_options": {},
+    "notes": [
+      "All I2C/SPI/UART can be remapped via GPIO Matrix (simpler than ESP32, no input_only pins)",
+      "GPIO 2/8/9 are strapping pins; their level at startup affects the operating mode",
+      "GPIO 8 is also the onboard LED; caution needed when used as strapping",
+      "GPIO 12-17 are occupied by internal Flash and cannot be used externally",
+      "GPIO 18/19 are USB serial pins; cannot be repurposed when using USB serial",
+      "Only 1 hardware I2C controller. When connecting multiple I2C devices, they can share the same bus if addresses don't conflict; if addresses conflict, use machine.SoftI2C to emulate on other GPIOs (any free GPIO works)",
+      "RISC-V core; some MicroPython libraries may be less mature than Xtensa (ESP32)"
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "id": "raspberry-pi-pico-w",
+  "display_name": "Raspberry Pi Pico W",
+  "mcu": "RP2040 + CYW43439",
+  "chip_family": "rp2",
+  "firmware": {
+    "url": "https://micropython.org/download/RPI_PICO_W/",
+    "port": "rp2",
+    "board_name": "RPI_PICO_W",
+    "latest_version": "1.24.1"
+  },
+  "specs": {
+    "flash_mb": 2,
+    "psram_mb": 0,
+    "gpio": 26,
+    "adc": 3,
+    "dac": 0,
+    "i2c": 2,
+    "spi": 2,
+    "uart": 2,
+    "pwm": 16,
+    "touch": 0,
+    "wifi": true,
+    "ble": true,
+    "usb_otg": false
+  },
+  "typical_use_cases": ["IoT", "WiFi sensors", "Smart home", "Remote monitoring"],
+  "beginner_friendly": true,
+  "price_yuan": 35,
+  "notes": "Pico with WiFi/BLE, one of the most cost-effective networking solutions",
+
+  "onboard_peripherals": [
+    {
+      "name": "WiFi chip (CYW43439)",
+      "type": "wifi_module",
+      "interface": "SPI",
+      "occupied_pins": {
+        "spi_clk": 24,
+        "spi_cs": 25,
+        "spi_data_out": 23,
+        "wake": 23,
+        "irq": 24
+      },
+      "always_used": true,
+      "notes": "WiFi/BLE module connected via internal SPI. GPIO 23/24/25 are not available to the user"
+    },
+    {
+      "name": "LED",
+      "type": "led",
+      "interface": "GPIO",
+      "occupied_pins": {},
+      "always_used": false,
+      "notes": "The onboard LED is controlled by the WiFi chip (not RP2040 GPIO). Control via `from machine import Pin; Pin('LED', Pin.OUT)`, does not occupy RP2040 GPIO"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "fixed",
+    "default_bus_pins": {
+      "i2c0": { "sda": 4, "scl": 5 },
+      "i2c1": { "sda": 2, "scl": 3 },
+      "spi0": { "mosi": 3, "miso": 0, "clk": 2, "cs": 1 },
+      "spi1": { "mosi": 11, "miso": 8, "clk": 10, "cs": 9 },
+      "uart0": { "tx": 0, "rx": 1 },
+      "uart1": { "tx": 4, "rx": 5 }
+    },
+    "restricted_gpio": {
+      "adc_only": [26, 27, 28],
+      "wifi_chip_occupied": [23, 24, 25]
+    },
+    "pin_options": {
+      "i2c0_sda": [0, 4, 8, 12, 16, 20],
+      "i2c0_scl": [1, 5, 9, 13, 17, 21],
+      "i2c1_sda": [2, 6, 10, 14, 18, 26],
+      "i2c1_scl": [3, 7, 11, 15, 19, 27],
+      "spi0_mosi": [3, 7, 11, 15, 19],
+      "spi0_miso": [0, 4, 8, 12, 16, 20],
+      "spi0_clk":  [2, 6, 10, 14, 18, 22],
+      "spi0_cs":   [1, 5, 9, 13, 17, 21],
+      "spi1_mosi": [11, 15, 19, 27],
+      "spi1_miso": [8, 12, 16, 20],
+      "spi1_clk":  [10, 14, 18, 22, 26],
+      "spi1_cs":   [9, 13, 17, 21],
+      "uart0_tx":  [0, 12, 16, 28],
+      "uart0_rx":  [1, 13, 17, 29],
+      "uart1_tx":  [4, 8, 20],
+      "uart1_rx":  [5, 9, 21]
+    },
+    "notes": [
+      "RP2040 peripherals are fixed to GPIO pins. Each function can only be selected from the set of pins listed in pin_options",
+      "GPIO 23/24/25 are occupied by the WiFi chip (CYW43439) and completely unavailable",
+      "GPIO 29 has a special purpose (VSYS voltage monitoring or ADC) and is generally not used for peripherals",
+      "The onboard LED is controlled internally via the WiFi chip, use `machine.Pin('LED', ...)` to operate, does not occupy RP2040 pins",
+      "I2C0 (GPIO4/5) is the default I2C, be careful not to conflict with UART1 (TX=4/RX=5)",
+      "For WiFi-related code, use `import network; wlan = network.WLAN(network.STA_IF)` instead of the ESP32 approach"
+    ]
+  }
+}

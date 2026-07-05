@@ -1,0 +1,152 @@
+{
+  "id": "m5stack-core",
+  "display_name": "M5Stack Core (ESP32)",
+  "mcu": "ESP32-D0WDQ6",
+  "chip_family": "esp32",
+  "firmware": {
+    "url": "https://micropython.org/download/M5STACK_ATOM/",
+    "port": "esp32",
+    "board_name": "M5STACK_ATOM",
+    "latest_version": "1.24.1"
+  },
+  "specs": {
+    "flash_mb": 16,
+    "psram_mb": 0,
+    "gpio": 16,
+    "adc": 2,
+    "dac": 0,
+    "i2c": 1,
+    "spi": 1,
+    "uart": 1,
+    "pwm": 8,
+    "touch": 0,
+    "wifi": true,
+    "ble": true,
+    "usb_otg": false
+  },
+  "typical_use_cases": ["Rapid prototyping", "Display projects", "Portable devices", "Educational demonstrations"],
+  "beginner_friendly": true,
+  "price_yuan": 120,
+  "notes": "Integrated 2-inch color screen + 3 buttons + battery management + magnetic shell, ready to use out of the box. Few GPIO pins exposed, limited expandability",
+
+  "onboard_peripherals": [
+    {
+      "name": "ILI9342C LCD",
+      "type": "display",
+      "interface": "SPI",
+      "occupied_pins": {
+        "mosi": 23,
+        "miso": 38,
+        "clk": 18,
+        "cs": 5,
+        "dc": 15,
+        "rst": -1,
+        "backlight": -1
+      },
+      "driver": {
+        "source": "upypi",
+        "package_name": "ili934x-mpy",
+        "url": "https://upypi.net/pkgs/ili934x-mpy/",
+        "install_cmd": "mpremote mip install https://upypi.net/pkgs/ili934x-mpy/latest/package.json"
+      },
+      "always_used": true,
+      "notes": "320x240, 2.0 inch TFT. SPI bus is always occupied (only hardware SPI). rst=-1 means controlled by ESP32 RST pin, no GPIO occupied; backlight=-1 means always on by default, no GPIO occupied"
+    },
+    {
+      "name": "MPU6886 IMU",
+      "type": "imu",
+      "interface": "I2C",
+      "occupied_pins": { "sda": 21, "scl": 22 },
+      "i2c_addr": "0x68",
+      "driver": {
+        "source": "upypi",
+        "package_name": "mpu6886-mpy",
+        "url": "https://upypi.net/pkgs/mpu6886-mpy/",
+        "install_cmd": "mpremote mip install https://upypi.net/pkgs/mpu6886-mpy/latest/package.json"
+      },
+      "always_used": true,
+      "notes": "6-axis gyroscope + accelerometer. Always on the I2C bus"
+    },
+    {
+      "name": "3 Buttons",
+      "type": "button",
+      "interface": "GPIO",
+      "occupied_pins": {
+        "btn_a": 39,
+        "btn_b": 38,
+        "btn_c": 37
+      },
+      "always_used": true,
+      "notes": "3 physical buttons. GPIO 37/38/39 are input-only without pull-down, need `Pin(37, Pin.IN, Pin.PULL_UP)` in code"
+    },
+    {
+      "name": "I2S Speaker",
+      "type": "speaker",
+      "interface": "I2S",
+      "occupied_pins": { "data": 25 },
+      "always_used": false,
+      "notes": "Onboard speaker. GPIO25 can be released when not in use"
+    },
+    {
+      "name": "TF Card Slot",
+      "type": "storage",
+      "interface": "SPI",
+      "occupied_pins": { "cs": 4, "mosi": 23, "miso": 19, "clk": 18 },
+      "always_used": false,
+      "notes": "TF card slot shares the SPI bus (MOSI/CLK shared with LCD), only additionally occupies CS=GPIO4. Release GPIO4 when TF card is not used"
+    },
+    {
+      "name": "Power Management IC (IP5306)",
+      "type": "power_mgmt",
+      "interface": "I2C",
+      "occupied_pins": { "sda": 21, "scl": 22 },
+      "i2c_addr": "0x75",
+      "always_used": true,
+      "notes": "I2C shared bus with MPU6886, address 0x75. Manages battery charging and discharging"
+    },
+    {
+      "name": "USB-to-UART (CP2104)",
+      "type": "usb_uart",
+      "interface": "UART",
+      "occupied_pins": { "tx": 1, "rx": 3 },
+      "always_used": true,
+      "notes": "USB serial chip, connected to GPIO1/3. UART0 is occupied"
+    }
+  ],
+
+  "pin_layout": {
+    "model": "flexible",
+    "default_bus_pins": {
+      "i2c0": { "sda": 21, "scl": 22 },
+      "spi0": { "mosi": 23, "miso": 19, "clk": 18, "cs": -1 },
+      "uart0": { "tx": 1, "rx": 3 }
+    },
+    "restricted_gpio": {
+      "input_only": [34, 35, 36, 39],
+      "strapping": [0, 2, 5, 12, 15],
+      "flash_psram_occupied": [6, 7, 8, 9, 10, 11],
+      "adc2_wifi_conflict": [],
+      "onboard_occupied": [
+        1, 3, 4, 5, 12, 15, 18, 19, 21, 22, 23, 25, 37, 38, 39
+      ]
+    },
+    "pin_options": {},
+    "notes": [
+      "GPIO Matrix allows soft remapping, but hardware bus resources are extremely limited:",
+      "  - I2C: Onboard already occupies SDA=21/SCL=22 (shared by MPU6886 + IP5306)",
+      "    If connecting external I2C sensors, they can share the bus if addresses don't conflict; otherwise use SoftI2C on other GPIOs",
+      "  - SPI: Onboard already occupies MOSI=23/CLK=18, MISO can be 19 or 38 (LCD uses 38, TF card uses 19, sharing MOSI/CLK)",
+      "    If connecting external SPI devices, CS can be any free GPIO, other pins share the bus with onboard peripherals",
+      "  - UART: Only UART0 (TX=1/RX=3), already occupied by USB serial chip",
+      "    If needing external UART devices, use SoftUART on other GPIOs",
+      "Available GPIOs (approximately 10):",
+      "  - GPIO 0/2/4/12/13/14/15/16/17/19/25/26/27/32/33/34/35/36/37/38/39",
+      "  - Among them, 0/2/12/15 are strapping pins, use with caution",
+      "  - Among them, 34/35/36/39 are input-only",
+      "  - Among them, 37/38/39 are occupied by buttons (input-only + buttons), effectively unusable",
+      "  - Among them, 25 is occupied by I2S speaker (always_used=false, can be released)",
+      "  - Among them, 4 is occupied by TF card CS (always_used=false, can be released)",
+      "Actually available GPIOs: 0, 2, 13, 14, 16, 17, 26, 27, 32, 33"
+    ]
+  }
+}
