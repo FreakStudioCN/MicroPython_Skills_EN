@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,7 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, text=True, capture_output=True, check=False)
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, text=True, capture_output=True, check=False, env=env)
 
 
 def assert_ok(condition: bool, message: str) -> None:
@@ -122,6 +125,24 @@ def test_validator_rejects_bad_business_states() -> None:
     missing_capability_without_detail["payload"]["structured_errors"][0]["code"] = "HOST_CAPABILITY_MISSING"
     missing_capability_without_detail["payload"]["structured_errors"][0]["details"] = {}
     expect_invalid(missing_capability_without_detail, "details.missing_capability is required")
+
+    no_device_without_device_action = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    no_device_without_device_action["payload"]["permissions"] = [
+        item for item in no_device_without_device_action["payload"]["permissions"] if item.get("operation") != "device_scan"
+    ]
+    expect_invalid(no_device_without_device_action, "DEVICE_NOT_FOUND requires a device_scan or device_run permission entry")
+
+    garbled_summary = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    garbled_summary["payload"]["summary"] = "Hardware verification pending бк no device available."
+    expect_invalid(garbled_summary, "encoding artifact")
+
+    mojibake_description = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    mojibake_description["payload"]["file_manifest"]["files"][0]["description"] = "Driver artifacts â€” pending verification."
+    expect_invalid(mojibake_description, "encoding artifact")
+
+    smart_punctuation = json.loads((ROOT / "sample" / "phase_complete.upy_gen_driver_plugin.partial.no_device.json").read_text(encoding="utf-8"))
+    smart_punctuation["payload"]["summary"] = "Hardware verification pending — no device available."
+    expect_invalid(smart_punctuation, "encoding artifact")
 
 
 def test_validator_rejects_foreign_phase_identity() -> None:

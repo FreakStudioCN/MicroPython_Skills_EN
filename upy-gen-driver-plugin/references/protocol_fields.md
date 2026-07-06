@@ -51,7 +51,7 @@ Required fields: `artifact_root`, `session_root`, `project_root`, `file_operatio
 
 Start every run by checking required capabilities for the selected mode. Do not defer a missing required capability until after files have been generated unless the capability is optional for the current path.
 
-Use `HOST_CAPABILITY_MISSING` when a required host capability is absent, and record `details.missing_capability`. Use `DEVICE_NOT_FOUND` only after device scan/run capability exists, permission was granted, and the scan/run actually failed to find the target device.
+Use `HOST_CAPABILITY_MISSING` when a required host capability is absent, and record `details.missing_capability`. Use `DEVICE_NOT_FOUND` only after device scan/run capability exists, permission was granted, and the scan/run actually failed to find the target device. A `DEVICE_NOT_FOUND` result must have at least one `payload.permissions[]` entry with `operation="device_scan"` or `operation="device_run"`.
 
 ## Checkpoints
 
@@ -101,6 +101,8 @@ For `file_read`, `file_write`, and `manifest_update`, `paths[]` is required. Do 
 Operations: `file_read`, `file_write`, `script_run`, `device_scan`, `device_run`, `network_fetch`, `manifest_update`.
 
 Local mock tests must still write permission entries. If the mock auto-grants permission, set `result="granted"` and include `mock=true` in the entry details.
+
+All user-facing protocol text fields (`summary`, `description`, `label`, `title`, `message`, `reason`, and similar fields) must be UTF-8 clean. Reject replacement characters, mojibake sequences, C1 control characters, smart punctuation, and isolated foreign-script fragments in otherwise English/Chinese protocol text. Use ASCII punctuation for generated protocol strings.
 
 Example:
 
