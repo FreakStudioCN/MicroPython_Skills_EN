@@ -1,59 +1,5 @@
 [
   {
-    "official_slug": "PYBD_SF2",
-    "source_url": "https://store.micropython.org/media/products/PYBD_SF2_W4F2_ds2.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBD_SF2__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "296544",
-    "error": ""
-  },
-  {
-    "official_slug": "PYBD_SF3",
-    "source_url": "https://store.micropython.org/media/products/PYBD_SF3_W4F2_ds2.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBD_SF3__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "296193",
-    "error": ""
-  },
-  {
-    "official_slug": "PYBD_SF6",
-    "source_url": "https://store.micropython.org/media/products/PYBD_SF6_W4F2_ds2.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBD_SF6__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "296410",
-    "error": ""
-  },
-  {
-    "official_slug": "PYBLITEV10",
-    "source_url": "https://store.micropython.org/media/products/PYBLITEv1_0-D.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBLITEV10__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "372337",
-    "error": ""
-  },
-  {
-    "official_slug": "PYBV10",
-    "source_url": "http://micropython.org/resources/pybv11-pinout.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBV10__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "398180",
-    "error": ""
-  },
-  {
-    "official_slug": "PYBV11",
-    "source_url": "https://store.micropython.org/media/products/PYBv1_1-E.jpg",
-    "local_file": "pinout_images_2026-07-13\\PYBV11__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "398180",
-    "error": ""
-  },
-  {
     "official_slug": "ACTINIUS_ICARUS",
     "source_url": "https://docs.actinius.com/assets/images/icarus-external-pins-e99a66b22b6791aa92476c0c795ec4ab.png",
     "local_file": "pinout_images_2026-07-13\\ACTINIUS_ICARUS__pinout.png",
@@ -95,16 +41,7 @@
     "local_file": "pinout_images_2026-07-13\\ADAFRUIT_FEATHER_RP2350__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "476279",
-    "error": ""
-  },
-  {
-    "official_slug": "FEATHER52",
-    "source_url": "https://cdn-blog.adafruit.com/uploads/2021/05/feather-nrf-pins.png",
-    "local_file": "pinout_images_2026-07-13\\FEATHER52__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "181977",
+    "bytes_written": "444893",
     "error": ""
   },
   {
@@ -162,21 +99,21 @@
     "error": ""
   },
   {
-    "official_slug": "ADAFRUIT_QTPY_SAMD21",
-    "source_url": "https://cdn-learn.adafruit.com/assets/assets/000/110/643/medium800/adafruit_products_Adafruit_QT_Py_SAMD21_pinout.png?1649443234",
-    "local_file": "pinout_images_2026-07-13\\ADAFRUIT_QTPY_SAMD21__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "122822",
-    "error": ""
-  },
-  {
     "official_slug": "ADAFRUIT_QTPY_RP2040",
     "source_url": "https://cdn-learn.adafruit.com/assets/assets/000/107/201/medium800/adafruit_products_qtpy-rp2040-pins.png?1639162512",
     "local_file": "pinout_images_2026-07-13\\ADAFRUIT_QTPY_RP2040__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
     "bytes_written": "154987",
+    "error": ""
+  },
+  {
+    "official_slug": "ADAFRUIT_QTPY_SAMD21",
+    "source_url": "https://cdn-learn.adafruit.com/assets/assets/000/110/643/medium800/adafruit_products_Adafruit_QT_Py_SAMD21_pinout.png?1649443234",
+    "local_file": "pinout_images_2026-07-13\\ADAFRUIT_QTPY_SAMD21__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "122822",
     "error": ""
   },
   {
@@ -270,12 +207,12 @@
     "error": "GitHub tree/page URL"
   },
   {
-    "official_slug": "MICROBIT",
-    "source_url": "https://cdn.makecode.com/blob/aa0ba7aee33f0b9260c0b0f5df3a4eb4d60534e0/static/mb/device/pins-v1-v2.png",
-    "local_file": "pinout_images_2026-07-13\\MICROBIT__pinout.png",
+    "official_slug": "B_L475E_IOT01A",
+    "source_url": "https://docs.neqto.com/images/b-l4s5i-iot01a_hw_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\B_L475E_IOT01A__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "164650",
+    "bytes_written": "674871",
     "error": ""
   },
   {
@@ -378,21 +315,66 @@
     "error": ""
   },
   {
+    "official_slug": "EVK_NINA_B1",
+    "source_url": "https://os.mbed.com/media/uploads/andreaslarsson/evk_nina_b1-pin-out_big_IX5AOPu.png",
+    "local_file": "pinout_images_2026-07-13\\EVK_NINA_B1__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "552958",
+    "error": ""
+  },
+  {
+    "official_slug": "FEATHER52",
+    "source_url": "https://cdn-blog.adafruit.com/uploads/2021/05/feather-nrf-pins.png",
+    "local_file": "pinout_images_2026-07-13\\FEATHER52__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "181977",
+    "error": ""
+  },
+  {
+    "official_slug": "GARATRONIC_NADHAT_F405",
+    "source_url": "https://shop.mchobby.be/img/cms/catalogue/HAT-NADHAT-PYB405/PYB405-GPIO-pinout.png",
+    "local_file": "",
+    "status": "failed",
+    "content_type": "",
+    "bytes_written": "0",
+    "error": "URL error: [Errno 2] No such file or directory"
+  },
+  {
+    "official_slug": "GARATRONIC_PYBSTICK26_ESP32C3",
+    "source_url": "https://github.com/mchobby/pyboard-driver/raw/master/PYBStick-ESP32-C3/docs/_static/PYBStick-ESP32-C3.jpg",
+    "local_file": "pinout_images_2026-07-13\\GARATRONIC_PYBSTICK26_ESP32C3__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "271623",
+    "error": ""
+  },
+  {
+    "official_slug": "GARATRONIC_PYBSTICK26_F411",
+    "source_url": "https://github.com/mchobby/pyboard-driver/raw/master/PYBStick/docs/_static/PYBStick-STD-26.jpg",
+    "local_file": "pinout_images_2026-07-13\\GARATRONIC_PYBSTICK26_F411__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "362418",
+    "error": ""
+  },
+  {
+    "official_slug": "GARATRONIC_PYBSTICK26_RP2040",
+    "source_url": "https://github.com/micropython/micropython/tree/master/ports/rp2/boards/GARATRONIC_PYBSTICK26_RP2040",
+    "local_file": "",
+    "status": "skipped_non_file_url",
+    "content_type": "",
+    "bytes_written": "0",
+    "error": "GitHub tree/page URL"
+  },
+  {
     "official_slug": "HYDRABUS",
     "source_url": "https://hydrabus.com/wp-content/uploads/2024/01/HydraBus_1_0_HydraFW_Default_PinAssignment_A4.pdf",
     "local_file": "pinout_images_2026-07-13\\HYDRABUS__pinout.pdf",
     "status": "downloaded",
     "content_type": "application/pdf",
     "bytes_written": "483091",
-    "error": ""
-  },
-  {
-    "official_slug": "BLUEIO_TAG_EVIM",
-    "source_url": "https://1.bp.blogspot.com/-rAv9tTM-rNY/XgZ8b52uTqI/AAAAAAAAAiA/1AcnV6J4gzYX5dI_liSt2Ich4epdj8pwgCLcBGAsYHQ/s1600/BLUEIO-TAG-EVIM_Features_Top.png",
-    "local_file": "pinout_images_2026-07-13\\BLUEIO_TAG_EVIM__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "461359",
     "error": ""
   },
   {
@@ -423,6 +405,33 @@
     "error": ""
   },
   {
+    "official_slug": "LOLIN_C3_MINI",
+    "source_url": "https://www.wemos.cc/en/latest/_images/c3_mini_v2.1.0_4_16x9.png",
+    "local_file": "pinout_images_2026-07-13\\LOLIN_C3_MINI__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "125416",
+    "error": ""
+  },
+  {
+    "official_slug": "LOLIN_S2_MINI",
+    "source_url": "https://www.studiopieters.nl/wp-content/uploads/2025/06/S2-MINI_full.svg",
+    "local_file": "pinout_images_2026-07-13\\LOLIN_S2_MINI__pinout.svg",
+    "status": "downloaded",
+    "content_type": "image/svg+xml",
+    "bytes_written": "638846",
+    "error": ""
+  },
+  {
+    "official_slug": "LOLIN_S2_PICO",
+    "source_url": "https://www.wemos.cc/en/latest/_images/s2_pico_v1.0.0_4_16x9.png",
+    "local_file": "pinout_images_2026-07-13\\LOLIN_S2_PICO__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "69392",
+    "error": ""
+  },
+  {
     "official_slug": "M5STACK_ATOM",
     "source_url": "https://storage.ko-fi.com/cdn/useruploads/display/a71687f2-634e-42da-9eb0-dff71775c3cc_polykb-atom-pinout.png",
     "local_file": "pinout_images_2026-07-13\\M5STACK_ATOM__pinout.webp",
@@ -441,6 +450,15 @@
     "error": ""
   },
   {
+    "official_slug": "MACHDYNE_WERKZEUG",
+    "source_url": "https://machdyne.com/wp-content/uploads/2022/07/werkzeug_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\MACHDYNE_WERKZEUG__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "954324",
+    "error": ""
+  },
+  {
     "official_slug": "MAKERDIARY_RT1011_NANO_KIT",
     "source_url": "https://wiki.makerdiary.com/imxrt1011-nanokit/assets/images/imxrt1011-nanokit-pinout_reva.png",
     "local_file": "pinout_images_2026-07-13\\MAKERDIARY_RT1011_NANO_KIT__pinout.png",
@@ -450,30 +468,12 @@
     "error": ""
   },
   {
-    "official_slug": "NRF52840_MDK_USB_DONGLE",
-    "source_url": "https://wiki.makerdiary.com/nrf52840-mdk-usb-dongle/assets/images/nrf52840-mdk-usb-dongle-pinout.png",
-    "local_file": "pinout_images_2026-07-13\\NRF52840_MDK_USB_DONGLE__pinout.png",
+    "official_slug": "MICROBIT",
+    "source_url": "https://cdn.makecode.com/blob/aa0ba7aee33f0b9260c0b0f5df3a4eb4d60534e0/static/mb/device/pins-v1-v2.png",
+    "local_file": "pinout_images_2026-07-13\\MICROBIT__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "349867",
-    "error": ""
-  },
-  {
-    "official_slug": "GARATRONIC_PYBSTICK26_RP2040",
-    "source_url": "https://github.com/micropython/micropython/tree/master/ports/rp2/boards/GARATRONIC_PYBSTICK26_RP2040",
-    "local_file": "",
-    "status": "skipped_non_file_url",
-    "content_type": "",
-    "bytes_written": "0",
-    "error": "GitHub tree/page URL"
-  },
-  {
-    "official_slug": "MINISAM_M4",
-    "source_url": "https://i0.wp.com/minifigboards.com/wp-content/uploads/2022/11/Mini_SAM_M4_Pinout_720x.webp?resize=720%2C556&ssl=1",
-    "local_file": "pinout_images_2026-07-13\\MINISAM_M4__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "78600",
+    "bytes_written": "164650",
     "error": ""
   },
   {
@@ -486,6 +486,15 @@
     "error": ""
   },
   {
+    "official_slug": "MINISAM_M4",
+    "source_url": "https://i0.wp.com/minifigboards.com/wp-content/uploads/2022/11/Mini_SAM_M4_Pinout_720x.webp?resize=720%2C556&ssl=1",
+    "local_file": "pinout_images_2026-07-13\\MINISAM_M4__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "78600",
+    "error": ""
+  },
+  {
     "official_slug": "NETDUINO_PLUS_2",
     "source_url": "https://github.com/micropython/micropython/tree/master/ports/stm32/boards/NETDUINO_PLUS_2",
     "local_file": "",
@@ -493,6 +502,618 @@
     "content_type": "",
     "bytes_written": "0",
     "error": "GitHub tree/page URL"
+  },
+  {
+    "official_slug": "NRF52840_MDK_USB_DONGLE",
+    "source_url": "https://wiki.makerdiary.com/nrf52840-mdk-usb-dongle/assets/images/nrf52840-mdk-usb-dongle-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\NRF52840_MDK_USB_DONGLE__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "349867",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F091RC",
+    "source_url": "https://raw.githubusercontent.com/wiki/RIOT-OS/RIOT/images/nucleo-f091_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F091RC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "96135",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F401RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_f401re_2017_9_19_arduino_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F401RE__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "983554",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F401RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_f401re_2017_9_19_arduino_right.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F401RE__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "881094",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F401RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_f401re_2017_9_19_morpho_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F401RE__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "745080",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F401RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_f401re_2017_9_19_morpho_right.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F401RE__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "615339",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F411RE",
+    "source_url": "https://dcc-ex.com/_images/nucleo-f411re-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F411RE__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "87784",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F412ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f412zg_morpho_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F412ZG__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "468416",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F412ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f412zg_morpho_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F412ZG__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "393828",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F412ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f412zg_zio_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F412ZG__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "509413",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F412ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f412zg_zio_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F412ZG__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "426666",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F413ZH",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f413zh_morpho_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F413ZH__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "468057",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F413ZH",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f413zh_morpho_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F413ZH__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "402226",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F413ZH",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f413zh_zio_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F413ZH__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "505991",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F413ZH",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f413zh_zio_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F413ZH__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "433820",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F429ZI",
+    "source_url": "https://dcc-ex.com/_images/nucleo-F429ZI-FZ439ZI-pins.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F429ZI__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "435232",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F439ZI",
+    "source_url": "https://dcc-ex.com/_images/nucleo-F429ZI-FZ439ZI-pins.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F439ZI__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "435232",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F446RE",
+    "source_url": "https://www.bdtronics.com/media/catalog/product/cache/a6f25b39b1e74690356d764802d043a7/s/t/stm32-nucleo-f446re-stm32f446ret6-development-board-pinout.webp",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F446RE__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "173654",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F746ZG",
+    "source_url": "https://www.researchgate.net/profile/Mohsen-Fallah-3/publication/354022135/figure/fig10/AS:1059909651140610@1629713561984/Hardware-layout-and-configuration-for-the-STM32-NUCLEO-board.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F746ZG__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "108964",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F767ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f767zi_morpho_left_2020_3_30.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F767ZI__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "470034",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F767ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f767zi_morpho_right_2020_3_30.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F767ZI__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "405945",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F767ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f767zi_zio_left_2020_3_30.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F767ZI__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "511768",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_F767ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f767zi_zio_right_2020_3_30.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_F767ZI__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "431061",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_G0B1RE",
+    "source_url": "https://preview.redd.it/nucleo-g0b1re-pinout-diagram-v0-dg9664tat6ke1.png?width=1184&format=png&auto=webp&s=cd4dd3cd48b6e7921a149a6221d2a7e7fbf85ada",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_G0B1RE__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "77018",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_G474RE",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_g474re_2020_9_10_arduino_left.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_G474RE__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "158024",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_G474RE",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_g474re_2020_9_10_arduino_right.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_G474RE__pinout_2.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "219929",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_G474RE",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_g474re_2020_9_10_morpho_left.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_G474RE__pinout_3.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "234762",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_G474RE",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_g474re_2020_9_10_morpho_right.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_G474RE__pinout_4.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "276586",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_morpho_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "469552",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_morpho_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "408313",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_zio_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "510954",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_zio_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "431476",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI2",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi2_morpho_left_2019_10_9.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI2__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "469554",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI2",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi2_morpho_right_2019_10_9.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI2__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "408679",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI2",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi2_zio_left_2019_10_9.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI2__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "510700",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H743ZI2",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi2_zio_right_2019_10_9.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H743ZI2__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "433662",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H753ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_morpho_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H753ZI__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "469552",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H753ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_morpho_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H753ZI__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "408313",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H753ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_zio_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H753ZI__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "510954",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H753ZI",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h743zi_zio_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H753ZI__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "431476",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H7A3ZI_Q",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h7a3zi_q_zio_left_2022_6_9.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H7A3ZI_Q__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "501725",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_H7A3ZI_Q",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_h7a3zi_q_zio_right_2022_6_9_Tu9BzdV.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_H7A3ZI_Q__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "441247",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L073RZ",
+    "source_url": "https://www.gotronik.pl/images/1_nucleo_l073rz_connectors.PNG",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L073RZ__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "93605",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L152RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_l152re_2017_9_22_ard_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L152RE__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "982234",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L152RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_l152re_2017_9_22_ard_right.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L152RE__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "888287",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L152RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_l152re_2017_9_22_mor_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L152RE__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "744189",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L152RE",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_l152re_2017_9_22_mor_right.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L152RE__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "633577",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L432KC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/nucleo_l432kc_2017_10_09.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L432KC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "917606",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L452RE",
+    "source_url": "https://docs.zephyrproject.org/latest/_images/nucleo_l452re_pinout.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L452RE__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "46455",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L476RG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_l476rg_arduino_left_2017_4_21.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L476RG__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "393316",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L476RG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_l476rg_arduino_right_2017_4_21.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L476RG__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "353269",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L476RG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_l476rg_morpho_left_2017_4_21.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L476RG__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "305357",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L476RG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_l476rg_morpho_right_2017_4_21.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L476RG__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "276928",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L4A6ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f746zg_morpho_left_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L4A6ZG__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "467440",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L4A6ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f746zg_morpho_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L4A6ZG__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "401203",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L4A6ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f746zg_zio_left_2022_10_19_V6L6hlp.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L4A6ZG__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "511521",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_L4A6ZG",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_f746zg_zio_right_2019_8_29.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_L4A6ZG__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "437621",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_U5A5ZJ_Q",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_u575zi_q_zio_left_2021_9_3.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_U5A5ZJ_Q__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "509337",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_U5A5ZJ_Q",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_u575zi_q_zio_right_2021_9_3.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_U5A5ZJ_Q__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "426953",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WB55",
+    "source_url": "https://os.mbed.com/media/uploads/LMESTM/nucleo_wb55rg_arduino_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WB55__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "533468",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WB55",
+    "source_url": "https://os.mbed.com/media/uploads/LMESTM/nucleo_wb55rg_arduino_right.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WB55__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "540921",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WB55",
+    "source_url": "https://os.mbed.com/media/uploads/LMESTM/nucleo_wb55rg_morpho_left.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WB55__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "623017",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WB55",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/nucleo_wb55rg_2020_8_26.jpg",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WB55__pinout_4.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "227363",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WL55",
+    "source_url": "https://os.mbed.com/media/uploads/jeanmarcr/nucleo_wl55jc_arduino_left_2021_2_1.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WL55__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "395081",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WL55",
+    "source_url": "https://os.mbed.com/media/uploads/jeanmarcr/nucleo_wl55jc_arduino_right_2021_2_1.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WL55__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "371638",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WL55",
+    "source_url": "https://os.mbed.com/media/uploads/jeanmarcr/nucleo_wl55jc_morpho_left_2021_2_1.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WL55__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "314916",
+    "error": ""
+  },
+  {
+    "official_slug": "NUCLEO_WL55",
+    "source_url": "https://os.mbed.com/media/uploads/jeanmarcr/nucleo_wl55jc_morpho_right_2021_2_1.png",
+    "local_file": "pinout_images_2026-07-13\\NUCLEO_WL55__pinout_4.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "289470",
+    "error": ""
+  },
+  {
+    "official_slug": "NULLBITS_BIT_C_PRO",
+    "source_url": "https://nullbits.co/static/img/bitc_pro_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\NULLBITS_BIT_C_PRO__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "394660",
+    "error": ""
   },
   {
     "official_slug": "OLIMEX_ESP32_POE",
@@ -510,24 +1131,6 @@
     "status": "downloaded",
     "content_type": "image/jpeg",
     "bytes_written": "243337",
-    "error": ""
-  },
-  {
-    "official_slug": "TEENSY40",
-    "source_url": "https://www.pjrc.com/store/teensy40_card10a_rev2.png",
-    "local_file": "pinout_images_2026-07-13\\TEENSY40__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "143101",
-    "error": ""
-  },
-  {
-    "official_slug": "TEENSY41",
-    "source_url": "https://etechnophiles.com/wp-content/uploads/2023/02/Teensy-4.1-Pinout.jpg",
-    "local_file": "pinout_images_2026-07-13\\TEENSY41__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "54412",
     "error": ""
   },
   {
@@ -576,12 +1179,57 @@
     "error": ""
   },
   {
-    "official_slug": "WIPY",
-    "source_url": "https://docs.pycom.io/gitbook/assets/wipy2-pinout.png",
-    "local_file": "pinout_images_2026-07-13\\WIPY__pinout.png",
+    "official_slug": "PYBD_SF2",
+    "source_url": "https://store.micropython.org/media/products/PYBD_SF2_W4F2_ds2.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBD_SF2__pinout.jpg",
     "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "587761",
+    "content_type": "image/jpeg",
+    "bytes_written": "296544",
+    "error": ""
+  },
+  {
+    "official_slug": "PYBD_SF3",
+    "source_url": "https://store.micropython.org/media/products/PYBD_SF3_W4F2_ds2.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBD_SF3__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "296193",
+    "error": ""
+  },
+  {
+    "official_slug": "PYBD_SF6",
+    "source_url": "https://store.micropython.org/media/products/PYBD_SF6_W4F2_ds2.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBD_SF6__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "296410",
+    "error": ""
+  },
+  {
+    "official_slug": "PYBLITEV10",
+    "source_url": "https://store.micropython.org/media/products/PYBLITEv1_0-D.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBLITEV10__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "372337",
+    "error": ""
+  },
+  {
+    "official_slug": "PYBV10",
+    "source_url": "http://micropython.org/resources/pybv11-pinout.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBV10__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "398180",
+    "error": ""
+  },
+  {
+    "official_slug": "PYBV11",
+    "source_url": "https://store.micropython.org/media/products/PYBv1_1-E.jpg",
+    "local_file": "pinout_images_2026-07-13\\PYBV11__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "398180",
     "error": ""
   },
   {
@@ -613,137 +1261,11 @@
   },
   {
     "official_slug": "RPI_PICO_W",
-    "source_url": "https://mischianti.org/wp-content/uploads/2022/09/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti-1024x786.jpg.webp",
-    "local_file": "pinout_images_2026-07-13\\RPI_PICO_W__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "144526",
-    "error": ""
-  },
-  {
-    "official_slug": "B_L475E_IOT01A",
-    "source_url": "https://docs.neqto.com/images/b-l4s5i-iot01a_hw_pinout.png",
-    "local_file": "pinout_images_2026-07-13\\B_L475E_IOT01A__pinout.png",
+    "source_url": "https://mischianti.org/wp-content/uploads/2022/09/Raspberry-Pi-Pico-W-rp2040-WiFi-pinout-mischianti.png",
+    "local_file": "pinout_images_2026-07-13\\RPI_PICO_W__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "674871",
-    "error": ""
-  },
-  {
-    "official_slug": "STM32F4DISC",
-    "source_url": "http://microcontrollerslab.com/wp-content/uploads/2019/12/stm32f4-discovery-pinout.png",
-    "local_file": "pinout_images_2026-07-13\\STM32F4DISC__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "243338",
-    "error": ""
-  },
-  {
-    "official_slug": "STM32F411DISC",
-    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8X1mS_EOXHOcn6KZv2cSdb5Y_bwJ39yx_IH6je8tbeAx-q-RJp2uisEql&s=10",
-    "local_file": "pinout_images_2026-07-13\\STM32F411DISC__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "97837",
-    "error": ""
-  },
-  {
-    "official_slug": "STM32F469DISC",
-    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_f469ni_mbed_pinout_v3.png",
-    "local_file": "pinout_images_2026-07-13\\STM32F469DISC__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "527463",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F091RC",
-    "source_url": "https://raw.githubusercontent.com/wiki/RIOT-OS/RIOT/images/nucleo-f091_pinout.png",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F091RC__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "96135",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F411RE",
-    "source_url": "https://dcc-ex.com/_images/nucleo-f411re-pinout.png",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F411RE__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "87784",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F429ZI",
-    "source_url": "https://dcc-ex.com/_images/nucleo-F429ZI-FZ439ZI-pins.png",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F429ZI__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "435232",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F439ZI",
-    "source_url": "https://dcc-ex.com/_images/nucleo-F429ZI-FZ439ZI-pins.png",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F439ZI__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "435232",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F446RE",
-    "source_url": "https://www.bdtronics.com/media/catalog/product/cache/a6f25b39b1e74690356d764802d043a7/s/t/stm32-nucleo-f446re-stm32f446ret6-development-board-pinout.webp",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F446RE__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "173654",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_F746ZG",
-    "source_url": "https://www.researchgate.net/profile/Mohsen-Fallah-3/publication/354022135/figure/fig10/AS:1059909651140610@1629713561984/Hardware-layout-and-configuration-for-the-STM32-NUCLEO-board.png",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_F746ZG__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "108964",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_G0B1RE",
-    "source_url": "https://preview.redd.it/nucleo-g0b1re-pinout-diagram-v0-dg9664tat6ke1.png?width=1184&format=png&auto=webp&s=cd4dd3cd48b6e7921a149a6221d2a7e7fbf85ada",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_G0B1RE__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "77018",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_L073RZ",
-    "source_url": "https://www.gotronik.pl/images/1_nucleo_l073rz_connectors.PNG",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_L073RZ__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "93605",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_L432KC",
-    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMKU5k94ppkEfuGtE_2O8ijVxgWJypRErYIxXQoiMvVzqviiyspzDeOJY&s=10",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_L432KC__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "42120",
-    "error": ""
-  },
-  {
-    "official_slug": "NUCLEO_L452RE",
-    "source_url": "https://docs.zephyrproject.org/latest/_images/nucleo_l452re_p_pinout.jpg",
-    "local_file": "pinout_images_2026-07-13\\NUCLEO_L452RE__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "58511",
+    "bytes_written": "860274",
     "error": ""
   },
   {
@@ -753,6 +1275,15 @@
     "status": "downloaded",
     "content_type": "image/png",
     "bytes_written": "1158273",
+    "error": ""
+  },
+  {
+    "official_slug": "SEEED_WIO_TERMINAL",
+    "source_url": "https://scruss.com/wordpress/wp-content/uploads/2020/09/Wio-Terminal-Pinout-1024x513.jpg",
+    "local_file": "pinout_images_2026-07-13\\SEEED_WIO_TERMINAL__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "73447",
     "error": ""
   },
   {
@@ -792,12 +1323,21 @@
     "error": ""
   },
   {
-    "official_slug": "SEEED_XIAO_RP2040",
-    "source_url": "https://docs.zephyrproject.org/latest/_images/xiao_rp2040_pinout.webp",
-    "local_file": "pinout_images_2026-07-13\\SEEED_XIAO_RP2040__pinout.webp",
+    "official_slug": "SEEED_XIAO_NRF52",
+    "source_url": "https://files.seeedstudio.com/wiki/XIAO-BLE/XIAO_nRF52840_front_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\SEEED_XIAO_NRF52__pinout.png",
     "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "30844",
+    "content_type": "image/png",
+    "bytes_written": "2893987",
+    "error": ""
+  },
+  {
+    "official_slug": "SEEED_XIAO_RP2040",
+    "source_url": "https://files.seeedstudio.com/wiki/XIAO-RP2040/img/XIAO_RP2040_front_pinout.png",
+    "local_file": "pinout_images_2026-07-13\\SEEED_XIAO_RP2040__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "2491888",
     "error": ""
   },
   {
@@ -819,24 +1359,6 @@
     "error": ""
   },
   {
-    "official_slug": "SEEED_XIAO_NRF52",
-    "source_url": "https://files.seeedstudio.com/wiki/XIAO-BLE/XIAO_nRF52840_front_pinout.png",
-    "local_file": "pinout_images_2026-07-13\\SEEED_XIAO_NRF52__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "2893987",
-    "error": ""
-  },
-  {
-    "official_slug": "SIL_WESP32",
-    "source_url": "https://community-assets.home-assistant.io/original/4X/9/d/8/9d8edf22eba67d74cde2354fe2495fdfc11e754d.jpeg",
-    "local_file": "pinout_images_2026-07-13\\SIL_WESP32__pinout.jpg",
-    "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "164726",
-    "error": ""
-  },
-  {
     "official_slug": "SIL_RP2040_SHIM",
     "source_url": "https://silicognition.com/Products/images/RP2040-Shim-pinout.png",
     "local_file": "pinout_images_2026-07-13\\SIL_RP2040_SHIM__pinout.png",
@@ -846,21 +1368,48 @@
     "error": ""
   },
   {
-    "official_slug": "SPARKFUN_IOT_REDBOARD_ESP32",
-    "source_url": "https://ae-pic-a1.aliexpress-media.com/kf/Sf7e1b043ce1b4fa2bd753a753f6da9367.jpg",
-    "local_file": "pinout_images_2026-07-13\\SPARKFUN_IOT_REDBOARD_ESP32__pinout.jpg",
+    "official_slug": "SIL_WESP32",
+    "source_url": "https://wesp32.com/images/wesp32-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\SIL_WESP32__pinout.png",
     "status": "downloaded",
-    "content_type": "image/avif",
-    "bytes_written": "83017",
+    "content_type": "image/png",
+    "bytes_written": "96132",
+    "error": ""
+  },
+  {
+    "official_slug": "SOLDERED_NULA_MAX_RP2350",
+    "source_url": "https://soldered.com/cdn/shop/files/Nula-Max-RP2350-Pinout-scaled.png?v=17687702644680276557",
+    "local_file": "pinout_images_2026-07-13\\SOLDERED_NULA_MAX_RP2350__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "390132",
+    "error": ""
+  },
+  {
+    "official_slug": "SOLDERED_NULA_MINI",
+    "source_url": "https://docs.soldered.com/assets/images/NULA-MINI-ESP32-C6-Pinout-426ee97f199dda496eff3caa6192a4fe.webp",
+    "local_file": "pinout_images_2026-07-13\\SOLDERED_NULA_MINI__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "137782",
+    "error": ""
+  },
+  {
+    "official_slug": "SPARKFUN_MICROMOD_STM32",
+    "source_url": "https://cdn.sparkfun.com/assets/learn_tutorials/1/2/0/6/SparkFun_MicroMod_Interface_v1.0_-_Pinout.pdf",
+    "local_file": "pinout_images_2026-07-13\\SPARKFUN_MICROMOD_STM32__pinout.pdf",
+    "status": "downloaded",
+    "content_type": "application/pdf",
+    "bytes_written": "28127",
     "error": ""
   },
   {
     "official_slug": "SPARKFUN_PROMICRO",
-    "source_url": "https://keycapsss.com/media/da/b2/b3/1762952293/rp2040-pro-micro-controller-16mb-pinout.png?ts=1762952293",
-    "local_file": "pinout_images_2026-07-13\\SPARKFUN_PROMICRO__pinout.png",
+    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-LyFkukn0BsBZlc4Vw4jqzOB2PpH_PYuOEQ_ev_BmYoO6P2COUmgXFgva&s=10",
+    "local_file": "pinout_images_2026-07-13\\SPARKFUN_PROMICRO__pinout.jpg",
     "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "810353",
+    "content_type": "image/jpeg",
+    "bytes_written": "30734",
     "error": ""
   },
   {
@@ -870,15 +1419,6 @@
     "status": "downloaded",
     "content_type": "image/png",
     "bytes_written": "273743",
-    "error": ""
-  },
-  {
-    "official_slug": "SPARKFUN_SAMD51_THING_PLUS",
-    "source_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/8/8/8/SAMD51_Thing_Plus_graphical_datasheet-b.png",
-    "local_file": "pinout_images_2026-07-13\\SPARKFUN_SAMD51_THING_PLUS__pinout.png",
-    "status": "downloaded",
-    "content_type": "image/png",
-    "bytes_written": "250444",
     "error": ""
   },
   {
@@ -892,11 +1432,20 @@
   },
   {
     "official_slug": "SPARKFUN_SAMD21_DEV_BREAKOUT",
-    "source_url": "https://cdn.sparkfun.com/assets/learn_tutorials/4/5/4/board-mini-overview-2.jpg",
-    "local_file": "pinout_images_2026-07-13\\SPARKFUN_SAMD21_DEV_BREAKOUT__pinout.jpg",
+    "source_url": "https://cdn.sparkfun.com/assets/learn_tutorials/4/5/4/graphicalDatasheet-Dev.pdf",
+    "local_file": "pinout_images_2026-07-13\\SPARKFUN_SAMD21_DEV_BREAKOUT__pinout.pdf",
     "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "265235",
+    "content_type": "application/pdf",
+    "bytes_written": "1047041",
+    "error": ""
+  },
+  {
+    "official_slug": "SPARKFUN_SAMD51_THING_PLUS",
+    "source_url": "https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/8/8/8/SAMD51_Thing_Plus_graphical_datasheet-b.png",
+    "local_file": "pinout_images_2026-07-13\\SPARKFUN_SAMD51_THING_PLUS__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "250444",
     "error": ""
   },
   {
@@ -909,21 +1458,210 @@
     "error": ""
   },
   {
-    "official_slug": "UM_FEATHERS2",
-    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSnVmbddqWn5EbFZIvXm-XOZgA-SBcwkVLXaMjKw7XnbZzXCg-NOJNIJDU&s=10",
-    "local_file": "pinout_images_2026-07-13\\UM_FEATHERS2__pinout.png",
+    "official_slug": "SPARKFUN_XRP_CONTROLLER",
+    "source_url": "https://docs.sparkfun.com/SparkFun_XRP_Controller/assets/img/XRP-Controller-Expansion-Pinout-Table.jpg",
+    "local_file": "pinout_images_2026-07-13\\SPARKFUN_XRP_CONTROLLER__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "356309",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F411DISC",
+    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8X1mS_EOXHOcn6KZv2cSdb5Y_bwJ39yx_IH6je8tbeAx-q-RJp2uisEql&s=10",
+    "local_file": "pinout_images_2026-07-13\\STM32F411DISC__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "97837",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F429DISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_f429zi_2017-07-25_slide1.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F429DISC__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "46188",
+    "bytes_written": "244879",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F429DISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_f429zi_2017-07-25_slide2.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F429DISC__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "265420",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F429DISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_f429zi_2017-07-25_slide3.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F429DISC__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "318188",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F469DISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_f469ni_mbed_pinout_v3.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F469DISC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "527463",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F4DISC",
+    "source_url": "http://microcontrollerslab.com/wp-content/uploads/2019/12/stm32f4-discovery-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F4DISC__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "243338",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F769DISC",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/disco_f769ni_arduinoleft_v3.jpg",
+    "local_file": "pinout_images_2026-07-13\\STM32F769DISC__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "168299",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F769DISC",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/disco_f769ni_arduinoright_v3.jpg",
+    "local_file": "pinout_images_2026-07-13\\STM32F769DISC__pinout_2.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "205879",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32F7DISC",
+    "source_url": "https://os.mbed.com/media/uploads/adustm/disco_f746ng_mbed_pinout_v5.png",
+    "local_file": "pinout_images_2026-07-13\\STM32F7DISC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "713380",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32H747I_DISCO",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/disco_h747i_2020_2_10_arduino_left.jpg",
+    "local_file": "pinout_images_2026-07-13\\STM32H747I_DISCO__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "107671",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32H747I_DISCO",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/disco_h747i_2020_2_10_arduino_right.jpg",
+    "local_file": "pinout_images_2026-07-13\\STM32H747I_DISCO__pinout_2.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "135360",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32H747I_DISCO",
+    "source_url": "https://os.mbed.com/media/uploads/jeromecoutant/disco_h747i_2020_2_10_stmod.jpg",
+    "local_file": "pinout_images_2026-07-13\\STM32H747I_DISCO__pinout_3.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "163303",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32L476DISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_l476vg_revc_mbed_pinout_v2.png",
+    "local_file": "pinout_images_2026-07-13\\STM32L476DISC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "669097",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32L496GDISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_l496ag_2018_03_21_arduino_left.png",
+    "local_file": "pinout_images_2026-07-13\\STM32L496GDISC__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "1118269",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32L496GDISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_l496ag_2018_03_21_arduino_right.png",
+    "local_file": "pinout_images_2026-07-13\\STM32L496GDISC__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "1152626",
+    "error": ""
+  },
+  {
+    "official_slug": "STM32L496GDISC",
+    "source_url": "https://os.mbed.com/media/uploads/bcostm/disco_l496ag_2018_06_25a_arduino_stmod.png",
+    "local_file": "pinout_images_2026-07-13\\STM32L496GDISC__pinout_3.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "390911",
+    "error": ""
+  },
+  {
+    "official_slug": "TEENSY40",
+    "source_url": "https://www.pjrc.com/teensy/card10a_rev1_web.png",
+    "local_file": "pinout_images_2026-07-13\\TEENSY40__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "281986",
+    "error": ""
+  },
+  {
+    "official_slug": "TEENSY40",
+    "source_url": "https://www.pjrc.com/teensy/card10b_rev1_web.png",
+    "local_file": "pinout_images_2026-07-13\\TEENSY40__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "284500",
+    "error": ""
+  },
+  {
+    "official_slug": "TEENSY41",
+    "source_url": "https://www.pjrc.com/teensy/card11a_rev3_web.png",
+    "local_file": "pinout_images_2026-07-13\\TEENSY41__pinout.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "283619",
+    "error": ""
+  },
+  {
+    "official_slug": "TEENSY41",
+    "source_url": "https://www.pjrc.com/teensy/card11b_rev4_web.png",
+    "local_file": "pinout_images_2026-07-13\\TEENSY41__pinout_2.png",
+    "status": "downloaded",
+    "content_type": "image/png",
+    "bytes_written": "323753",
+    "error": ""
+  },
+  {
+    "official_slug": "UM_FEATHERS2",
+    "source_url": "https://feathers2.io/images/feathers2_pinout_extended2.jpg",
+    "local_file": "pinout_images_2026-07-13\\UM_FEATHERS2__pinout.jpg",
+    "status": "downloaded",
+    "content_type": "image/jpeg",
+    "bytes_written": "383171",
     "error": ""
   },
   {
     "official_slug": "UM_FEATHERS2NEO",
-    "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRigkImm1YIyzJdfzd6LAJlAAU7U9cS5fcoCMsE3jN6ZKGdsDjA0mvFyYg&s=10",
+    "source_url": "https://www.esp32learning.com/wp-content/uploads/2021/12/FeatherS2Neo_Pinout2.jpg",
     "local_file": "pinout_images_2026-07-13\\UM_FEATHERS2NEO__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "77361",
+    "bytes_written": "164104",
     "error": ""
   },
   {
@@ -955,11 +1693,11 @@
   },
   {
     "official_slug": "UM_OMGS3",
-    "source_url": "https://www.cnx-software.com/wp-content/uploads/2024/09/Unexpected-Maker-OMGS3-pinout-diagram.webp",
-    "local_file": "pinout_images_2026-07-13\\UM_OMGS3__pinout.webp",
+    "source_url": "https://esp32s3.com/images/pins_omgs3.jpg",
+    "local_file": "pinout_images_2026-07-13\\UM_OMGS3__pinout.jpg",
     "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "157598",
+    "content_type": "image/jpeg",
+    "bytes_written": "330797",
     "error": ""
   },
   {
@@ -973,47 +1711,56 @@
   },
   {
     "official_slug": "UM_TINYC6",
-    "source_url": "https://s3.amazonaws.com/images.ecwid.com/images/wysiwyg/product/90477757/602208790/1699344246507962359259/TinyXXX_Pinout_Matrix_jpg",
+    "source_url": "https://d2j6dbq0eux0bg.cloudfront.net/images/90477757/products/602208790/3960737589.jpg",
     "local_file": "pinout_images_2026-07-13\\UM_TINYC6__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "308715",
+    "bytes_written": "225000",
     "error": ""
   },
   {
     "official_slug": "UM_TINYPICO",
-    "source_url": "https://s3.amazonaws.com/images.ecwid.com/images/wysiwyg/product/90477757/577111313/16924004566791620828599/tiny_pinout_matrix_jpg",
+    "source_url": "https://www.crowdsupply.com/img/a5f9/1c063cad-187f-4749-9e29-e134554fa5f9_gallery-lg.jpg",
     "local_file": "pinout_images_2026-07-13\\UM_TINYPICO__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "682306",
+    "bytes_written": "368416",
     "error": ""
   },
   {
     "official_slug": "UM_TINYS2",
-    "source_url": "https://s3.amazonaws.com/images.ecwid.com/images/wysiwyg/product/90477757/577111313/16924004566791620828599/tiny_pinout_matrix_jpg",
-    "local_file": "pinout_images_2026-07-13\\UM_TINYS2__pinout.jpg",
+    "source_url": "https://templates.blakadder.com/assets/device_images/unexpectedmaker_tinys2_pinout-p1.webp",
+    "local_file": "pinout_images_2026-07-13\\UM_TINYS2__pinout.webp",
     "status": "downloaded",
-    "content_type": "image/jpeg",
-    "bytes_written": "682306",
+    "content_type": "image/webp",
+    "bytes_written": "106722",
+    "error": ""
+  },
+  {
+    "official_slug": "UM_TINYS2",
+    "source_url": "https://templates.blakadder.com/assets/device_images/unexpectedmaker_tinys2_pinout-p3.webp",
+    "local_file": "pinout_images_2026-07-13\\UM_TINYS2__pinout_2.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "103976",
     "error": ""
   },
   {
     "official_slug": "UM_TINYS3",
-    "source_url": "https://esp32s3.com/images/tiny_pinout_matrix.jpg",
+    "source_url": "https://esp32s3.com/images/pins_tinys3.jpg",
     "local_file": "pinout_images_2026-07-13\\UM_TINYS3__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "685857",
+    "bytes_written": "302019",
     "error": ""
   },
   {
     "official_slug": "UM_TINYWATCHS3",
-    "source_url": "http://wiki.fluidnc.com/hardware/esp32-s3_devkitc-1_pinlayout_v1.1.jpg",
+    "source_url": "https://d2j6dbq0eux0bg.cloudfront.net/images/90477757/products/763138502/5029420839.jpg",
     "local_file": "pinout_images_2026-07-13\\UM_TINYWATCHS3__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "461010",
+    "bytes_written": "227653",
     "error": ""
   },
   {
@@ -1032,6 +1779,15 @@
     "status": "downloaded",
     "content_type": "image/png",
     "bytes_written": "960288",
+    "error": ""
+  },
+  {
+    "official_slug": "WAVESHARE_ESP32_S3_PICO",
+    "source_url": "https://docs.waveshare.com/assets/images/ESP32-S3-Pico-details-inter-ccf703ca905565eb0ef0c703a983187d.webp",
+    "local_file": "pinout_images_2026-07-13\\WAVESHARE_ESP32_S3_PICO__pinout.webp",
+    "status": "downloaded",
+    "content_type": "image/webp",
+    "bytes_written": "62508",
     "error": ""
   },
   {
@@ -1054,29 +1810,20 @@
   },
   {
     "official_slug": "WAVESHARE_RP2040_ZERO",
-    "source_url": "https://mischianti.org/wp-content/uploads/2022/09/weact-studio-rp2040-raspberry-pi-pico-alternative-pinout-low-resolution-1024x837.jpg",
+    "source_url": "https://mischianti.org/wp-content/uploads/2022/09/Waveshare-rp2040-zero-Raspberry-Pi-Pico-alternative-pinout.jpg",
     "local_file": "pinout_images_2026-07-13\\WAVESHARE_RP2040_ZERO__pinout.jpg",
     "status": "downloaded",
     "content_type": "image/jpeg",
-    "bytes_written": "173156",
+    "bytes_written": "208063",
     "error": ""
   },
   {
     "official_slug": "WAVESHARE_RP2350B_CORE",
-    "source_url": "https://www.cnx-software.com/wp-content/uploads/2025/02/WeAct-RP2350B-Core-Board-pinout-diagram.webp",
-    "local_file": "pinout_images_2026-07-13\\WAVESHARE_RP2350B_CORE__pinout.webp",
+    "source_url": "https://www.waveshare.com/img/devkit/Core2350B0/Core2350B0-details-inter.jpg",
+    "local_file": "pinout_images_2026-07-13\\WAVESHARE_RP2350B_CORE__pinout.jpg",
     "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "667316",
-    "error": ""
-  },
-  {
-    "official_slug": "WAVESHARE_ESP32_S3_PICO",
-    "source_url": "https://docs.waveshare.com/assets/images/ESP32-S3-Pico-details-inter-ccf703ca905565eb0ef0c703a983187d.webp",
-    "local_file": "pinout_images_2026-07-13\\WAVESHARE_ESP32_S3_PICO__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "62508",
+    "content_type": "image/jpeg",
+    "bytes_written": "365143",
     "error": ""
   },
   {
@@ -1107,48 +1854,21 @@
     "error": ""
   },
   {
-    "official_slug": "LOLIN_C3_MINI",
-    "source_url": "https://www.wemos.cc/en/latest/_images/c3_mini_v2.1.0_4_16x9.png",
-    "local_file": "pinout_images_2026-07-13\\LOLIN_C3_MINI__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "125416",
-    "error": ""
-  },
-  {
-    "official_slug": "LOLIN_S2_MINI",
-    "source_url": "https://www.studiopieters.nl/wp-content/uploads/2025/06/S2-MINI_full.svg",
-    "local_file": "pinout_images_2026-07-13\\LOLIN_S2_MINI__pinout.svg",
-    "status": "downloaded",
-    "content_type": "image/svg+xml",
-    "bytes_written": "638846",
-    "error": ""
-  },
-  {
-    "official_slug": "LOLIN_S2_PICO",
-    "source_url": "https://www.wemos.cc/en/latest/_images/s2_pico_v1.0.0_4_16x9.png",
-    "local_file": "pinout_images_2026-07-13\\LOLIN_S2_PICO__pinout.webp",
-    "status": "downloaded",
-    "content_type": "image/webp",
-    "bytes_written": "69392",
-    "error": ""
-  },
-  {
-    "official_slug": "NULLBITS_BIT_C_PRO",
-    "source_url": "https://nullbits.co/static/img/bit-c-legend.png",
-    "local_file": "pinout_images_2026-07-13\\NULLBITS_BIT_C_PRO__pinout.png",
+    "official_slug": "WIPY",
+    "source_url": "https://docs.pycom.io/gitbook/assets/wipy2-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\WIPY__pinout.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "75902",
+    "bytes_written": "587761",
     "error": ""
   },
   {
-    "official_slug": "EVK_NINA_B1",
-    "source_url": "https://os.mbed.com/media/uploads/andreaslarsson/evk_nina_b1-pin-out_big_IX5AOPu.png",
-    "local_file": "pinout_images_2026-07-13\\EVK_NINA_B1__pinout.png",
+    "official_slug": "WIPY",
+    "source_url": "https://docs.pycom.io/gitbook/assets/wipy3-pinout.png",
+    "local_file": "pinout_images_2026-07-13\\WIPY__pinout_2.png",
     "status": "downloaded",
     "content_type": "image/png",
-    "bytes_written": "552958",
+    "bytes_written": "380854",
     "error": ""
   }
 ]

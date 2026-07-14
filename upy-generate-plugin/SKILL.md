@@ -16,7 +16,7 @@ status_update(...)
 phase_complete(...)
 ```
 
-Formal chain:
+Formal pipeline:
 
 ```text
 upy-analyze-plugin
@@ -39,14 +39,14 @@ If `upy-autofix-plugin` is not yet implemented, allow:
 
 ```text
 upy-deploy-plugin
--> user input phenomenon/feedback issue
+-> user inputs symptoms/feedback
 -> upy-generate-plugin(mode=fix, source=user_feedback_after_deploy)
 -> upy-deploy-plugin
 ```
 
 ## Required Reading
 
-Before full/fix generation, read these reference files in stages. They are migrated from the key constraints and templates of the old `G:\MicroPython_Skills\upy-generate\SKILL.md` and take precedence over the summary in this file:
+Before starting full/fix generation, read these reference files in order. They are migrated from the key constraints and templates of the old `G:\MicroPython_Skills\upy-generate\SKILL.md` and take precedence over the summary in this file:
 
 | Timing | Required File |
 |---|---|
@@ -57,7 +57,7 @@ Before full/fix generation, read these reference files in stages. They are migra
 | Before generating device MicroPython unittest tests | `references/device_unittest_subset.md` |
 | Before modifying `conf.py` or `main.py` | `references/main_conf_rules.md` |
 | Before using MicroPython hardware/peripheral/port APIs | `knowledge/micropython_official_library_index.json` |
-| Before using LLM/ASR/TTS/IoT/MQTT/Webhook/Cloud APIs | `references/cloud_integrations.md` |
+| Before needing LLM/ASR/TTS/IoT/MQTT/Webhook/Cloud APIs | `references/cloud_integrations.md` |
 | Before running quality gates | `references/validation_gates.md` |
 | Before outputting success and git commit | `references/final_review_checklist.md` |
 
@@ -107,7 +107,7 @@ Fix mode:
     "mode": "fix",
     "source": "user_feedback_after_deploy",
     "error_context": {
-      "user_feedback": "After power-on, the OLED does not display; the serial port only prints boot ok",
+      "user_feedback": "After power-on, the OLED does not display; serial only prints boot ok",
       "deploy_result_path": "sessions/<session_id>/phase_complete.upy_deploy_plugin.json",
       "serial_excerpt": "...",
       "previous_generate_commit": "abc123"
@@ -118,30 +118,31 @@ Fix mode:
 
 ## Full Flow
 
-1. Validate upstream `phase_complete(upy-scaffold-plugin)`: `result=success` and `next_phase=upy-generate-plugin`. During migration, direct testing may pass manifest directly, but the formal chain must not skip scaffold. Then run `scripts/check_session_state.py --session-dir <session_root> --project-dir <project_root>`. If a stale old generate record is found, archive/ignore the old `phase_complete.upy_generate_plugin.json` and `generate_phase_log.md`; do not treat it as the current success/resume state.
+1. Validate upstream `phase_complete(upy-scaffold-plugin)`: `result=success` and `next_phase=upy-generate-plugin`. During migration, direct testing may pass manifest directly, but the formal pipeline must not skip scaffold. Then run `scripts/check_session_state.py --session-dir <session_root> --project-dir <project_root>`. If a stale old generate record is found, archive/ignore the old `phase_complete.upy_generate_plugin.json` and `generate_phase_log.md`; do not treat it as the current success/resume state.
 2. Read `payload.manifest_content`, `runtime_context.project_root`, `firmware/board.py`, `firmware/conf.py`, `firmware/main.py`, `.flake8`.
-3. Before running, ask the user if they want to supplement device behavior. Only allow supplementing business behavior, thresholds, periods, state machines, logging, and simulation scenarios; adding new hardware or changing pins must fall back to analyze/select-hw/scaffold.
-4. Write `project/generate_plan.json`, planning only without writing runtime code. The plan must include scheduler_mode, driver adapters, tasks, config_constants, main_assembly, tests, resource_plan, cloud_integrations (if cloud APIs are needed). Voice, sensor, cloud API, state machine, or cross-tick business flows must also include `data_flow_contract[]`, and declare contract test coverage for each critical data flow. Then run `scripts/check_generate_plan.py --project-dir <project_root> --require-plan`. If it fails, stop at partial; do not proceed with large-scale code writing.
-5. Parse driver and middleware dependencies using English keywords. First run `scripts/resolve_upypi_packages.py` to enumerate `https://upypi.net/packages.json`, then search by English keywords, using awesome-micropython or GitHub fallback.
-6. If the requirements involve LLM, ASR, TTS, vision, IoT/MQTT, Webhook, weather maps, object storage, third-party REST APIs, or any paid/credentialed cloud service, read `references/cloud_integrations.md` and `knowledge/cloud_service_catalog.json`, and initiate user confirmation: service provider, official documentation/console/pricing links, whether billing/token purchase has been activated, whether API Key is ready, whether a gateway/proxy is needed. Do not write real tokens into the code.
-7. Run `scripts/download_drivers.py`. The script only reads manifest/stdin and only outputs JSON to stdout; it must not write directly to the project directory or modify `project-manifest.json` directly.
-8. Convert each `files[]` from the script output into `file_operation(write)`, with the target must be under `firmware/lib/...`.
-9. Read `references/driver_factory_templates.md`, then read the driver source code, README, example, and package metadata to generate `firmware/drivers/<name>_driver/__init__.py` and `mock.py`. Mock method signatures must come from the driver source code.
-10. Read `references/task_generation_rules.md`, and generate tasks according to the scheduling mode selected by scaffold:
+3. Before writing `generate_plan.json`, Mock, business framework, or business code, you must gate on the explicit driver workflow status in `manifest_content.devices[]`. If `driver.status`, `driver.driver_status`, or `device.driver_status` is `cold_driver_required`, `pending_validation`, `unverified`, `failed`, or an unknown value, you must output `partial`, `next_phase=null`, `structured_errors[]`, and guide the user to first run `upy-gen-driver-plugin` pipeline mode to generate `firmware/drivers/<driver_id>_driver/`. An explicit `ready` status only passes if it also has `driver.path` and `hardware_marker=SELF_TEST_PASS:<driver_id>:<scenario>`; ordinary `builtin_runtime`, `micropython_lib`, `upypi`, `awesome-micropython`, `github`, `none`, `manual` source-only dependencies without a workflow status continue with existing dependency resolution.
+4. Before running, ask the user if they want to supplement device behavior. Only allow supplementing business behavior, thresholds, periods, state machines, logging, and simulation scenarios; adding new hardware or changing pins must fall back to analyze/select-hw/scaffold.
+5. Write `project/generate_plan.json`, planning only, without writing runtime code. The plan must include scheduler_mode, driver adapters, tasks, config_constants, main_assembly, tests, resource_plan, cloud_integrations (if cloud APIs are needed). Voice, sensor, cloud API, state machine, or cross-tick business flows must also include `data_flow_contract[]`, and declare contract test coverage for each critical data flow. Then run `scripts/check_generate_plan.py --project-dir <project_root> --require-plan`; if it fails, stop at partial and do not proceed with large-scale code writing.
+6. Resolve driver and middleware dependencies using English keywords. First run `scripts/resolve_upypi_packages.py` to enumerate `https://upypi.net/packages.json`, then search by English keywords, awesome-micropython, or GitHub fallback.
+7. If the requirements involve LLM, ASR, TTS, vision, IoT/MQTT, Webhook, weather maps, object storage, third-party REST APIs, or any paid/credentialed cloud service, read `references/cloud_integrations.md` and `knowledge/cloud_service_catalog.json`, and initiate user confirmation: service provider, official documentation/console/pricing links, whether billing/tokens have been activated, whether API Keys are ready, and whether a gateway/proxy is needed. Do not write real tokens into the code.
+8. Run `scripts/download_drivers.py`. The script only reads manifest/stdin and outputs JSON to stdout; it must not write directly to the project directory or modify `project-manifest.json` directly.
+9. Convert each `files[]` entry from the script output into `file_operation(write)`, with the target path under `firmware/lib/...`.
+10. Read `references/driver_factory_templates.md`, then read the driver source code, README, example, and package metadata to generate `firmware/drivers/<name>_driver/__init__.py` and `mock.py`. Mock method signatures must come from the driver source code.
+11. Read `references/task_generation_rules.md` and generate tasks according to the scheduling mode selected by scaffold:
     - `timer`: periodic tick, avoid blocking, prefer `time_helper.timed_function`.
     - `async`: use `uasyncio`, prefer `timed_coro`, change blocking sleep to `await asyncio.sleep_ms`.
     - `thread`: use `_thread` worker, locks, and main loop heartbeat.
-11. Reuse scaffold assets: `firmware/lib/logger`, `time_helper`, `maintenance`, `scheduler`. Do not regenerate the logging system.
-12. Read `references/main_conf_rules.md`, update `firmware/conf.py`. All thresholds, periods, retries, and logging configurations must be in conf, not hardcoded in task/main; cloud APIs can only write non-secret endpoints, model names, timeouts, retries, feature toggles, and secret names, not real keys.
-13. When involving `machine`, `network`, `neopixel`, `esp32`, `rp2`, `bluetooth`, or other hardware/peripheral/port APIs, first check `knowledge/micropython_official_library_index.json` for the corresponding MicroPython official page, and record `module`, official `url`, and `reason` in `manifest_content.generate.doc_evidence[]`. Only CPython reference links or insufficient MicroPython page content cannot be considered sufficient basis for peripheral implementation; must supplement port documentation evidence or output partial.
-14. Continue updating `firmware/main.py` according to `references/main_conf_rules.md`, retain startup delay, install rotating logger, complete `machine -> factory -> driver -> task` DI assembly, perform I2C scan at startup, dual-write key status to print and logger. Immediately after writing `conf.py/main.py`, run `scripts/check_conf_contract.py --project-dir <project_root>`.
-15. Generate PC `unittest` and device MicroPython `unittest` tests. Before generating device-side tests, must read `references/device_unittest_subset.md`; device-side tests are not CPython-only tests, nor should they be just import smoke tests. If device-side tests import `unittest`, must declare `runtime_dependencies.mip` for the deploy phase to install `unittest`; do not default to copying micropython-lib source into the project.
-16. Read `references/validation_gates.md`, run the complete quality gate suite: `.pylintrc`, generate_plan, py_compile, conf_contract, driver compile, flake8, pylint, PC unittest, MicroPython import, dead config, task no-machine, device unittest subset, runtime dependencies, doc evidence, skeleton compliance, generated semantics, cloud integrations, session checkpoint.
-17. Read `references/final_review_checklist.md`, perform the final review item by item, and output structured `review_findings`.
-18. After drafting `phase_complete`, run `scripts/check_final_review_consistency.py` and `scripts/check_phase_complete_consistency.py --phase-complete <phase_complete> --project-dir <project_root>`; if they fail, must change to `partial/failed`, `next_phase=null`, and record structured errors.
-19. After checks and final review pass, initiate a git commit permission request. Both full and fix modes must commit after passing validation.
-20. Output `phase_complete`, default `next_phase=upy-deploy-plugin`; user can choose `upy-simulate-plugin` or `null`. If cloud services are `mock_only` or `blocked`, must not enter deploy.
-21. After success, ask if additional artifacts should be generated: `upy-diagram-plugin` and `upy-wiring-plugin`. They can only go into `optional_next_phases`, must not override the main `next_phase`.
+12. Reuse scaffold assets: `firmware/lib/logger`, `time_helper`, `maintenance`, `scheduler`. Do not regenerate the logging system.
+13. Read `references/main_conf_rules.md`, update `firmware/conf.py`. All thresholds, periods, retries, and log configurations must be in conf, not hardcoded in task/main; cloud APIs can only write non-secret endpoints, model names, timeouts, retries, feature toggles, and secret names, not real keys.
+14. When involving `machine`, `network`, `neopixel`, `esp32`, `rp2`, `bluetooth`, or other hardware/peripheral/port APIs, you must first check `knowledge/micropython_official_library_index.json` for the corresponding MicroPython official page, and record `module`, official `url`, and `reason` in `manifest_content.generate.doc_evidence[]`. Only CPython reference links or insufficient MicroPython page content are not sufficient evidence for peripheral implementation; you must supplement port documentation evidence or output partial.
+15. Continue updating `firmware/main.py` according to `references/main_conf_rules.md`, retain the startup delay, install the rotating logger, complete the `machine -> factory -> driver -> task` DI assembly, perform an I2C scan at startup, and dual-write critical status to print and logger. Immediately after writing `conf.py/main.py`, run `scripts/check_conf_contract.py --project-dir <project_root>`.
+16. Generate PC `unittest` and device MicroPython `unittest` tests. Before generating device-side tests, you must read `references/device_unittest_subset.md`; device-side tests are not CPython-only tests, nor should they be just import smoke tests. If device-side tests import `unittest`, you must declare `unittest` in `runtime_dependencies.mip` for the deploy phase to install; do not default to copying micropython-lib source into the project.
+17. Read `references/validation_gates.md` and run the complete quality gate suite: `.pylintrc`, generate_plan, py_compile, conf_contract, driver compile, flake8, pylint, PC unittest, MicroPython import, dead config, task no-machine, device unittest subset, runtime dependencies, doc evidence, skeleton compliance, generated semantics, cloud integrations, session checkpoint.
+18. Read `references/final_review_checklist.md`, perform the final review item by item, and output structured `review_findings`.
+19. After drafting `phase_complete`, run `scripts/check_final_review_consistency.py` and `scripts/check_phase_complete_consistency.py --phase-complete <phase_complete> --project-dir <project_root>`; if they fail, change to `partial/failed`, `next_phase=null`, and record a structured error.
+20. After checks and final review pass, initiate a git commit permission request. Both full and fix modes must commit after passing validation.
+21. Output `phase_complete`, default `next_phase=upy-deploy-plugin`; the user may choose `upy-simulate-plugin` or `null`. If the cloud service is `mock_only` or `blocked`, do not enter deploy.
+22. After success, ask if the user wants to generate additional artifacts: `upy-diagram-plugin` and `upy-wiring-plugin`. They can only go into `optional_next_phases` and must not override the main `next_phase`.
 
 Additional hard rules:
 
@@ -196,37 +197,37 @@ Judgment rules:
 - All driver and middleware files must be written to `firmware/lib`, using POSIX relative paths for protocol paths.
 - User Chinese requirements must first be converted to English keywords before searching. Example: `温湿度` -> `temperature humidity sensor`, `MQTT 上报` -> `mqtt publish client`.
 - V0 may call `upy-pkg-guide` as an adapter, but the output must be normalized to JSON: package name, source, version, files, README, example, API summary, warnings.
-- If `devices[].driver.status == cold_driver_required`, Mock and business framework can be generated, but must not output deploy-ready success; should output partial and suggest `upy-gen-driver-plugin` or simulate.
+- If explicit `devices[].driver.status` / `driver_status` is `cold_driver_required`, `pending_validation`, `unverified`, `failed`, or an unknown value, do not enter business code generation; output partial and suggest running `upy-gen-driver-plugin` pipeline mode first. Do not treat the absence of a status on ordinary source-only dependencies as a signal that a cold-driver is resolved or unresolved.
 
 ## Cloud Service/API Integration Rules
 
-- When involving LLM, Volc Engine, Alibaba Cloud Bailian/Tongyi, Tencent Hunyuan, Baidu Qianfan, OpenAI, Azure OpenAI, Gemini, Anthropic, ASR/TTS, IoT/MQTT, Webhook, SMS/Email, weather maps, object storage, or any third-party REST API, must read `references/cloud_integrations.md`.
-- First provide the user with official service provider docs/console/pricing links, letting the user decide whether to activate, purchase tokens/quotas, generate API Keys, or use their own HTTPS gateway/proxy.
-- `knowledge/cloud_service_catalog.json` is an extensible service catalog. If a service provider is missing, a `custom_http_proxy` solution can be generated, but the reason and user to-do items must be recorded.
+- When involving LLM, Volcengine Ark, Alibaba Cloud Bailian/Tongyi, Tencent Hunyuan, Baidu Qianfan, OpenAI, Azure OpenAI, Gemini, Anthropic, ASR/TTS, IoT/MQTT, Webhook, SMS/Email, weather maps, object storage, or any third-party REST API, you must read `references/cloud_integrations.md`.
+- First provide the user with official service provider docs/console/pricing links, and let the user decide whether to activate, purchase tokens/quotas, generate API Keys, or use their own HTTPS gateway/proxy.
+- `knowledge/cloud_service_catalog.json` is an extensible service catalog. If a service provider is missing, you can generate a `custom_http_proxy` solution, but you must record the reason and user action items.
 - `manifest_content.generate.cloud_integrations[]` must record provider, category, services, official_links, credential_management, user_action_required, deploy_ready.
-- Must not write real API Key/token/AK/SK/password/Bearer into `conf.py`, tasks, main, tests, logs, phase_complete, or git commit. Only record secret names and deploy-time hints.
+- Do not write real API Key/token/AK/SK/password/Bearer into `conf.py`, tasks, main, tests, logs, phase_complete, or git commit. Only record secret names and deploy-time hints.
 - For cloud services requiring HMAC/OAuth/token exchange/mTLS/large SDK/account-level AKSK, prefer generating a gateway/proxy mode; ESP32 only calls a controlled HTTPS gateway.
-- If cloud services are not confirmed, billing not activated, credentials not prepared, or only mock, `next_phase` must be `upy-simulate-plugin` or `null`, cannot default to deploy.
-- Run `scripts/check_cloud_integrations.py --project-dir <project_root>`; before real success, must also pass `check_phase_complete_consistency.py`.
+- When cloud services are unconfirmed, billing not activated, credentials not prepared, or only mocked, `next_phase` must be `upy-simulate-plugin` or `null`, and cannot default to deploy.
+- Run `scripts/check_cloud_integrations.py --project-dir <project_root>`; before real success, also pass `check_phase_complete_consistency.py`.
 
 ## Code Generation Constraints
 
-- First read `references/legacy_constraints.md`, retain the unit-test-driven embedded development philosophy of the old `upy-generate`.
+- First read `references/legacy_constraints.md`, retaining the unit-test-driven embedded development philosophy of the old `upy-generate`.
 - Except for `firmware/main.py` and hardware factory, business tasks must not import `machine`.
-- Tasks use dependency injection, do not instantiate hardware directly.
-- Each sensor/device read/write has independent try/except; one failure does not affect others.
-- Critical states must be dual-written to print + `lib.logger`: startup, driver initialization, readings, alarms, display, network transmission, exceptions.
-- When generating tasks, must follow the logging matrix in `references/task_generation_rules.md`.
-- When generating factory/mock, must follow the I2C/GPIO/SPI templates and driver API parsing rules in `references/driver_factory_templates.md`.
-- When generating `main.py` and `conf.py`, must follow the rotating logger, I2C scan, boot delay, and configuration constant rules in `references/main_conf_rules.md`.
-- PC tests must use CPython `unittest`, covering three scenarios: normal, device is None, driver exception.
-- Device tests must read and follow `references/device_unittest_subset.md`: use the MicroPython-runnable `unittest` subset, covering device-side runnable protocols, states, driver adapters, configurations, or lightweight filesystem behavior; do not generate pytest, `unittest.mock`, `pathlib`, `tempfile`, `typing`, or other CPython-only test code.
+- Tasks use dependency injection, not direct hardware instantiation.
+- Each sensor/device read/write must have its own try/except; one failure should not affect others.
+- Critical states must be dual-written via print + `lib.logger`: startup, driver initialization, readings, alarms, display, network send, exceptions.
+- When generating tasks, you must follow the logging matrix in `references/task_generation_rules.md`.
+- When generating factory/mock, you must follow the I2C/GPIO/SPI templates and driver API parsing rules in `references/driver_factory_templates.md`.
+- When generating `main.py` and `conf.py`, you must follow the rotating logger, I2C scan, boot delay, and config constant rules in `references/main_conf_rules.md`.
+- PC tests must use CPython `unittest`, covering three scenarios: normal, device is None, and driver exception.
+- Device tests must read and follow `references/device_unittest_subset.md`: use the MicroPython-runnable `unittest` subset, covering device-side testable protocol, state, driver adapter, configuration, or lightweight filesystem behavior; do not generate pytest, `unittest.mock`, `pathlib`, `tempfile`, `typing`, or other CPython-only test code.
 - Do not write Wi-Fi passwords, API Keys, or tokens into `conf.py`.
-- Do not silently modify `board.py` pinout; output structured error if pin issues are found.
+- Do not silently modify `board.py` pinout; output a structured error if pin issues are found.
 
 ## MicroPython-Aware Validation
 
-MicroPython official documentation states that its standard library is a streamlined subset for embedded systems, and different ports/firmware may trim modules; therefore, relying solely on CPython `flake8` is insufficient. After generation, the complete quality gate suite must be run. Prefer using the unified script:
+The MicroPython official documentation states that its standard library is a streamlined subset for embedded systems, and different ports/firmware may trim modules; therefore, you cannot rely solely on CPython `flake8`. After generation, you must run the complete quality gate suite. Prefer using the unified script:
 
 ```text
 python scripts/update_session_state.py --session-dir <session_root> --checkpoint tests_generated --step quality_gates --status running --idempotency-key <stable-key>
@@ -259,7 +260,7 @@ check_final_review_consistency.py
 check_phase_complete_consistency.py
 ```
 
-`.flake8` should preferentially reuse the configuration generated by scaffold, only making project-level supplements, not overriding upstream. If scaffold did not generate `.pylintrc`, generate must write or request writing it via `scripts/ensure_pylintrc.py`, and must not skip pylint. The pylint hard gate applies to generate's responsible files: `firmware/main.py`, `firmware/drivers/**/*.py`, `firmware/tasks/*.py`; by default, only fatal/error/usage bits are treated as hard failures, while warning/refactor/convention are recorded as warnings, unless `--strict-pylint` is explicitly used. `firmware/lib` and scaffold framework libraries only undergo compile/import risk checks; style noise must not block success.
+`.flake8` should preferentially reuse the configuration generated by scaffold, only making project-level supplements, not overriding upstream. If scaffold did not generate `.pylintrc`, generate must write or request to write it via `scripts/ensure_pylintrc.py`, and cannot skip pylint. Pylint is a strong gate for files generated by generate: `firmware/main.py`, `firmware/drivers/**/*.py`, `firmware/tasks/*.py`; by default, only fatal/error/usage bits are treated as hard failures; warning/refactor/convention are recorded as warnings, unless `--strict-pylint` is explicitly used. `firmware/lib` and scaffold framework libraries only undergo compile/import risk checks; style noise should not block success.
 
 MicroPython import checks must distinguish between real runtime imports and PC fallbacks. Allow:
 
@@ -272,27 +273,27 @@ except ImportError:
 
 Such fallbacks are only `MPY_IMPORT_CPYTHON_FALLBACK` warnings; direct `import asyncio`, `typing`, `dataclasses`, `pathlib`, CPython `logging` remain hard failures.
 
-`check_generated_semantics.py` is a hard gate. It must intercept issues like runtime placeholders, state machine reset every tick, async synchronous network calls, discarding hardware data after reading, shared I2S/SPI/UART resources without `generate.resource_plan`, etc. When these issues are hit, must not output deploy-ready success. If the generated `main.py` installs a rotating logger, it must have a top-level startup fatal guard: on exception, both `sys.print_exception()` to serial and `logger.exception()` to the device log. The generated `Scheduler(...)` must pass `error_cb`, and task exceptions must also be dual-written with `print + logger.exception`.
+`check_generated_semantics.py` is a strong gate. It must intercept issues like runtime placeholders, resetting state machines every tick, async synchronous network calls, discarding hardware data after reading, and shared I2S/SPI/UART resources without `generate.resource_plan`. When these issues are hit, do not output deploy-ready success. If the generated `main.py` installs a rotating logger, it must have a top-level startup fatal guard: on exception, both `sys.print_exception()` to serial and `logger.exception()` to the device log. The generated `Scheduler(...)` must pass `error_cb`, and task exceptions must also be dual-written via `print + logger.exception`.
 
 ## Fix Mode
 
 Fix mode can come from `upy-autofix-plugin` or from user manual feedback after deploy. Rules:
 
-1. Only make minimal changes, do not rewrite the entire project.
+1. Only make minimal changes; do not rewrite the entire project.
 2. Input must include `error_context`, including traceback, file paths, device observations, user feedback, triage_json, or previous_attempts.
-3. Before modification, read `generate_fix_history.json` and the last commit.
+3. Before modifying, read `generate_fix_history.json` and the last commit.
 4. After modification, re-run lint/check.
 5. After passing, git commit.
 6. Output `code_diff`, `changed_files`, `attempts[]`, `knowledge_refs[]`.
 
 Boundaries:
 
-| Issue Type | Handling |
+| Problem Type | Handling |
 |---|---|
 | Business logic, driver API calls, thresholds, logging | generate fix |
-| Wrong pin connection, I2C address change, bus conflict | structured error, suggest select-hw or manual confirmation |
+| Wrong pin connections, I2C address changes, bus conflicts | structured error, suggest select-hw or manual confirmation |
 | Adding/replacing hardware | Fall back to analyze/select-hw/scaffold |
-| Flashing, serial, upload failure | deploy retry or device troubleshooting |
+| Flashing, serial, upload failures | deploy retry or device troubleshooting |
 | Driver does not exist | partial, trigger gen-driver or simulate |
 
 ## phase_complete Output
@@ -301,21 +302,21 @@ Successful output must include:
 
 - `manifest_content.phase="generate"`.
 - `manifest_content` retains the complete upstream manifest: `requirements`, non-empty `devices`, `mcu`, `pinout`, `scaffold`/`scaffold_mode` and other fields must not be replaced by a `generate` summary.
-- `project/project-manifest.json` has been synchronously updated to `phase="generate"`.
+- `project/project-manifest.json` is synchronously updated to `phase="generate"`.
 - `generate.behavior_spec`.
 - `generate.deploy_plan`.
 - `generate.simulation_hints`.
 - `generate.cloud_integrations` (if cloud API/LLM/IoT/Webhook is involved).
 - `generate.git.commit`.
 - `lint.flake8` / `lint.pylint` / `tests.pc_unittest` / `checks`.
-- `file_manifest`, and must include a manifest role entry for `project-manifest.json`.
+- `file_manifest`, and it must include a manifest role entry for `project-manifest.json`.
 - `file_manifest` should include a `role="plan"` entry for `generate_plan.json`.
 - `session_state.upy_generate_plugin.json` artifact, `checks.session_state_checkpoint.ok=true`, `checkpoint`.
 - `permissions`.
 - `optional_next_phases`.
 - `review_findings.blocking=[]`.
 
-`manifest_content` must be the complete updated project manifest, not just summary fields like `phase/schema_version/project_name/updated_at`. Before `phase_complete.result=success`, must pass `scripts/check_phase_complete_consistency.py`.
+`manifest_content` must be the complete updated project manifest, not just summary fields like `phase/schema_version/project_name/updated_at`. Before `phase_complete.result=success`, it must pass `scripts/check_phase_complete_consistency.py`.
 
 Default:
 
@@ -336,7 +337,7 @@ Default:
 }
 ```
 
-When partial/failed, `next_phase=null`, and include:
+On partial/failure, `next_phase=null`, and include:
 
 ```json
 {
