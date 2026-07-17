@@ -2,7 +2,7 @@
 
 > Status: ✅ Finalized
 >
-> Phase 6 — Error-library-driven interactive single-point troubleshooting. Match error_lib → adapt debug_steps → step-by-step automatic/manual alternating execution → locate root cause → delegate to upstream skill for repair → feed back into error library.
+> Phase 6 — Error-library-driven interactive single-point troubleshooting. Match error_lib → adapt debug_steps → step-by-step automatic/manual execution → locate root cause → delegate upstream skill for fix → feed back into error library.
 
 ---
 
@@ -11,11 +11,11 @@
 | Item | Content |
 |------|---------|
 | Phase | autofix |
-| Upstream Skill | upy-deploy (FAIL auto-trigger) or user clicks [Debug] button |
-| Downstream Skills | upy-generate / upy-select-hw / upy-analyze (delegate repair); upy-deploy (verify); upy-simulate (optional PC verification) |
-| One-line Responsibility | Query error library → generate troubleshooting plan → step-by-step guidance (auto-detect + manual cooperation) → locate root cause → repair → verify → feed back into knowledge base |
+| Upstream Skill | upy-deploy (auto-triggered on FAIL) or user clicks [Debug] button |
+| Downstream Skills | upy-generate / upy-select-hw / upy-analyze (delegated fix); upy-deploy (verification); upy-simulate (optional PC verification) |
+| One-line Responsibility | Query error library → generate troubleshooting plan → step-by-step guidance (auto-detect + manual cooperation) → locate root cause → fix → verify → feed back into knowledge base |
 
-**Core Change:** From "auto-repair 3 times then give up" to "error-library-driven + structured debug_steps + step-by-step automatic/manual alternating troubleshooting". The LLM only performs **matching + parameter adaptation + step scheduling**, not step generation.
+**Core Change:** From "auto-fix 3 times then give up" to "error-library-driven + structured debug_steps + step-by-step automatic/manual troubleshooting". The LLM only performs **matching + parameter adaptation + step scheduling**, not step generation.
 
 ---
 
@@ -40,11 +40,11 @@
 
 | Field | Type | Required | Source | Description |
 |-------|------|----------|--------|-------------|
-| `mode` | string | Yes | Trigger | `"auto"` — auto-triggered by deploy FAIL; `"manual"` — user clicks [Debug] button |
+| `mode` | string | Yes | Trigger | `"auto"` — auto-triggered on deploy FAIL; `"manual"` — user clicks [Debug] button |
 | `error_context` | object | Yes | deploy phase_complete | Contains traceback / file_path / line_number / repl_output / log_report |
 | `user_symptom` | string? | No | User input | User's supplementary observation ("SHT30 module LED not lit") |
 | `user_suspect` | string? | No | User input | User's suspected cause ("maybe breadboard contact is poor") |
-| `max_attempts` | number | No | Plugin settings | Default 3 |
+| `max_attempts` | number | No | Plugin setting | Default 3 |
 
 ### Mid-process User Intervention
 
@@ -85,7 +85,7 @@
 ### Message Sequence
 
 ```
-Phase 0: User Input (mode="manual")
+Phase 0: User Input (when mode="manual")
   → approval_request #1: Error symptom input card (debug_symptom_input)
 
 Phase 1: Query Library + Generate Troubleshooting Plan
@@ -96,7 +96,7 @@ Phase 1: Query Library + Generate Troubleshooting Plan
   → status_update "Adapting troubleshooting steps..."
   → phase_complete (debug_plan artifact)
 
-Phase 2: Execute Troubleshooting Step-by-Step (Loop)
+Phase 2: Step-by-step Troubleshooting Execution (Loop)
   For each step:
     ├── auto_verify / auto_detect:
     │     → status_update "Step N/M: {title}"
@@ -111,25 +111,25 @@ Phase 2: Execute Troubleshooting Step-by-Step (Loop)
     └── user_action:
           → status_update "Step N/M: {title}"
           → approval_request: Guided operation card (debug_user_action)
-          → User completes operation → device_command(action="exec") auto re-test
+          → User completes action → device_command(action="exec") auto re-test
           → approval_request: Result confirmation card
 
-  Jump based on step.on_pass / step.on_fail:
+  Branch based on step.on_pass / step.on_fail:
     → continue → next step
     → goto_step N → jump to step N
     → abort → exit loop, display troubleshooting guidance
     → resolve → exit loop, enter Phase 3
 
-Phase 3: Repair + Verify + Record
+Phase 3: Fix + Verify + Record
   → status_update "Root cause located: {root_cause}"
   → (If code change needed) Delegate upy-generate / upy-select-hw
   → deploy(mode="incremental")
-  → status_update "✓ Repair verification passed"
+  → status_update "✓ Fix verification passed"
   → file_operation(write) → error_lib.json (update statistics)
   → phase_complete (result="success")
 
-Phase 4: 3 Attempts Unresolved
-  → status_update "Auto-troubleshooting could not locate root cause, generating diagnostic bundle..."
+Phase 4: 3 Unsuccessful Troubleshooting Attempts
+  → status_update "Automatic troubleshooting could not locate root cause, generating diagnostic bundle..."
   → file_operation(write) → diagnostic_bundle.json
   → phase_complete (result="failed", artifact=diagnostic_bundle)
   → approval_request: Diagnostic bundle export card (debug_bundle_export)
@@ -150,17 +150,17 @@ Phase 4: 3 Attempts Unresolved
 │  │ at firmware/tasks/sensor_task.py:23 │  │
 │  └────────────────────────────────────┘  │
 │                                          │
-│  Please supplement your observations:     │
+│  Please supplement the symptoms you observed: │
 │  ┌────────────────────────────────────┐  │
-│  │ (placeholder: Module LED lit? Wires checked?)│
+│  │ (placeholder: Is module LED on? Checked wiring?)│
 │  └────────────────────────────────────┘  │
 │                                          │
 │  Your suspected cause (optional):         │
 │  ┌────────────────────────────────────┐  │
-│  │ (placeholder: Power/Wiring/Module damage...)│
+│  │ (placeholder: Power/Wiring/Module damage...) │
 │  └────────────────────────────────────┘  │
 │                                          │
-│  [Start Troubleshooting]  [Skip, Auto-Repair]│
+│  [Start Troubleshooting]  [Skip, Auto-fix]│
 └──────────────────────────────────────────┘
 ```
 
@@ -182,7 +182,7 @@ Phase 4: 3 Attempts Unresolved
     "multi_select": false,
     "actions": [
       { "label": "Start Troubleshooting", "value": "start_debug", "primary": true },
-      { "label": "Skip, Auto-Repair", "value": "skip_to_autofix" }
+      { "label": "Skip, Auto-fix", "value": "skip_to_autofix" }
     ]
   }
 }
@@ -197,14 +197,14 @@ Phase 4: 3 Attempts Unresolved
 │  ┌────────────────────────────────────┐  │
 │  │  📐 Operation Guide                 │  │
 │  │                                    │  │
-│  │  Tool: Multimeter (DC Voltage DCV)  │  │
+│  │  Tool: Multimeter (DC Voltage DCV) │  │
 │  │                                    │  │
-│  │  1. Red probe to SDA pin (GPIO21)   │  │
+│  │  1. Red probe to SDA pin (GPIO21)  │  │
 │  │  2. Black probe to GND             │  │
 │  │  3. Record voltage value           │  │
-│  │  4. Repeat for SCL pin (GPIO22)    │  │
+│  │  4. Same method for SCL pin (GPIO22)│  │
 │  │                                    │  │
-│  │  Normal: 3.3V ± 0.3V               │  │
+│  │  Normal value: 3.3V ± 0.3V         │  │
 │  │  Acceptable: 3.0V ~ 3.6V           │  │
 │  │  Abnormal: < 3.0V or > 3.6V        │  │
 │  │                                    │  │
@@ -212,12 +212,12 @@ Phase 4: 3 Attempts Unresolved
 │  └────────────────────────────────────┘  │
 │                                          │
 │  SDA Pin Voltage (GPIO21):                │
-│  [~3.3V Normal]  [< 3.0V Low]  [~0V No Voltage]│
+│  [~3.3V Normal]  [< 3.0V Low]  [~0V No Voltage] │
 │                                          │
 │  SCL Pin Voltage (GPIO22):                │
-│  [~3.3V Normal]  [< 3.0V Low]  [~0V No Voltage]│
+│  [~3.3V Normal]  [< 3.0V Low]  [~0V No Voltage] │
 │                                          │
-│  [Cannot Measure, Skip]                   │
+│  [Cannot measure, skip]                   │
 └──────────────────────────────────────────┘
 ```
 
@@ -271,7 +271,7 @@ Phase 4: 3 Attempts Unresolved
     "multi_select": true,
     "actions": [
       { "label": "Confirm", "value": "confirm", "primary": true },
-      { "label": "Cannot Measure, Skip", "value": "skip" }
+      { "label": "Cannot measure, skip", "value": "skip" }
     ]
   }
 }
@@ -281,11 +281,11 @@ Phase 4: 3 Attempts Unresolved
 
 ```
 ┌──────────────────────────────────────────┐
-│  Step 2/6: I2C Bus Scan (Auto-Executed)   │
+│  Step 2/6: I2C Bus Scan (Auto-executed)   │
 │                                          │
-│  Expected Result:                         │
+│  Expected Behavior:                       │
 │  ✓ I2C.scan() should return [0x3C, 0x44] │
-│    (SSD1306 @ 0x3C, SHT30 @ 0x44)       │
+│    (SSD1306 @ 0x3C, SHT30 @ 0x44)        │
 │                                          │
 │  Actual Output:                           │
 │  ┌────────────────────────────────────┐  │
@@ -297,12 +297,12 @@ Phase 4: 3 Attempts Unresolved
 │  Do you see the output above?             │
 │  [Yes, output is []]  [Not sure]          │
 │                                          │
-│  Supplementary Observation (optional):    │
+│  Supplementary observation (optional):    │
 │  ┌────────────────────────────────────┐  │
 │  │ (placeholder)                     │  │
 │  └────────────────────────────────────┘  │
 │                                          │
-│  → Next Step: Measure I2C Bus Voltage     │
+│  → Next step: Measure I2C bus voltage     │
 └──────────────────────────────────────────┘
 ```
 
@@ -319,7 +319,7 @@ Phase 4: 3 Attempts Unresolved
       "expected_normal": "I2C.scan() should return [0x3C, 0x44]",
       "actual_output": "[]",
       "verdict": "fail",
-      "next_step": "Measure I2C Bus Voltage"
+      "next_step": "Measure I2C bus voltage"
     },
     "items": [],
     "allow_add": false,
@@ -347,13 +347,13 @@ Phase 4: 3 Attempts Unresolved
 | step_auto_exec | info | Executing auto-detection... | auto_verify/auto_detect |
 | step_auto_pass | success | ✓ {title} — Normal | Auto step pass |
 | step_auto_fail | warn | ⚠ {title} — Abnormal | Auto step fail |
-| step_user_wait | info | ⏳ Waiting for user operation... | user_measure/action |
-| step_user_done | success | ✓ User feedback received | User operation complete |
+| step_user_wait | info | ⏳ Waiting for user action... | user_measure/action |
+| step_user_done | success | ✓ User feedback received | User action complete |
 | step_skip | info | ⛔ Skipping step N | User skip |
 | root_cause_found | success | ✓ Root cause located: {description} | Phase 3 start |
-| fix_delegate | info | Delegating repair to {skill}... | Delegate upstream skill |
-| fix_verify | info | Verifying repair result... | deploy phase |
-| fix_done | success | ✓ Repair verification passed | Verification passed |
+| fix_delegate | info | Delegating fix to {skill}... | Delegate upstream skill |
+| fix_verify | info | Verifying fix result... | deploy phase |
+| fix_done | success | ✓ Fix verification passed | Verification passed |
 | lib_update | info | Updating error library... | Writing error_lib |
 | bundle_gen | info | Generating diagnostic bundle... | Phase 4 |
 | bundle_done | success | ✓ Diagnostic bundle generated | Bundle complete |
@@ -376,10 +376,10 @@ Phase 4: 3 Attempts Unresolved
         "title": "Troubleshooting Process",
         "headers": ["Step", "Type", "Title", "Result"],
         "rows": [
-          ["1/6", "Auto", "Verify MCU Basic Function", "✓ MCU_OK"],
-          ["2/6", "Auto", "I2C Bus Scan", "✗ []"],
-          ["3/6", "User Measure", "Measure I2C Bus Voltage", "✓ SDA:0.2V SCL:0.1V — Abnormal"],
-          ["4/6", "User Action", "Add 4.7kΩ Pull-up Resistors", "✓ Done → Re-test SCAN:[0x3C,0x44]"]
+          ["1/6", "Auto", "Confirm MCU basic function", "✓ MCU_OK"],
+          ["2/6", "Auto", "I2C bus scan", "✗ []"],
+          ["3/6", "User Measure", "Measure I2C bus voltage", "✓ SDA:0.2V SCL:0.1V — Abnormal"],
+          ["4/6", "User Action", "Add 4.7kΩ pull-up resistors", "✓ Done → Re-test SCAN:[0x3C,0x44]"]
         ]
       },
       {
@@ -396,7 +396,7 @@ Phase 4: 3 Attempts Unresolved
 }
 ```
 
-**FAIL (3 Attempts Unresolved):**
+**FAIL (3 unsuccessful troubleshooting attempts):**
 
 ```json
 {
@@ -412,13 +412,13 @@ Phase 4: 3 Attempts Unresolved
         "title": "Troubleshooting Process",
         "headers": ["Round", "Step", "Type", "Title", "Result"],
         "rows": [
-          ["1", "1/6", "Auto", "MCU Basic Function", "✓"],
-          ["1", "2/6", "Auto", "I2C Scan", "✗ []"],
-          ["1", "3/6", "User Measure", "Bus Voltage", "✓ Normal 3.3V"],
-          ["1", "4/6", "User Action", "Add Pull-ups", "✗ Still empty"],
-          ["1", "5/6", "User Measure", "SHT30 Power", "✓ Normal 3.3V"],
-          ["1", "6/6", "User Action", "Replace Sensor", "✗ Still empty"],
-          ["2", "1/1", "Auto", "Reduce I2C Frequency", "✗ Still empty"],
+          ["1", "1/6", "Auto", "MCU basic function", "✓"],
+          ["1", "2/6", "Auto", "I2C scan", "✗ []"],
+          ["1", "3/6", "User Measure", "Bus voltage", "✓ Normal 3.3V"],
+          ["1", "4/6", "User Action", "Add pull-up", "✗ Still empty"],
+          ["1", "5/6", "User Measure", "SHT30 power", "✓ Normal 3.3V"],
+          ["1", "6/6", "User Action", "Replace sensor", "✗ Still empty"],
+          ["2", "1/1", "Auto", "Lower I2C frequency", "✗ Still empty"],
           ["3", "1/2", "Auto", "Try SoftI2C", "✗ Still empty"],
           ["3", "2/2", "Auto", "Onboard LED", "✓"]
         ]
@@ -426,11 +426,11 @@ Phase 4: 3 Attempts Unresolved
       {
         "type": "markdown",
         "title": "LLM Analysis",
-        "content": "### Excluded\n\n- I2C frequency (100kHz/400kHz both failed)\n- Pin configuration (SoftI2C also failed)\n- MCU power/reset (onboard LED normal)\n- I2C bus voltage (normal 3.3V)\n- Pull-up resistors (already added)\n- Sensor power (normal 3.3V)\n- Sensor module (still failed after replacement)\n\n### Still Suspected\n\n- MCU I2C peripheral hardware damage (low probability)\n- Breadboard internal short (needs multimeter continuity check step by step)\n\n### Knowledge Gap\n\nCannot remotely distinguish between 'I2C peripheral damage' and 'breadboard latent short'. Recommend swapping MCU module for cross-validation."
+        "content": "### Ruled Out\n\n- I2C frequency (100kHz/400kHz both failed)\n- Pin configuration (SoftI2C also failed)\n- MCU power/reset (onboard LED normal)\n- I2C bus voltage (normal 3.3V)\n- Pull-up resistors (added)\n- Sensor power (normal 3.3V)\n- Sensor module (still failed after replacement)\n\n### Still Suspected\n\n- MCU I2C peripheral hardware damage (low probability)\n- Breadboard internal short (needs multimeter continuity check pin by pin)\n\n### Knowledge Gap\n\nCannot remotely distinguish between 'I2C peripheral damage' and 'breadboard hidden short'. Suggest cross-validating with a different MCU module."
       }
     ],
     "warnings": ["Troubleshooting steps exhausted, root cause not located"],
-    "errors": ["Auto-troubleshooting unresolved"],
+    "errors": ["Automatic troubleshooting unresolved"],
     "diagnostic_bundle_path": ".upy/diagnostic_bundles/bundle_20260617T103000.json",
     "error_lib_updated": true
   }
@@ -445,20 +445,20 @@ Phase 4: 3 Attempts Unresolved
 
 | No. | Location | Current Behavior | Change To | Reason |
 |-----|----------|-----------------|-----------|--------|
-| 1 | Role Positioning | Orchestration coordination layer, triage.py collects + LLM judges + delegates repair | **Error-library-driven interactive single-point troubleshooting**. LLM matches error_lib → adapts debug_steps → step-by-step execution → user cooperation | From "auto-repair 3 times" to "guided troubleshooting" |
-| 2 | Prerequisites | triage.py + deploy_logs/ | Add `error_lib.json` (project-level `.upy/` + global-level `~/.upy/`) | Querying the library is the first step |
-| 3 | Step 1 | `python triage.py --log-dir ... --port COM3` | **Delete**. Log parsing done by LLM directly from error_context. I2C scan moved into debug_steps auto_detect step | Server does not run local scripts |
-| 4 | Step 2 Judgment | 7 error categories → branch to different skills | **Phase 1: Query library for match**. Extract signature (error_type+keywords+device) → file_operation(read) error_lib.json → match scoring → take highest score entry → fill template parameters `{I2C_SCL}` `{I2C_SDA}` etc. → generate debug_plan | Error library driven, LLM does not generate steps |
-| 5 | Step 2.5 Hardware Signal Verification | LLM generates sanity_config.json → `python hardware_sanity.py` → ask_user | **Merge into Phase 2 debug_steps execution loop**. auto_verify/auto_detect → device_command. user_measure/user_observe → approval_request | Unified into 6 step types |
-| 6 | Step 2.5 User Feedback | hardware_sanity.py sets `_pending_question` → LLM calls AskUserQuestion | **Change to approval_request card**. user_feedback mode results directly map to debug_step_result / debug_user_measure cards | Plugin side renders approval cards uniformly |
+| 1 | Role Definition | Orchestration coordination layer, triage.py collects + LLM analyzes + delegates fix | **Error-library-driven interactive single-point troubleshooting**. LLM matches error_lib → adapts debug_steps → step-by-step execution → user cooperation | From "auto-fix 3 times" to "guided troubleshooting" |
+| 2 | Prerequisites | triage.py + deploy_logs/ | Added `error_lib.json` (project-level `.upy/` + global-level `~/.upy/`) | Querying library is the first step |
+| 3 | Step 1 | `python triage.py --log-dir ... --port COM3` | **Deleted**. Log parsing done by LLM directly from error_context. I2C scan moved into debug_steps auto_detect steps | Server does not run local scripts |
+| 4 | Step 2 Analysis | 7 error categories → branch to different skills | **Phase 1: Query library for match**. Extract signature (error_type+keywords+device) → file_operation(read) error_lib.json → match scoring → take highest score entry → fill template parameters `{I2C_SCL}` `{I2C_SDA}` etc. → generate debug_plan | Error library driven, LLM does not generate steps |
+| 5 | Step 2.5 Hardware Signal Verification | LLM generates sanity_config.json → `python hardware_sanity.py` → ask_user | **Merged into Phase 2 debug_steps execution loop**. auto_verify/auto_detect → device_command. user_measure/user_observe → approval_request | Unified into 6 step types |
+| 6 | Step 2.5 User Feedback | hardware_sanity.py sets `_pending_question` → LLM calls AskUserQuestion | **Changed to approval_request cards**. user_feedback mode results directly mapped to debug_step_result / debug_user_measure cards | Plugin side renders approval cards uniformly |
 | 7 | Step 3 Delegation | `Skill("upy-generate")` / `Skill("upy-select-hw")` | **Server-side internal call** + phase switch. LLM starts generate with mode="fix" + error_context, phase field switch notifies plugin | Same-process call, phase lets plugin perceive progress |
-| 8 | Step 4 Verification | `Skill("upy-simulate")` → `Skill("upy-deploy")` | deploy(mode="incremental", changed_files). Before each verification, send approval_request showing "expected normal result", after execution send result confirmation card | User participates in verification |
-| 9 | Step 5 Hardware Troubleshooting Guidance | Plain text Chinese guidance | **Integrate into debug_steps fail_guidance field**. On abort, display structured guidance card (with wiring diagram references) | Not plain text, includes diagrams |
-| 10 | Step 6 3 Failures | git rollback + plain text bottleneck report | **Generate diagnostic_bundle.json** (structured JSON, containing all attempts + code snapshots + LLM analysis + knowledge gaps). **No auto-rollback**, preserve scene for manual analysis | For human+LLM joint analysis, not simple abandonment |
+| 8 | Step 4 Verification | `Skill("upy-simulate")` → `Skill("upy-deploy")` | deploy(mode="incremental", changed_files). Before each verification, send approval_request showing "expected normal behavior", after execution send result confirmation card | User participates in verification |
+| 9 | Step 5 Hardware Troubleshooting Guidance | Plain text Chinese guidance | **Integrated into debug_steps fail_guidance field**. On abort, display structured guidance card (including wiring diagram references) | Not plain text, includes diagrams |
+| 10 | Step 6 3 Failures | git rollback + plain text bottleneck report | **Generate diagnostic_bundle.json** (structured JSON, containing all attempts + code snapshots + LLM analysis + knowledge gaps). **No auto-rollback**, preserve scene for manual analysis | For human + LLM joint analysis, not simple abandonment |
 | 11 | Step 7 Error Recording | Append to `logs/error_report.json` | **Write to error_lib.json**. Success → update success_count + avg_steps_to_resolve. Failure → append suspected entry. After manual resolution → write verified entry | Unified as error_lib |
-| 12 | **New** Phase 0 | None | `approval_request` error symptom input card: REPL output pre-filled + user supplementary observation + suspected cause. Displayed when mode="manual" | User participation entry point |
+| 12 | **New** Phase 0 | None | `approval_request` error symptom input card: REPL output pre-filled + user supplements observations + suspected cause. Displayed when mode="manual" | User participation entry point |
 | 13 | **New** Error Library Self-Evolution | None | After troubleshooting ends → update entry statistics. New steps added by LLM → append to entry debug_steps. After 3 total failures, user inputs root cause → create verified entry | Knowledge accumulation |
-| 14 | **New** Adaptation Parameter Extraction | None | LLM extracts actual pin numbers/addresses from board.py + manifest, fills `{I2C_SCL}`, `{SHT30_ADDR}` etc. variables in debug_steps templates | Generic template → project-specific |
+| 14 | **New** Adaptation Parameter Extraction | None | LLM extracts actual pin numbers/addresses from board.py + manifest, fills variables like `{I2C_SCL}`, `{SHT30_ADDR}` in debug_steps templates | Generic template → project-specific |
 
 ---
 
@@ -474,13 +474,13 @@ Validates error_lib.json structural integrity. Runs automatically after LLM writ
 |------------|-------------|
 | JSON Syntax | Parsable |
 | Required Fields | Each entry contains id / signature / classification / debug_steps / metadata |
-| debug_steps Integrity | Each step contains step_id / type / title / expected_normal / on_pass / on_fail |
-| step.type Enum | `auto_verify` / `auto_detect` / `user_measure` / `user_observe` / `user_action` / `info_only` |
-| on_pass/on_fail Enum | `continue` / `goto_step` / `abort` / `retry_step` / `resolve` |
-| goto_step/retry_step Target Exists | `on_pass_target` / `on_fail_target` / `retry_step_id` must point to an existing step_id |
+| debug_steps Completeness | Each step contains step_id / type / title / expected_normal / on_pass / on_fail |
+| step.type Enumeration | `auto_verify` / `auto_detect` / `user_measure` / `user_observe` / `user_action` / `info_only` |
+| on_pass/on_fail Enumeration | `continue` / `goto_step` / `abort` / `retry_step` / `resolve` |
+| goto_step/retry_step Target Exists | `on_pass_target` / `on_fail_target` / `retry_step_id` points to an existing step_id |
 | step_id Unique | No duplicates within the same entry |
-| certainty Enum | `verified` / `suspected` / `speculative` |
-| source Enum | `manual` / `auto` |
+| certainty Enumeration | `verified` / `suspected` / `speculative` |
+| source Enumeration | `manual` / `auto` |
 
 stdout:
 ```json
@@ -496,10 +496,10 @@ Validates diagnostic bundle structural integrity.
 | Check Item | Description |
 |------------|-------------|
 | JSON Syntax | Parsable |
-| Required Top-Level Fields | bundle_id / project / error_summary / attempts / llm_analysis |
+| Required Top-level Fields | bundle_id / project / error_summary / attempts / llm_analysis |
 | attempts Sequential | attempt_number increments from 1 |
 | error_summary.across_attempts | Matches number of attempts |
-| code_snapshot File Exists | Referenced file paths exist in project directory |
+| code_snapshot File Exists | Referenced file paths exist in the project directory |
 
 ### triage.py (Refactored)
 
@@ -507,11 +507,11 @@ Validates diagnostic bundle structural integrity.
 
 | Change | Content |
 |--------|---------|
-| Remove `--port` / `--sda` / `--scl` | No longer calls mpremote |
-| Add `--input` | Read log text from stdin (server reads via file_operation then pipes), replaces `--log-dir` |
+| Removed `--port` / `--sda` / `--scl` | No longer calls mpremote |
+| Added `--input` | Reads log text from stdin (server reads via file_operation then pipes), replaces `--log-dir` |
 | Keep `parse_errors()` | Regex matching logic unchanged |
 | Keep `--snapshot` / `--rollback` | Git operations unchanged |
-| Add `--validate-lib` | Calls validate_error_lib.py to validate error_lib.json |
+| Added `--validate-lib` | Calls validate_error_lib.py to validate error_lib.json |
 
 ### hardware_sanity.py (Minor Modification)
 
@@ -520,7 +520,7 @@ Validates diagnostic bundle structural integrity.
 | Change | Content |
 |--------|---------|
 | `_pending_question` field extended | Added `expected_behavior` + `abnormal_options[]` fields for LLM to generate approval_request |
-| Add `--stdin-config` | Read config JSON from stdin, avoids server writing file to disk |
+| Added `--stdin-config` | Reads config JSON from stdin, avoids server writing files to disk |
 
 ---
 
@@ -551,16 +551,16 @@ Diagnostic bundle schema, referenced by validate_diagnostic_bundle.py. Dynamical
 
 ---
 
-## VII. Plugin-Side UI Components
+## VII. Plugin-side UI Components
 
 | Component | Corresponding Message | Description |
-|-----------|----------------------|-------------|
+|-----------|-----------------------|-------------|
 | [Debug] Button | Triggers start_phase(mode="manual") | Appears in result panel after deploy FAIL |
-| Error Symptom Input Card | approval_request `debug_symptom_input` | REPL output pre-filled + user supplement |
+| Error Symptom Input Card | approval_request `debug_symptom_input` | REPL output pre-filled + user supplements |
 | Troubleshooting Plan Panel | phase_complete artifact `debug_plan` | Step list + match source + estimated time |
 | Guided Operation Card | approval_request `debug_user_measure` / `debug_user_action` | Contains operation steps/wiring diagram/normal range |
-| Result Confirmation Card | approval_request `debug_step_result` | "Do you see the expected result?" |
-| Diagnostic Bundle Export Card | approval_request `debug_bundle_export` | After 3 failed troubleshooting attempts |
+| Result Confirmation Card | approval_request `debug_step_result` | "Do you see the expected behavior?" |
+| Diagnostic Bundle Export Card | approval_request `debug_bundle_export` | After 3 unsuccessful troubleshooting attempts |
 | Error Library Management Panel | error_lib_update | Browse/add/edit/delete entries |
 
 ---
@@ -571,7 +571,7 @@ Diagnostic bundle schema, referenced by validate_diagnostic_bundle.py. Dynamical
 
 ```
 Project-level: {project_dir}/.upy/error_lib.json    ← Specific to current project, created by init_scaffold from template
-Global-level: ~/.upy/error_lib.json                 ← Shared across projects, synced by plugin management
+Global-level: ~/.upy/error_lib.json                 ← Shared across projects, managed by plugin sync
 ```
 
 ### Library Query Priority
@@ -586,8 +586,8 @@ Global-level: ~/.upy/error_lib.json                 ← Shared across projects, 
 ### Data Sources
 
 | Source | Write Location | Trigger Condition | certainty |
-|--------|---------------|-------------------|-----------|
-| User manual upload (plugin [Upload Case] button) | Global-level | User active operation | `verified` |
+|--------|----------------|-------------------|-----------|
+| User manual upload (plugin [Upload Case] button) | Global-level | User action | `verified` |
 | autofix troubleshooting success (reusing existing entry) | Project-level | success_count++ / avg_steps update | Unchanged |
 | autofix troubleshooting success (LLM custom new steps) | Project-level | New steps appended to entry debug_steps end | Unchanged |
 | autofix troubleshooting success (brand new problem) | Project-level | Create new entry | `suspected` |
@@ -615,7 +615,7 @@ autofix auto-create (auto, suspected)
 
 verified entry fails 1 time
   → fail_count++ → still verified (sporadic)
-  → 3 consecutive failures → downgraded to suspected → LLM reviews debug_steps
+  → Fails 3 consecutive times → downgraded to suspected → LLM reviews debug_steps
 ```
 
 ### Match Scoring Algorithm
@@ -652,7 +652,7 @@ Placeholders in the form `{VAR}` in debug_steps are automatically filled by the 
 
 ## IX. Independent Test Scenarios
 
-### Plugin-Side Tests (No Server)
+### Plugin-side Tests (No Server)
 
 1. Manually send approval_request `debug_symptom_input` → Verify error symptom input card interaction
 2. Manually send phase_complete (debug_plan artifact) → Verify troubleshooting plan panel rendering
@@ -661,12 +661,12 @@ Placeholders in the form `{VAR}` in debug_steps are automatically filled by the 
 5. Simulate complete troubleshooting sequence: device_command → device_result → approval_request confirm → next step
 6. Manually send phase_complete (FAIL + diagnostic_bundle_path) → Verify diagnostic bundle export card
 
-### Skill-Side Tests (No Plugin)
+### Skill-side Tests (No Plugin)
 
 1. Prepare error_lib.json (containing 3 test entries), construct start_phase(mode="auto", error_context=OSError_19)
-2. Verify match scoring: confirm err_sht30_i2c_19 gets highest score
+2. Verify match scoring: confirm err_sht30_i2c_19 gets the highest score
 3. Verify parameter filling: check that `{I2C_SDA}` in debug_steps is replaced with actual value
-4. Mock user responses to each approval_request, verify on_pass/on_fail jump logic
+4. Mock user responses to each approval_request, verify on_pass/on_fail branching logic
 5. Verify PASS path: troubleshoot to root_cause → delegate generate → deploy → error_lib update
 6. Verify FAIL path: steps exhausted → generate diagnostic_bundle → phase_complete(failed)
 7. Run validate_error_lib.py to confirm LLM-written entry structure is valid

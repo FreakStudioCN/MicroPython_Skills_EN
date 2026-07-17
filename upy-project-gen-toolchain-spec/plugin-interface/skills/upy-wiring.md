@@ -2,7 +2,7 @@
 
 > Status: ✅ Finalized
 >
-> Phase 7a — Wiring diagram generation. Read all `.py` source code in `firmware/` to extract actual pins/buses/addresses, cross-validate with manifest, LLM generates `wiring.json`, script renders Mermaid `.md` + SVG + PNG + HTML.
+> Phase 7a — Wiring diagram generation. Read all firmware/ .py source files to extract actual pins/buses/addresses, cross-validate with manifest, LLM generates wiring.json, script renders Mermaid .md + SVG + PNG + HTML.
 
 ---
 
@@ -13,7 +13,7 @@
 | Phase | wiring |
 | Upstream Skill | upy-scaffold or upy-generate (manual/auto trigger) |
 | Downstream Skill | upy-diagram (parallel, can be generated simultaneously) |
-| One-line Responsibility | firmware source code as authoritative data source → LLM extracts hardware connection facts → generates wiring.json → validates → renders Mermaid wiring diagram + SVG + PNG + HTML + pin cross-reference table |
+| One-line Responsibility | firmware source as authoritative data source → LLM extracts hardware connection facts → generates wiring.json → validates → renders Mermaid wiring diagram + SVG + PNG + HTML + pin cross-reference table |
 
 **Core Constraints:**
 - firmware > manifest > LLM inference (data priority)
@@ -42,7 +42,7 @@
 | `manifest` | object | Yes | upy-generate output | Complete manifest, including mcu/devices/pinout/bom |
 | `complexity` | string | No | Plugin setting | `"simple"` — only .md; `"full"` — .md + .svg + .png + .html + _pins.md. Default `"full"` |
 
-**Note:** The manifest is passed in via start_phase; the LLM does not need to file_operation(read) it again. However, firmware/ source files are **not** in the payload and must be read one by one via file_operation(read).
+**Note:** The manifest is passed in start_phase, so the LLM does not need to file_operation(read) it again. However, firmware/ source files are **not** in the payload and must be read one by one via file_operation(read).
 
 ---
 
@@ -51,8 +51,8 @@
 ### Message Sequence
 
 ```
-Step 1-3: Read source code + extract hardware facts
-  → status_update "Reading firmware/ source code..."
+Step 1-3: Read source + extract hardware facts
+  → status_update "Reading firmware/ source files..."
   → file_operation(read) × N (all .py files under firmware/)
   → status_update "✓ Read N files, extracted X pins, Y buses, Z warnings"
 
@@ -84,14 +84,14 @@ Output
 
 | step_id | level | message | Trigger |
 |---------|-------|---------|---------|
-| read_src | info | Reading firmware/ source code... | Step 2 start |
+| read_src | info | Reading firmware/ source files... | Step 2 start |
 | read_file | info | Reading: firmware/tasks/sensor_task.py (N/M) | Per file |
 | read_done | success | ✓ Read N files, extracted X pins, Y buses, Z warnings | Step 2+3 complete |
 | gen_json | info | Generating wiring intermediate JSON... | Step 4 |
 | gen_done | success | ✓ wiring.json generated | Step 4 complete |
 | validate | info | Validating wiring.json... | Step 5 |
 | validate_pass | success | ✓ wiring.json validation passed | Validation passed |
-| validate_fail | warn | ✗ wiring.json: N errors → fixing (Round M) | Validation failed, entering fix loop |
+| validate_fail | warn | ✗ wiring.json: N errors → fixing (round M) | Validation failed, entering fix loop |
 | render | info | Rendering wiring diagram (mermaid.ink API)... | Step 6 |
 | render_svg | info | Rendering SVG... | render_wiring_local sub-step |
 | render_png | info | Rendering PNG... | render_wiring_local sub-step |
@@ -115,7 +115,7 @@ Output
 }
 ```
 
-**Note:** `validate_json.py` and `wiring.schema.json` are both copied to the project's `.upy/` directory by upy-scaffold and are accessible locally by the plugin.
+**Note:** `validate_json.py` and `wiring.schema.json` are both copied to the project `.upy/` directory by upy-scaffold and are accessible locally by the plugin.
 
 ### script_run — render_wiring_local.py (Step 6)
 
@@ -133,7 +133,7 @@ Output
 }
 ```
 
-**Note:** The rendering script requires network access (mermaid.ink API) to generate SVG/PNG and must be executed on the plugin side. Timeout of 60s covers network latency.
+**Note:** The render script requires network access (mermaid.ink API) to generate SVG/PNG and must be executed on the plugin side. Timeout of 60s covers network latency.
 
 ### phase_complete
 
@@ -167,7 +167,7 @@ Output
 }
 ```
 
-**warnings Examples (LLM auto-generates by rules):**
+**warnings examples (LLM auto-generates by rules):**
 
 | Condition | level | Example msg |
 |-----------|-------|-------------|
@@ -175,7 +175,7 @@ Output
 | No pull-up resistor declaration | `warning` | "Verify I2C pull-up resistors on SDA/SCL (4.7kΩ to 3.3V)" |
 | 5V device on 3.3V | `danger` | "LCD1602: 5V device on 3.3V pin — level shifter needed" |
 | Buzzer without current-limiting resistor | `info` | "Add 220Ω resistor in series with buzzer" |
-| firmware and manifest inconsistency | `danger` | "SHT30: firmware uses 0x44, manifest says 0x45" |
+| firmware vs manifest mismatch | `danger` | "SHT30: firmware uses 0x44, manifest says 0x45" |
 
 ---
 
@@ -186,11 +186,11 @@ Total 6 changes:
 | No. | Location | Current Behavior | Change To | Reason |
 |-----|----------|-----------------|-----------|--------|
 | 1 | Pre-check | `python --version` + `python -c "import jsonschema"` | Remove. Dependencies guaranteed by plugin environment + scaffold preset files | Server does not perceive runtime environment |
-| 2 | Step 1 Read schema | LLM Reads `wiring.schema.json` (spec directory) | Schema is preset by scaffold to `{project}/.upy/schemas/wiring.schema.json`. Server-side LLM has built-in schema knowledge and generates JSON directly, no file read needed | Spec file not in project directory, server cannot access |
-| 3 | Step 2-3 Read source files | LLM directly Reads firmware/**/*.py + manifest | `file_operation(read)` reads all .py files under firmware/ one by one. Manifest already in start_phase.payload, no need to re-read | Server reads files via plugin |
+| 2 | Step 1 Read schema | LLM Read `wiring.schema.json` (spec directory) | Schema preset by scaffold to `{project}/.upy/schemas/wiring.schema.json`. Server-side LLM has built-in schema knowledge and generates JSON directly, no file read needed | Spec files not in project directory, server cannot access |
+| 3 | Step 2-3 Read source files | LLM directly Read firmware/**/*.py + manifest | `file_operation(read)` reads all .py files under firmware/ one by one. Manifest already in start_phase.payload, no need to re-read | Server reads files through plugin |
 | 4 | Step 4 Write wiring.json | LLM writes local file | `file_operation(write)` → docs/wiring.json | Unified file operations |
 | 5 | Step 5 Validate | `python validate_json.py --schema <spec path> --json ...` | `script_run(validate_json.py --schema .upy/schemas/wiring.schema.json --json docs/wiring.json)`. Script preset by scaffold to `.upy/scripts/` | Schema and script must be in project directory, executable locally by plugin |
-| 6 | Step 6+7 Render | `python render_wiring_local.py --input ... --output ...` | `script_run(render_wiring_local.py --input docs/wiring.json --output docs/ --format all)`. Script preset by scaffold | Rendering requires network (mermaid.ink) + writes local files → plugin executes |
+| 6 | Step 6+7 Render | `python render_wiring_local.py --input ... --output ...` | `script_run(render_wiring_local.py --input docs/wiring.json --output docs/ --format all)`. Script preset by scaffold | Rendering requires network (mermaid.ink) + write local files → plugin execution |
 | 7 | Step 8 Update manifest | `python -c "..."` inline script | `file_operation(read)` manifest → server modifies wiring field → `file_operation(write)` | Unified file operations |
 
 ---
@@ -209,9 +209,9 @@ Total 6 changes:
 
 | Change | Content |
 |--------|---------|
-| Added `--json-summary` | Outputs a single line of JSON summary to stdout upon completion: `{"status":"ok","files":[{"path":"docs/wiring.md","size":2048},...],"errors":[]}`. Allows server to confirm output file list and sizes |
+| Added `--json-summary` | Outputs a single JSON summary line to stdout upon render completion: `{"status":"ok","files":[{"path":"docs/wiring.md","size":2048},...],"errors":[]}`. For server to confirm output file list and sizes |
 
-**No other changes needed.** The rendering script already uses defensive reading (`safe_get`) and will not crash due to missing fields in wiring.json.
+**No other changes needed.** The render script already uses defensive reading (`safe_get`) and will not crash due to missing wiring.json fields.
 
 ### Impact on upy-scaffold
 
@@ -223,22 +223,22 @@ Total 6 changes:
 
 ---
 
-## VI. Plugin-Side UI Components
+## VI. Plugin-side UI Components
 
 | Component | Corresponding Message | Description |
 |-----------|----------------------|-------------|
-| Progress Timeline | status_update × ~10 | Read→Extract→Generate→Validate→Render→Output |
-| Wiring Diagram Preview | Click wiring.html in file_list | WebView embedded preview (Tab switching: Wiring Diagram/Source Code/Pin Table) |
-| [Generate Wiring Diagram] Button | Triggers start_phase | Enabled after scaffold/generate completes |
-| [Regenerate] Button | Replaces button | Can regenerate after initial generation |
+| Progress timeline | status_update × ~10 | Read→Extract→Generate→Validate→Render→Output |
+| Wiring diagram preview | Click wiring.html in file_list | WebView embedded preview (Tab switching: Wiring Diagram/Source Code/Pin Table) |
+| [Generate Wiring Diagram] button | Triggers start_phase | Enabled after scaffold/generate completes |
+| [Regenerate] button | Replace button | Can regenerate after initial generation |
 
 ### Wiring Diagram Preview Description
 
-After the plugin receives phase_complete(file_list), it renders the file list. User clicks `wiring.html` → WebView preview:
+After plugin receives phase_complete(file_list), it renders as a file list. User clicks `wiring.html` → WebView preview:
 
 ```
 ┌──────────────────────────────────────────┐
-│ [Wiring Diagram] [Mermaid Source] [Pin Table] │
+│ [Wiring] [Mermaid Source] [Pin Table]     │
 ├──────────────────────────────────────────┤
 │                                          │
 │   ┌─────────────────────┐                │
@@ -256,17 +256,17 @@ After the plugin receives phase_complete(file_list), it renders the file list. U
 
 ## VII. Independent Test Scenarios
 
-### Plugin-Side Testing (No Server)
+### Plugin-side Testing (No Server)
 
 1. Manually send `status_update` sequence → Verify read→generate→validate→render→output timeline
 2. Manually send `file_operation(read)` request → Return simulated firmware/ file content
 3. Manually send `file_operation(write)` → docs/wiring.json → Confirm file written
 4. Manually send `phase_complete` (file_list) → Verify file list rendering + wiring.html preview entry
 
-### Skill-Side Testing (No Plugin)
+### Skill-side Testing (No Plugin)
 
 1. Prepare complete firmware/ directory + manifest, mock file_operation(read) to return file content
-2. LLM generates wiring.json → Run validate_json.py, validation passes
+2. LLM generates wiring.json → Run validate_json.py validation passes
 3. Run render_wiring_local.py → Confirm 5 output files generated
-4. Verify cross-validation rules: Construct case where firmware and manifest are inconsistent → Confirm firmware takes precedence + warning generated
-5. Check all sent message JSONs conform to 02-protocol.md Schema
+4. Verify cross-validation rules: Construct case where firmware and manifest mismatch → Confirm firmware takes precedence + warning generated
+5. Check all sent message JSON conforms to 02-protocol.md Schema

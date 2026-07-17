@@ -1,15 +1,15 @@
 ---
 name: upy-simulate
-description: PC-side full-process business simulation. Reads all code under firmware/ as context. LLM autonomously designs scheduling/device/visualization schemes, generates simulation scripts under test/pc/, and runs them after flake8 + pylint validation. Triggered manually after upy-generate completes, or called after upy-autofix repairs.
+description: Full-process business simulation on PC. Reads all code under firmware/ as context. LLM autonomously designs scheduling/device/visualization schemes, generates simulation scripts under test/pc/, validates with flake8 + pylint, then runs. Triggered manually after upy-generate completes, or called after upy-autofix repairs.
 ---
 
-# PC-side Full-Process Simulation Skill
+# PC Full-Process Simulation Skill
 
-## Role Positioning
+## Role Definition
 
-Reads all code under `firmware/` as context. **The LLM autonomously designs** the scheduling scheme, Mock device assembly, visualization format, and data scenarios, generating `test/pc/sim_main.py` (and any necessary auxiliary files) to simulate the complete business process without relying on hardware.
+Reads all code under `firmware/` as context. **The LLM autonomously designs** the scheduling scheme, Mock device assembly, visualization format, and data scenarios, generating `test/pc/sim_main.py` (and any required auxiliary files) to simulate the complete business process without relying on hardware.
 
-**This is a code generation skill, not a runtime framework skill.** Do not pre-write a scheduler or hardcode a CLI format—the LLM reads the full codebase and generates a project-specific simulation script.
+**This is a code generation skill, not a runtime framework skill.** Do not pre-write a scheduler or hardcode a CLI format — the LLM reads the full codebase and generates a project-specific simulation script.
 
 ---
 
@@ -17,21 +17,21 @@ Reads all code under `firmware/` as context. **The LLM autonomously designs** th
 
 - **Do not modify any files under `firmware/`** (unless a definite syntax error or logic bug is found)
 - **All simulation code goes into `test/pc/`**, importing firmware/ modules via `sys.path.insert(0, ...)`
-- **Classes and functions from firmware/ can be inherited or wrapped**, but the original files must not be modified
-- **flake8 + pylint validation must pass**; if there are errors, fix them and re-validate until error-free
+- **Classes and functions from firmware/ may be inherited or wrapped**, but the original files must not be modified
+- **flake8 + pylint validation must pass**; if errors exist, fix and re-validate in a loop until error-free
 - **Must ask the user via AskUserQuestion before running**
 
 ---
 
 ## Execution Steps
 
-### Step 1: Full Context Reading
+### Step 1: Read Full Context
 
 The LLM must read all of the following files without omission:
 
 ```
 firmware/
-├── main.py              → Hardware init layer + callback wrapping + task registration + data flow (_data dict keys)
+├── main.py              → Hardware init layer + callback wrappers + task registration + data flow (_data dict keys)
 ├── conf.py              → Sampling rate, refresh interval, alarm thresholds, constants
 ├── project-manifest.json → mode (timer|async|thread), devices[], mcu{}
 ├── tasks/
@@ -47,7 +47,7 @@ firmware/
 └── assets/              → Device-side resource files (audio, images, etc.); simulation may need to reference them
 ```
 
-### Step 1B: Project Type Classification + Extractable Simulation Interface Extraction
+### Step 1B: Project Type Classification + Extract Simulatable Interfaces
 
 After reading all files, the LLM must perform the following two analyses:
 
@@ -61,7 +61,7 @@ Scan all code under firmware/ for the following signals and output the classific
 | `PWM` / `Servo` / `Stepper` / `encoder` / `H-bridge` / motor driver chip model | **Motor Control** |
 | display device + `Pin.IRQ` / button / touch / rotary encoder / keypad driver | **GUI Interaction** |
 | `conf.py` contains `*_THRESHOLD` / `*_ALARM` constants | **Alarm Monitoring** |
-| `_thread` / `uasyncio` and ≥ 3 concurrent tasks | **Multi-task Concurrency** |
+| `_thread` / `uasyncio` and ≥ 3 concurrent tasks | **Multi-tasking Concurrency** |
 | `uart` / `CAN` / `RS485` / `Modbus` / external communication protocol | **Industrial Communication** |
 
 A project can belong to multiple types. Format:
@@ -69,22 +69,22 @@ A project can belong to multiple types. Format:
 # @ProjectTypes: sensor_monitoring, alarm_monitoring, gui_display
 ```
 
-#### 2. Extractable Simulation Interface Inventory
+#### 2. List of Simulatable Interfaces
 
-Do not only read `drivers/*/mock.py`; also extract all **simulatable external boundaries** from the entire firmware codebase:
+Do not only read `drivers/*/mock.py`; extract all **simulatable external boundaries** from the entire firmware codebase:
 
 - **Network**: `wlan.isconnected()`, `wlan.ifconfig()`, `socket.send()/recv()`, `umqtt.publish()/subscribe()/check_msg()`, `urequests.get()/post()`
-- **Motor**: `pwm.duty()`, `servo.angle()`, `stepper.step()`, encoder readings, limit switch states
+- **Motor**: `pwm.duty()`, `servo.angle()`, `stepper.step()`, encoder reading, limit switch state
 - **Input**: `pin.value()`, `pin.irq()` trigger timing, debounce period
-- **Protocol**: MQTT CONNECT/SUBACK/PUBACK states, HTTP response status codes
+- **Protocol**: MQTT CONNECT/SUBACK/PUBACK status, HTTP response status code
 
-For each simulatable interface, record: **the task name that calls it, normal behavior, and possible failure modes**.
+For each simulatable interface, record: **the task that calls it, normal behavior, and possible failure modes**.
 
 ---
 
 ### Step 2: LLM Autonomous Design
 
-Based on the full context from Step 1, the LLM autonomously decides on the following 5 things. **Do not pre-set a framework or hardcode a solution.**
+Based on the full context from Step 1, the LLM autonomously decides the following 5 things. **Do not pre-set a framework or hardcode a solution.**
 
 #### 2A. Scheduling Scheme
 
@@ -92,17 +92,17 @@ Based on the full context from Step 1, the LLM autonomously decides on the follo
 |--------------|-----------------|------|
 | timer | `while` + `time.sleep(tick_ms/1000)` + manual counter | LLM must generate a `SimScheduler` class with the same API as `Scheduler` in `firmware/lib/scheduler/timer_sched.py` (`add_task`, `start`), removing `machine.Timer` ISR |
 | async | `asyncio.run()` | CPython 3.7+ native asyncio, highly compatible with MicroPython `uasyncio` API; LLM can use it directly |
-| thread | `threading.Thread(target=loop, daemon=True)` | CPython native threading; main thread `time.sleep` keeps alive |
+| thread | `threading.Thread(target=loop, daemon=True)` | CPython native threading; main thread keeps alive with `time.sleep` |
 
-**Timer mode special note**: The `SimScheduler` generated by the LLM must be interface-compatible with the original `Scheduler`. CPython uses a `time.sleep` loop instead of an ISR, incrementing all task counters on each tick and executing callbacks that are due.
+**Special note for timer mode**: The `SimScheduler` generated by the LLM must be interface-compatible with the original `Scheduler`. CPython uses a `time.sleep` loop instead of an ISR, incrementing all task counters on each tick and executing callbacks that are due.
 
 #### 2B. Mock Device Assembly + Data Generator (Core)
 
-**This is the most critical design decision for upy-simulate.** Do not set Mock to static values—`MockSHT30(measure=(25.0, 60.0))` returns the same data every time, with no variation between ticks, and business logic branches will never be tested.
+**This is the most critical design decision for upy-simulate.** Mocks must not be static values — `MockSHT30(measure=(25.0, 60.0))` returns the same data every time, with no variation between ticks, and business logic branches will never be tested.
 
 **Correct approach: Data generator = function of tick.**
 
-The LLM reads each `drivers/*/mock.py` and determines:
+The LLM reads each `drivers/*/mock.py` to determine:
 - What parameters `__init__` accepts (e.g., `measure=(25.0, 60.0)`, `temp=25.5`)
 - What `_raise_on` values are supported (e.g., `'measure'`, `'read_compensated_data'`)
 - What methods are provided
@@ -131,7 +131,7 @@ def _sensor_cb():
     sensor_read(sht30, bmp280, _data)
 ```
 
-**Mock state update must happen before the callback** to ensure that when the task function calls `mock.measure()`, it gets the data for the current tick.
+**Mock state update must happen before the callback**, ensuring that when the task function calls `mock.measure()`, it receives the current tick's data.
 
 #### 2B+. Mock Design Patterns (by Project Type)
 
@@ -141,7 +141,7 @@ The following are Mock design references for **non-sensor projects**. The LLM mu
 
 ```python
 class MockWLAN:
-    """Key: state machine — connecting→connected→disconnected→reconnecting"""
+    """Key: state machine — connecting → connected → disconnected → reconnecting"""
     def __init__(self, **kwargs):
         self._connected = kwargs.get('connected', True)
         self._rssi = kwargs.get('rssi', -40)
@@ -195,7 +195,7 @@ class MockMQTT:
 
 ```python
 class MockStepper:
-    """Key: cumulative physical state across ticks, not reassigned each tick"""
+    """Key: cumulative physical state across ticks, not reassigned every tick"""
     def __init__(self, **kwargs):
         self._position = kwargs.get('position', 0)
         self._target = kwargs.get('target', 0)
@@ -224,7 +224,7 @@ class MockStepper:
 
 ```python
 class MockButton:
-    """Key: preload event queue, replay by tick, simulate real physical timing"""
+    """Key: pre-load event queue, replay by tick, simulate real physical timing"""
     def __init__(self, **kwargs):
         self._event_queue = kwargs.get('events', [])  # [(tick, value), ...]
         self._current_tick = 0
@@ -246,7 +246,7 @@ class MockButton:
 
 ```python
 # Standard MockBuzzer/MockLED are sufficient (_state + on/off + value)
-# But the LLM should verify in the scenario: the time point when value() is True after on() is called
+# But the LLM should verify in the scenario: after on() is called, value() is True at the expected time
 ```
 
 **Industrial Communication Mock (Modbus / RS485 / CAN):**
@@ -264,28 +264,28 @@ class MockModbus:
             raise OSError('Modbus timeout')
         return [self._registers.get(addr + i, 0) for i in range(count)]
 
-# Scenario: slave device offline → read_holding_registers continuously times out → master enters safe mode
+# Scenario: slave device offline → read_holding_registers times out repeatedly → master enters safe mode
 ```
 
 #### 2C. Visualization Format
 
 **CLI + rich is preferred. tkinter GUI is an optional fallback.**
 
-tkinter has known issues on Windows: `StringVar.set()` / Canvas operations in the `root.after()` callback chain may not refresh, and `sys.stdout` redirection can interfere with the event loop. CLI + rich has no such issues and allows faster development iteration.
+tkinter has known issues on Windows: `StringVar.set()` / Canvas operations may not refresh within the `root.after()` callback chain, and `sys.stdout` redirection can interfere with the event loop. CLI + rich has no such issues and allows faster development iteration.
 
 | Project Feature | Preferred Solution | Description |
 |---------|---------|------|
 | All projects | **`rich` library (Live/Table/Panel/Layout)** | Terminal dynamic dashboard, cross-platform, no rendering issues |
-| Has display device (OLED/LCD/TFT) | rich `Panel` + `Text` to simulate screen content | Panel title marks the device model, content area updates virtual screen text in real-time |
+| Has display device (OLED/LCD/TFT) | rich `Panel` + `Text` to simulate screen content | Panel title indicates device model, content area updates virtual screen text in real-time |
 | Has actuator (Buzzer/LED/Relay) | rich `Table` inline status markers | `ON`/`OFF` with color highlighting (green=active, gray=standby) |
-| Log output | rich `Live` bottom fixed area scrolling | Does not hijack `sys.stdout`, writes directly to Panel |
+| Log output | rich `Live` fixed bottom area scrolling | Does not hijack `sys.stdout`, writes directly to Panel |
 
-**The LLM generates only CLI mode (rich) by default.** `--mode gui` (tkinter) is generated only when explicitly requested by the user, and the following precautions must be followed:
+**The LLM generates CLI mode (rich) by default.** `--mode gui` (tkinter) is only generated when the user explicitly requests it, and the following precautions must be followed:
 - Do not use `sys.stdout` redirection; instead, call `log_widget.insert()` directly
 - Call `root.update_idletasks()` at the end of the `root.after()` callback to force a refresh
-- Wrap each `scheduler_tick()` in a `try/except` to prevent silent failures
+- Wrap each `scheduler_tick()` in `try/except` to prevent silent failures
 
-GUI mode is marked at the top of sim_main.py: `# @GUI: experimental — prefer --mode cli for reliable output`
+GUI mode is marked at the top of `sim_main.py`: `# @GUI: experimental — prefer --mode cli for reliable output`
 
 #### 2D. Data Scenarios (Temporal Evolution + Coverage Framework)
 
@@ -293,24 +293,24 @@ The LLM must design **at least one scenario for each coverage dimension** based 
 
 ##### 2D-1. Coverage Dimension Table (by Project Type)
 
-The LLM must design corresponding scenarios for each classification of the project, covering the following dimensions:
+The LLM must design corresponding scenarios for each project classification across the following dimensions:
 
 | Project Type | Coverage Dimension | Scenario Design Points |
 |----------|---------|------------------|
 | **Sensor Monitoring** | Normal data flow | Data fluctuates within thresholds; verify scheduling + data flow integrity |
 | | Threshold crossing (high) | Data crosses from below to above threshold; verify conditional trigger |
-| | Threshold crossing (low) | Same as above, opposite direction |
+| | Threshold crossing (low) | Same, opposite direction |
 | | Sensor failure | Inject exception via `_raise_on`; verify independent fault tolerance |
-| | Sensor recovery | Recover after failure; verify automatic recovery |
-| | Multi-sensor partial failure | A fails, B is normal; verify no interference |
+| | Sensor recovery | Recovery after failure; verify automatic recovery |
+| | Multi-sensor partial failure | A fails, B is normal; verify no mutual interference |
 | **Alarm/Actuator** | Alarm trigger → Actuator ON | Verify buzzer/LED/relay activation timing |
-| | Alarm cooldown | Verify no duplicate trigger during cooldown period |
+| | Alarm cooldown | Verify no repeated trigger during cooldown period |
 | | Alarm recovery → Actuator OFF | Actuator turns off after condition clears |
-| | Alarm re-trigger | Trigger again after cooldown period (requires ticks > cooldown_ticks × 2) |
+| | Alarm repeated trigger | Trigger again after cooldown period (requires ticks > cooldown_ticks × 2) |
 | **IoT/Network** | Connection loss | `isconnected() → False`; verify offline caching/queuing |
 | | Connection recovery | Reconnect + queue retransmission |
 | | Send timeout | `send() → timeout`; verify retry logic |
-| | Receive abnormal data | Format error / checksum failure → verify rejection |
+| | Receive anomalous data | Format error / checksum failure → verify rejection |
 | | Server disconnect | Broker actively disconnects; verify reconnection |
 | | Weak signal | RSSI continuously drops; verify degradation strategy |
 | **Motor Control** | Normal motion | Target position reached; verify motion completion |
@@ -324,23 +324,23 @@ The LLM must design corresponding scenarios for each classification of the proje
 | **Industrial Communication** | Slave device timeout | Modbus/CAN timeout → safe mode |
 | | Slave device returns error | Error code → error handling |
 | | Bus disconnection | Physical layer disconnection → alarm |
-| **Multi-task Concurrency** | All tasks due simultaneously | Verify no starvation |
+| **Multi-tasking Concurrency** | All tasks due simultaneously | Verify no starvation |
 | | One task takes too long | Verify impact on other tasks |
 
 ##### 2D-2. Minimum Number of Scenarios
 
 Each project must generate at least **N scenarios**, where `N = number of project classifications × 2 + 1`. Correspondence:
 
-| Number of Project Classifications | Minimum Scenarios |
+| Project Classification Count | Minimum Scenarios |
 |-----------|-----------------|
-| Only sensor | 3 (normal + failure + threshold trigger) |
+| Sensor only | 3 (normal + failure + threshold trigger) |
 | Sensor + Alarm | 5 |
 | Sensor + Alarm + Network | 7 |
 | Sensor + Motor + Alarm | 8 |
 
 ##### 2D-3. Scenario Self-Check + @Coverage Comment (Mandatory)
 
-After generating each scenario, the LLM **must** declare in the code with a `@Coverage` comment which dimension of which classification it covers, and at which tick it expects what event to trigger. The comment is written into the scenario function's docstring or the file header:
+After generating each scenario, the LLM **must** declare in the code with a `@Coverage` comment which classification's which dimension it covers, and at which tick it expects which event to trigger. The comment is written into the scenario function's docstring or file header:
 
 ```python
 def _scenario_temp_rising(sht30, bmp280, tick):
@@ -350,7 +350,7 @@ def _scenario_temp_rising(sht30, bmp280, tick):
     """
 ```
 
-The LLM **must check each one**: whether each scenario can actually trigger the declared events within its default `--ticks` value. The verification conclusion is written at the top of sim_main.py:
+The LLM **must check each one**: whether each scenario can actually trigger the declared events within its default `--ticks` value. The conclusion is written at the top of `sim_main.py`:
 
 ```python
 # @CoverageReport:
@@ -370,13 +370,13 @@ The LLM **must check each one**: whether each scenario can actually trigger the 
 Each scenario is a **Python function `(tick: int) → side effect`** (updating mock internal state). The LLM autonomously chooses from the following design methods:
 
 - **Mathematical expressions**: sine wave, linear rise/fall, exponential decay
-- **Event injection**: modify `mock._stall_at`, `mock._connected`, `mock._event_queue`, etc., at specific ticks
+- **Event injection**: modify `mock._stall_at`, `mock._connected`, `mock._event_queue`, etc. at specific ticks
 - **Exception injection**: set `mock._raise_on = 'xxx'` at specific ticks
 - **Lookup table sequence**: predefined `[(tick1, val1), (tick2, val2), ...]` time series
 
 #### 2E. User-Defined Scenarios (Natural Language → Mock API)
 
-**Trigger condition**: The user provides a natural language description when invoking the skill, or the user selects a custom scenario in the AskUserQuestion of Step 5.
+**Trigger condition**: The user provides a natural language description when invoking the skill, or the user selects a custom scenario in the AskUserQuestion from Step 5.
 
 ##### 2E-1. User Input Examples
 
@@ -393,36 +393,36 @@ The LLM must map the user's natural language to the corresponding mock's API:
 ```
 User Description              →  LLM Parsing                   →  Mock API Mapping
 ──────────────────────────────────────────────────────────────────────────
-"WiFi disconnects for 5 sec"  →  Network connection lost,      →  wlan._connected = False
-                                 lasting 5000ms                    for tick in range(t, t+5)
+"WiFi disconnect 5 seconds"   →  Network connection lost, duration 5000ms →  wlan._connected = False
+                                                                 for tick in range(t, t+5)
 
-"Auto reconnect"              →  Restore connection            →  wlan._connected = True
+"Auto reconnect"              →  Restore connection             →  wlan._connected = True
                                                                  wlan._raise_on = None
 
-"Motor stuck at position=300" →  Stall event                   →  stepper._stall_at = 300
+"Motor stuck at position=300" →  Stall event                    →  stepper._stall_at = 300
 
-"Rapid button press 10 times" →  100ms interval pulse sequence →  button._event_queue =
+"Rapid button press 10 times" →  100ms interval pulse sequence  →  button._event_queue =
                                                                   [(t,1), (t+1,0), (t+2,1), ...]
 
-"Two sensors fail at once"    →  Dual raise_on injection       →  sht30._raise_on = 'measure'
+"Two sensors fail simultaneously" →  Dual raise_on injection    →  sht30._raise_on = 'measure'
                                                                  bmp280._raise_on = 'read_compensated_data'
 
-"MQTT broker disconnects      →  Disconnect + delay + reconnect →  mqtt._raise_on = 'connect' ticks 5-7
- then recovers"                                                    mqtt._raise_on = None from tick 8
+"MQTT broker disconnect then recover" →  Disconnect + delay + reconnect →  mqtt._raise_on = 'connect' ticks 5-7
+                                                                 mqtt._raise_on = None from tick 8
 
-"Modbus slave times out 3x"   →  read fails continuously       →  modbus_reg._raise_on = 'read' for ticks 1-3
+"Modbus slave timeout 3 times" →  read fails consecutively       →  modbus_reg._raise_on = 'read' for ticks 1-3
 ```
 
 ##### 2E-3. Mapping Failure Handling
 
-If the LLM cannot map the user's description to an available API of an existing mock, it **must output feedback instead of silently skipping**:
+If the LLM cannot map the user's description to an available API of an existing mock, **it must output feedback instead of silently skipping**:
 
 ```
 ⚠ Cannot map: "Motor torque exceeded" — MockStepper does not provide torque simulation.
    Available injection points: _stall_at (position stall), step() raises RuntimeError
    Suggestion: Change to "Motor stalls at position=200", or add a _torque_limit attribute to MockStepper.
 
-⚠ Cannot map: "WPA3 handshake failed" — MockWLAN does not simulate the authentication layer.
+⚠ Cannot map: "WPA3 handshake failure" — MockWLAN does not simulate the authentication layer.
    Available injection points: _raise_on='connect' (connection refused), _connect_delay_ticks (connection time)
    Suggestion: Change to "WiFi connect fails 3 times then gives up"
 ```
@@ -431,20 +431,20 @@ If the LLM cannot map the user's description to an available API of an existing 
 
 - The scenario function after successful mapping is named `_scenario_custom_N`, with key `custom_N`
 - Automatically added to the `SCENARIOS` dict
-- Add a comment at the top of `sim_main.py`:
+- Add a comment to the top of `sim_main.py`:
   ```python
-  # @CustomScenario: custom_1 = "WiFi disconnects for 5 sec then reconnects" → wlan disconnect ticks 10-14, reconnect tick 15
-  # @CustomScenario: custom_2 = "Double-click button" → button events at ticks 3,4,8,9
+  # @CustomScenario: custom_1 = "WiFi disconnect 5s then reconnect" → wlan disconnect ticks 10-14, reconnect tick 15
+  # @CustomScenario: custom_2 = "Double button press" → button events at ticks 3,4,8,9
   ```
 
-##### 2E-5. Pre-Question (Optional)
+##### 2E-5. Preliminary Inquiry (Optional)
 
-If the user does not provide a custom description when invoking the skill, the LLM can insert a question before Step 5:
+If the user does not provide a custom description when invoking the skill, the LLM may insert a question before Step 5:
 ```
 header: "Custom Scenario"
-question: "Do you need a custom test scenario? If so, please describe (e.g., WiFi disconnection, motor stall, button rapid press, etc.)"
+question: "Do you need a custom test scenario? If so, please describe (e.g., WiFi disconnect, motor stall, rapid button press, etc.)"
 options:
-  - Use preset scenarios — Automatically generate coverage checklist based on project type
+  - Use preset scenarios — Automatically generate coverage list based on project type
   - Custom scenario — Enter natural language description in Other
 ```
 
@@ -465,7 +465,7 @@ test/pc/
 # @Generated by upy-simulate
 # @Date: <generation time>
 # @ProjectTypes: sensor_monitoring, alarm_monitoring, gui_display
-# @Description: PC-side full-process simulation entry
+# @Description: PC full-process simulation entry point
 #   Does not depend on MicroPython runtime or hardware devices
 #   Imports firmware/ task functions and mock drivers via sys.path
 # @CoverageReport:
@@ -481,9 +481,9 @@ test/pc/
 - Callback wrapping method must be consistent with `firmware/main.py`
 - Task registration method must be consistent with `firmware/main.py`
 - `_data` dict keys must be consistent with `firmware/main.py`
-- Accept `--ticks` (number of run cycles), `--scenario` (scenario), `--mode` (CLI/GUI, default CLI) command-line arguments
+- Accept command-line arguments `--ticks` (number of run cycles), `--scenario` (scenario), `--mode` (CLI/GUI, default CLI)
 - **Each scenario must define a data generator function** `gen_xxx(tick) → value`; the return value changes as tick changes
-- **Before the sensor callback executes, the mock's internal state must be updated**: `mock._measure = gen_sht30(tick_count)`, ensuring the task function gets the data for the current tick
+- **Before the sensor callback executes, the mock's internal state must be updated**: `mock._measure = gen_sht30(tick_count)`, ensuring the task function receives the current tick's data
 - **Do not create a Mock once and never update its internal state**
 
 ---
@@ -511,7 +511,7 @@ After each fix, both tools must be re-run to confirm. Maximum 5 fix rounds; if e
 
 ### Step 5: Ask the User
 
-After flake8 + pylint both pass, use **AskUserQuestion** to ask.
+After flake8 + pylint both pass, use **AskUserQuestion** to inquire.
 
 #### 5a. Pre-Run Analysis (LLM must complete before asking)
 
@@ -519,11 +519,11 @@ After flake8 + pylint both pass, use **AskUserQuestion** to ask.
 2. If alarm/threshold logic exists, calculate the **minimum recommended ticks**:
    - `min_recommended_ticks = max(ticks needed for each threshold crossing) + ALARM_COOLDOWN_MS / SAMPLE_INTERVAL_MS × 2`
    - Ensure coverage of at least: trigger → cooldown → second trigger (complete cycle)
-3. From the generated scenario list, distinguish between **"data flow only"** and **"business branch coverage"** types
+3. From the generated scenario list, distinguish between **"data flow only"** and **"covers business branches"** categories
 
 #### 5b. AskUserQuestion Content
 
-**Default mode is always CLI (rich).**
+**The default mode is always CLI (rich).**
 
 ```
 header: "Simulation Run"
@@ -539,8 +539,8 @@ options:
   - Run normal scenario — Only verify data flow + scheduling
   - Switch scenario to run — Enter in Other (e.g., --mode cli --scenario intermittent_failure)
   - Run GUI mode (experimental) — Enter in Other (e.g., --mode gui --scenario temp_rising)
-  - Custom scenario — Enter natural language description in Other (e.g., "WiFi disconnects for 5 sec")
-  - Do not run now — Keep test/pc/sim_main.py for manual execution later
+  - Custom scenario — Enter natural language description in Other (e.g., "WiFi disconnect 5 seconds")
+  - Do not run for now — Keep test/pc/sim_main.py, run manually later
 ```
 
 ---
@@ -561,24 +561,24 @@ python test/pc/sim_main.py --ticks {N} --mode {mode} --scenario {scenario}
 ```
 Traceback present                              → FAIL  → Fix sim_main.py, return to Step 3
 No Traceback, all @Coverage declared events
-  occur within expected tick range             → PASS  → Process ends
+  occur within expected tick range              → PASS  → End of process
 No Traceback, some @Coverage declared events
-  do not occur (scenario conservative or ticks insufficient) → WEAK_PASS → Prompt user to switch scenario
+  did not occur (scenario conservative or ticks insufficient) → WEAK_PASS → Prompt user to switch scenario
 ```
 
 **After the run completes, the LLM must output a coverage summary report by project type:**
 ```
 === Simulation Coverage Report ===
 ☑ [sensor] Sensor reading:             30/30 ticks normal
-☑ [sensor] Sensor fault tolerance:      Triggered → SHT30 read failed at ticks 3,6,9,12,...
+☑ [sensor] Sensor fault tolerance:          Triggered → SHT30 read failed at ticks 3,6,9,12,...
 ☑ [alarm]  Alarm check:                30/30 ticks normal
-☑ [alarm]  High temp alarm trigger:    Triggered → [alarm] temp high at tick 21
-☑ [alarm]  Actuator activation:        Triggered → Buzzer ON, LED ON at tick 21
-☐ [alarm]  Alarm recovery (all clear): Not triggered → ticks insufficient, need > 51
-☐ [alarm]  Low temp alarm trigger:     Not triggered → current scenario does not cover
-☐ [alarm]  Humidity alarm trigger:     Not triggered → no scenario covers 80%/20% humidity threshold
-☐ [network] Network fault tolerance:   N/A → Project has no network module
-☐ [motor]  Motor control:             N/A → Project has no motor module
+☑ [alarm]  High temperature alarm trigger:            Triggered → [alarm] temp high at tick 21
+☑ [alarm]  Actuator activation:              Triggered → Buzzer ON, LED ON at tick 21
+☐ [alarm]  Alarm recovery (all clear):   Not triggered → ticks insufficient, need > 51
+☐ [alarm]  Low temperature alarm trigger:            Not triggered → current scenario does not cover
+☐ [alarm]  Humidity alarm trigger:            Not triggered → no scenario covers 80%/20% humidity threshold
+☐ [network] Network fault tolerance:               N/A → Project has no network module
+☐ [motor]  Motor control:               N/A → Project has no motor module
 ==================================
 Result: WEAK_PASS — 3/5 coverage dimensions tested, 2 dimensions not covered.
   Suggestion: python test/pc/sim_main.py --scenario temp_dropping --ticks 30
@@ -600,14 +600,14 @@ Original Scheduler                    SimScheduler
 ───────────                           ─────────────
 machine.Timer ISR driven              time.sleep loop driven
 ISR only increments tick_cnt          Loop body manually increments tick_cnt
-Main loop checks tick_cnt → exec cb   Main loop checks tick_cnt → exec cb
+Main loop checks tick_cnt → executes cb   Main loop checks tick_cnt → executes cb
 start() never returns                 start() supports max_ticks limit
 No visualization hooks                on_tick callback pushes state
 ```
 
 Key interfaces must be consistent: `add_task(callback, interval_ms, name=None) → tid`, `start()`
 
-### Async Mode: Directly Use CPython asyncio
+### Async Mode: Use CPython asyncio Directly
 
 ```python
 import asyncio
@@ -618,7 +618,7 @@ import asyncio
 
 MicroPython `uasyncio` and CPython `asyncio` APIs are highly compatible; adaptation is usually unnecessary.
 
-### Thread Mode: Directly Use CPython threading
+### Thread Mode: Use CPython threading Directly
 
 ```python
 import threading
@@ -647,7 +647,7 @@ layout.split_column(
     Layout(Panel("", title="SSD1306 OLED 128x64"), name="display"),
 )
 
-# Update per tick
+# Update every tick
 with Live(layout, refresh_per_second=10, transient=False) as live:
     while running:
         # Update sensor Table
@@ -662,11 +662,11 @@ with Live(layout, refresh_per_second=10, transient=False) as live:
         buzzer_text.append("ON", style="bold red") if buzzer_on else buzzer_text.append("OFF", style="dim")
 ```
 
-Use `rich.Panel` to simulate virtual screen content for display devices, and `rich.Text` with color markers for actuator status (green=normal, red=active, gray=standby). Do not hijack `sys.stdout`; append logs directly to a separate `log_lines` list and write them to a bottom Panel during `Live` refresh.
+Use `rich.Panel` to simulate virtual screen content for display devices. Use `rich.Text` with color markers for actuator status (green=normal, red=active, gray=standby). Do not hijack `sys.stdout`; append logs directly to a separate `log_lines` list and write them to a bottom Panel during `Live` refresh.
 
 ### Optional: tkinter GUI (Experimental)
 
-Generated only when explicitly requested by the user. When generated, the code header must be marked with `# @GUI: experimental — prefer --mode cli for reliable output`.
+Only generated when the user explicitly requests it. When generated, the code header must be marked with `# @GUI: experimental — prefer --mode cli for reliable output`.
 
 ```python
 import tkinter as tk
@@ -701,7 +701,7 @@ root.mainloop()
 upy-generate
     │
     ├─→ upy-simulate (manual trigger)
-    │       test/pc/sim_main.py → PASS → Process ends / proceed to deploy
+    │       test/pc/sim_main.py → PASS → End of process / proceed to deploy
     │
     └─→ upy-deploy
             │
@@ -721,20 +721,20 @@ upy-generate
 
 - **Do not modify any files under `firmware/`** (unless a definite bug is found)
 - **All new code goes into `test/pc/`**
-- **flake8 + pylint validation must pass**; otherwise, loop and fix
+- **flake8 + pylint validation must pass**, otherwise loop fix
 - **Must ask the user via AskUserQuestion before running**
-- **Scheduling scheme is autonomously decided by the LLM based on manifest.mode**; no pre-set framework
-- **Visualization format is autonomously decided by the LLM based on the project's device combination**; no hardcoding
-- **CLI + rich is the preferred mode**: All projects generate CLI mode (rich Live/Table/Panel) by default; data changes dynamically in the terminal over time
-- **For projects with display devices, use rich Panel to simulate a virtual screen**: Panel title marks the device model; the content area updates the current display text each tick
-- **Do not hijack sys.stdout**: Logs are written directly to a rich Panel or via independent `loguru`/`print` to avoid redirection interfering with output timing
-- **tkinter GUI is an optional experimental mode**: Generated only when explicitly requested by the user; when generated, the code header must be marked with `# @GUI: experimental`, and GUI safety rules must be followed (no stdout redirection, update_idletasks, try/except wrapping)
-- **Before the sensor callback executes, the mock's internal state must be updated** (e.g., `mock._measure = gen_sht30(tick_count)`), allowing the task function to get dynamic data without modifying firmware/ code
-- **The simulation entry `sim_main.py` must support the three command-line arguments `--ticks`, `--scenario`, and `--mode`**; `--mode` can be `cli|gui`
+- **Scheduling scheme is autonomously decided by the LLM based on manifest.mode**, no pre-set framework
+- **Visualization format is autonomously decided by the LLM based on the project's device combination**, no hardcoding
+- **CLI + rich is the preferred mode**: All projects generate CLI mode (rich Live/Table/Panel) by default, data dynamically refreshes in the terminal over time
+- **For projects with display devices, use rich Panel to simulate a virtual screen**: Panel title indicates device model, content area updates the current display text every tick
+- **Do not hijack sys.stdout**: Logs are written directly to a rich Panel or via independent `loguru`/`print`, avoiding redirection interference with output timing
+- **tkinter GUI is an optional experimental mode**: Only generated when the user explicitly requests it; when generated, the code header must be marked with `# @GUI: experimental`, and GUI safety rules must be followed (no stdout redirection, update_idletasks, try/except wrapping)
+- **Before the sensor callback executes, the mock's internal state must be updated** (e.g., `mock._measure = gen_sht30(tick_count)`), allowing the task function to receive dynamic data without modifying firmware/ code
+- **The simulation entry point `sim_main.py` must support the three command-line arguments `--ticks`, `--scenario`, and `--mode`**, where `--mode` can be `cli|gui`
 - **Do not simulate driver internal details** (sensor protocols, I2C timing, etc.); only verify business logic through Mock object return values and exception injection
-- **Step 1B is mandatory**: The LLM must perform project type classification and output `@ProjectTypes` at the top of sim_main.py
+- **Step 1B is mandatory**: The LLM must perform project type classification and output `@ProjectTypes` at the top of `sim_main.py`
 - **Step 2D is mandatory**: Each scenario must include a `@Coverage` comment declaring the covered dimension; the LLM must check each scenario to ensure it can actually trigger the declared events within the default ticks, and write the conclusion in `@CoverageReport`
-- **Step 2D is mandatory**: Number of scenarios ≥ number of project classifications × 2 + 1; must cover every coverage dimension for each project classification (see coverage dimension table); if the existing template is insufficient, new scenarios must be added
+- **Step 2D is mandatory**: Number of scenarios ≥ number of project classifications × 2 + 1; must cover every coverage dimension for each project classification (see coverage dimension table); if the existing template is insufficient, a new scenario must be added
 - **Step 2E is mandatory**: When the user provides a natural language description, the LLM must map it to the mock API; if mapping fails, feedback must be output explaining the reason and suggesting alternatives
 - **Step 5 is mandatory**: AskUserQuestion must specify the project type + recommend a scenario that covers business logic branches + mark which scenarios only verify data flow
 - **Step 6 is mandatory**: Evaluation is divided into three levels: PASS / WEAK_PASS / FAIL; after running, a coverage summary report by project type must be output; on WEAK_PASS, alternative scenarios must be proactively suggested

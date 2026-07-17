@@ -13,7 +13,7 @@
 | Phase | diagram |
 | Upstream Skill | upy-generate (manual/auto trigger) |
 | Downstream Skill | None |
-| One-line Responsibility | Read code → LLM analyzes layered architecture/execution flow/data flow → generate diagram.json → validate → render 3 Mermaid diagrams × 4 formats = 13 files |
+| One-line Responsibility | Read code → LLM analyzes layered architecture/execution flow/data flow → generate diagram.json → validate → render 3 Mermaid diagram types × 4 formats = 13 files |
 
 **Same pattern as upy-wiring, differences:**
 - Has user interaction (complexity selection)
@@ -60,7 +60,7 @@
 ```
 (Optional) Step 0: Complexity selection
   → approval_request: complexity selection card (diagram_complexity)
-  → (skipped when complexity is preset)
+  → (skipped if complexity is preset)
 
 Step 1-2: Read source code
   → file_operation(read) × N (all .py in firmware/)
@@ -114,7 +114,7 @@ Conditional trigger: shown when `complexity` is null.
 │                                          │
 │  ○ Detailed                              │
 │    Full expansion, ≤16 modules, ≤14 steps │
-│    Suitable for complex projects or archival docs │
+│    Suitable for complex projects or documentation │
 │                                          │
 │  [Confirm]                               │
 └──────────────────────────────────────────┘
@@ -147,7 +147,7 @@ Conditional trigger: shown when `complexity` is null.
         "id": "full",
         "name": "Detailed",
         "subtitle": "≤16 modules, ≤14 steps, full expansion",
-        "meta": "Suitable for archival documentation",
+        "meta": "Suitable for documentation",
         "selected": false
       }
     ],
@@ -174,11 +174,11 @@ Conditional trigger: shown when `complexity` is null.
 | gen_json | info | Generating diagram.json... | Writing JSON |
 | gen_done | success | ✓ diagram.json generated | Step 3 complete |
 | validate | info | Validating diagram.json... | Step 4 |
-| validate_pass | success | ✓ Validation passed | Pass |
-| validate_fail | warn | ✗ N errors → fixing (round M) | Fail |
-| render_arch | info | Rendering architecture diagram (mermaid.ink)... | Architecture diagram render |
-| render_flow | info | Rendering flowchart... | Flowchart render |
-| render_data | info | Rendering data flow diagram... | Data flow diagram render |
+| validate_pass | success | ✓ Validation passed | Passed |
+| validate_fail | warn | ✗ N errors → Fixing (round M) | Failed |
+| render_arch | info | Rendering architecture diagram (mermaid.ink)... | Architecture diagram rendering |
+| render_flow | info | Rendering flowchart... | Flowchart rendering |
+| render_data | info | Rendering data flow diagram... | Data flow diagram rendering |
 | render_done | success | ✓ Generated 13 files | Step 5 complete |
 | update_manifest | info | Updating manifest... | Step 6 |
 | done | success | ✓ Architecture diagram generation complete | All complete |
@@ -199,7 +199,7 @@ Conditional trigger: shown when `complexity` is null.
 }
 ```
 
-**timeout 90s** — Renders 3 diagram types × 3 formats (.md generated locally, .svg/.png each require 1 HTTP request to mermaid.ink API), total 6 network requests.
+**timeout 90s** — Renders 3 diagram types × 3 formats (.md generated locally, .svg/.png each requires 1 HTTP request to mermaid.ink API), total 6 network requests.
 
 ### phase_complete
 
@@ -238,7 +238,7 @@ Conditional trigger: shown when `complexity` is null.
         "rows": [
           ["Total modules", "8"],
           ["Total dependency edges", "12"],
-          ["Max depth", "4 layers"],
+          ["Maximum depth", "4 layers"],
           ["Circular dependencies", "None"],
           ["Orphan modules", "None"],
           ["Direct import machine", "main.py (entry layer only, normal)"]
@@ -260,12 +260,12 @@ Total 6 changes:
 | # | Location | Current Behavior | Change To | Reason |
 |---|----------|-----------------|-----------|--------|
 | 1 | Pre-checks | `python --version` + `python -c "import jsonschema"` | Remove | Server doesn't perceive environment |
-| 2 | Step 0 complexity | `AskUserQuestion(...)` | `approval_request` complexity selection card. Skip when `complexity` is preset in start_phase | Plugin-side interaction |
-| 3 | Step 1 read schema | LLM Read `diagram.schema.json` | Schema pre-placed by scaffold into `.upy/schemas/`. Server LLM has built-in schema knowledge to generate JSON directly | Spec not in project directory |
-| 4 | Step 2 read source | LLM directly Read firmware/**/*.py + manifest | `file_operation(read)` reads files one by one. Manifest already in start_phase.payload | Server reads files via plugin |
-| 5 | Step 4 validate | `validate_json.py --schema <spec path> --json ...` | `script_run(validate_json.py --schema .upy/schemas/diagram.schema.json --json docs/diagram.json)` | Schema+script pre-placed by scaffold into `.upy/` |
-| 6 | Step 5+6 render | `render_diagram_local.py --input ... --output ...` | `script_run(render_diagram_local.py --input docs/diagram.json --output docs/ --format all)`. Script pre-placed by scaffold | Needs network (mermaid.ink) + write files → plugin executes |
-| 7 | Step 7 update manifest | `python -c "..."` inline script | `file_operation(read)` → server modifies diagrams field → `file_operation(write)` | Unified file operations |
+| 2 | Step 0 Complexity | `AskUserQuestion(...)` | `approval_request` complexity selection card. Skip if `complexity` is preset in start_phase | Plugin-side interaction |
+| 3 | Step 1 Read schema | LLM Read `diagram.schema.json` | Schema pre-placed by scaffold in `.upy/schemas/`. Server LLM has built-in schema knowledge to generate JSON directly | Spec not in project directory |
+| 4 | Step 2 Read source | LLM directly Read firmware/**/*.py + manifest | `file_operation(read)` reads files one by one. Manifest already in start_phase.payload | Server reads files via plugin |
+| 5 | Step 4 Validate | `validate_json.py --schema <spec path> --json ...` | `script_run(validate_json.py --schema .upy/schemas/diagram.schema.json --json docs/diagram.json)` | Schema+script pre-placed by scaffold in `.upy/` |
+| 6 | Step 5+6 Render | `render_diagram_local.py --input ... --output ...` | `script_run(render_diagram_local.py --input docs/diagram.json --output docs/ --format all)`. Script pre-placed by scaffold | Requires network (mermaid.ink) + write files → plugin executes |
+| 7 | Step 7 Update manifest | `python -c "..."` inline script | `file_operation(read)` → server modifies diagrams field → `file_operation(write)` | Unified file operations |
 
 ---
 
@@ -301,7 +301,7 @@ Shared with wiring, **no changes needed**. Already a generic JSON Schema validat
 | Component | Corresponding Message | Description |
 |-----------|----------------------|-------------|
 | Complexity selection card | approval_request `diagram_complexity` | Simple/Medium/Detailed three-choice, only shown when complexity is empty |
-| Progress timeline | status_update × ~12 | Read→Analyze (architecture/flow/data flow)→Generate→Validate→Render×3 |
+| Progress timeline | status_update × ~12 | Read→Analyze (Architecture/Flow/Data Flow)→Generate→Validate→Render×3 |
 | Architecture diagram preview | file_list → click architecture.html | WebView embedded preview |
 | Flowchart preview | file_list → click flowchart.html | WebView embedded preview |
 | Data flow diagram preview | file_list → click data_flow.html | WebView embedded preview |
@@ -312,19 +312,19 @@ Shared with wiring, **no changes needed**. Already a generic JSON Schema validat
 
 ## VII. Independent Test Scenarios
 
-### Plugin-Side Tests (No Server)
+### Plugin-Side Testing (No Server)
 
-1. Manually send approval_request `diagram_complexity` → verify three-choice + confirm
-2. Manually send `status_update` sequence → verify three-phase (architecture/flow/data flow) progress
-3. Manually send `phase_complete` (file_list 13 files + diagnostics table) → verify file list + diagnostics information panel
-4. Click architecture.html / flowchart.html / data_flow.html → verify WebView preview
+1. Manually send approval_request `diagram_complexity` → Verify three-choice + confirm
+2. Manually send `status_update` sequence → Verify three-phase (Architecture/Flow/Data Flow) progress
+3. Manually send `phase_complete` (file_list 13 files + diagnostics table) → Verify file list + diagnostics information panel
+4. Click architecture.html / flowchart.html / data_flow.html → Verify WebView preview
 
-### Skill-Side Tests (No Plugin)
+### Skill-Side Testing (No Plugin)
 
 1. Prepare complete firmware/ directory + manifest, mock file_operation(read) to return file contents
 2. Verify complexity="simple": total modules ≤6, flow steps ≤5
 3. Verify complexity="medium": total modules ≤10, flow steps ≤8
 4. Verify complexity="full": total modules ≤16, flow steps ≤14
 5. LLM generates diagram.json → validate_json.py validation passes
-6. render_diagram_local.py → confirm 13 output files + --json-summary output is correct
-7. Check all sent message JSONs conform to 02-protocol.md Schema
+6. render_diagram_local.py → Confirm 13 output files + --json-summary output is correct
+7. Check all sent message JSON conforms to 02-protocol.md Schema

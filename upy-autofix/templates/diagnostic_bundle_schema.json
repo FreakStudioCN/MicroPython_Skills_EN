@@ -23,7 +23,7 @@
         "mcu": { "type": "string", "description": "MCU model" },
         "chip_family": { "type": "string", "description": "Chip family" },
         "firmware": { "type": "string", "description": "MicroPython firmware version" },
-        "com_port": { "type": "string", "description": "COM port number" }
+        "com_port": { "type": "string", "description": "Serial port" }
       }
     },
     "error_summary": {
@@ -120,7 +120,7 @@
     },
     "logs": {
       "type": "object",
-      "description": "Complete logs for each deploy, key=deploy_N, value={log_filename: content}",
+      "description": "Complete logs for each deploy round, key=deploy_N, value={log_filename: content}",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": { "type": "string" }
@@ -134,7 +134,7 @@
         "eliminated_causes": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "List of eliminated causes (most important — to avoid redundant work)"
+          "description": "List of eliminated causes (most important - avoid redundant work)"
         },
         "suspected_causes": {
           "type": "array",

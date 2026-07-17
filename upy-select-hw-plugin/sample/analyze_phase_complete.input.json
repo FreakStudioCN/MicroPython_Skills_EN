@@ -8,14 +8,14 @@
   "payload": {
     "phase": "analyze",
     "result": "success",
-    "summary": "Device analysis completed: 6 devices identified (PIR/Touch/Temperature-Humidity/Microphone/Amplifier/WiFi), all have available runtime capabilities or drivers. ESP32-C3 has been recorded as the MCU preference.",
+    "summary": "Device analysis completed: 6 devices identified (PIR/Touch/Temperature-Humidity/Microphone/Amplifier/WiFi), all have available runtime capabilities or drivers. ESP32-C3 has been recorded as MCU preference.",
     "next_phase": "select-hw",
     "manifest_content": {
       "schema_version": "1.0",
       "phase": "analyze",
       "project_name": "Voice Dialogue Assistant",
       "requirements": {
-        "description": "When the PIR infrared sensor detects a person, it triggers dialogue mode. The touch device initiates voice output. Voice dialogue (ASR+LLM+TTS) is conducted via the I2S microphone and WiFi cloud API. Meanwhile, ambient temperature and humidity can be queried.",
+        "description": "When PIR infrared sensing detects a person, it triggers dialogue mode. The touch device initiates voice output. Voice dialogue (ASR+LLM+TTS) is conducted via I2S microphone and WiFi cloud API, while ambient temperature and humidity can be queried.",
         "scene": "indoor",
         "power": "usb",
         "network": "wifi",
@@ -80,7 +80,7 @@
           "driver": {
             "source": "builtin_runtime",
             "module": "machine.I2S",
-            "notes": "machine.I2S provides the I2S low-level API for audio sampling."
+            "notes": "machine.I2S provides I2S low-level API for audio sampling."
           }
         },
         {
@@ -92,7 +92,7 @@
           "driver": {
             "source": "builtin_runtime",
             "module": "machine.I2S",
-            "notes": "machine.I2S provides the I2S low-level API for audio playback."
+            "notes": "machine.I2S provides I2S low-level API for audio playback."
           }
         },
         {

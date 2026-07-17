@@ -2,16 +2,16 @@
 
 ## Core Principle
 
-**Define the protocol first, both sides develop against the protocol, mock independently for testing, and finally integrate.**
+**Define the protocol first, both sides develop against the protocol, test independently with mocks, and integrate at the end.**
 
 Skill maintainers and plugin engineers do not need to wait for each other. After defining the message format, each works independently.
 
 ---
 
-## Three-Line Parallel Model
+## Three-Track Parallel Model
 
 ```
-         ┌── Protocol Definition (this document set) ──┐
+         ┌── Protocol Definition (This Document Set) ──┐
          │  02-protocol.md                             │
          │  skills/_template.md                        │
          └─────────────────────┬───────────────────────┘
@@ -27,7 +27,7 @@ Skill maintainers and plugin engineers do not need to wait for each other. After
 │ Output           │           │                 │ send/receive │
 │ protocol messages│           │                 │ + UI components│
 │                  │           │                 │              │
-│ Testing:         │           │                 │ Testing:     │
+│ Test:            │           │                 │ Test:        │
 │ mock plugin      │           │                 │ mock server  │
 │ (simple script)  │           │                 │ (send fake   │
 │                  │           │                 │  messages)   │
@@ -44,7 +44,7 @@ Skill maintainers and plugin engineers do not need to wait for each other. After
 
 ## Plugin Side Independent Development Guide
 
-### What You Need to Do
+### What You Need To Do
 
 1. Implement receiving and rendering of 7 S→P messages (full JSON Schema in `02-protocol.md`)
 2. Implement sending of 5 P→S messages
@@ -56,15 +56,15 @@ Skill maintainers and plugin engineers do not need to wait for each other. After
 Use a mock server to send fake messages. The simplest way: write a Node.js script that pushes JSON messages into the WebView in sequence:
 
 ```javascript
-// mock-server.js — for plugin side independent testing
+// mock-server.js — for plugin-side independent testing
 const messages = [
   { type: "status_update", payload: { level: "info", message: "Analyzing requirements...", progress: 0.1 } },
   { type: "status_update", payload: { level: "success", message: "✓ Extracted 3 components", progress: 0.3 } },
   { type: "approval_request", payload: { /* component confirmation card */ } },
-  // ... simulate the complete flow
+  // ... simulate the full flow
 ];
 
-// Send one message every second to simulate server response
+// Send one message every second, simulating server responses
 messages.forEach((msg, i) => {
   setTimeout(() => webview.postMessage(msg), i * 1000);
 });
@@ -82,7 +82,7 @@ messages.forEach((msg, i) => {
 
 ## Skill Side Independent Development Guide
 
-Skill side development has two phases: **first modify the logic (testable locally), then modify the communication (mechanical translation).** Do not mix the two.
+Skill-side development has two phases: **first modify the logic (testable locally), then modify the communication (mechanical translation).** Do not mix the two.
 
 ### Phase A — Logic First (Run Directly with Local Claude Code)
 
@@ -90,7 +90,7 @@ Skill side development has two phases: **first modify the logic (testable locall
 
 **What not to change:** The communication method. Keep local tools like `Read`/`Bash`/`AskUserQuestion` that Claude Code can execute directly.
 
-**How to test:** Load SKILL.md with Claude Code and run it locally. You will immediately know if the logic and output are correct.
+**How to test:** Load SKILL.md into Claude Code and run it locally. You will know immediately if the logic and output are correct.
 
 ```
 Example: After modifying upy-gen-driver Step 5, add Step 6 (generate independent test script)
@@ -100,8 +100,8 @@ Example: After modifying upy-gen-driver Step 5, add Step 6 (generate independent
 ```
 
 **Acceptance Criteria:**
-- [ ] Local Claude Code can complete the skill end-to-end with correct output
-- [ ] Number of flow steps, order, and branch logic meet expectations
+- [ ] Local Claude Code can run through the skill completely with correct output
+- [ ] Number of steps, order, and branching logic meet expectations
 - [ ] No plugin, no server, no mock required
 
 ### Phase B — Communication Translation (Execute After Logic is Confirmed)
@@ -122,7 +122,7 @@ The logic remains unchanged; only the I/O method is swapped. This step will not 
 **How to test:** Use `mock_plugin.py` to simulate plugin responses and verify the message format.
 
 ```python
-# mock_plugin.py — for Phase B protocol verification
+# mock_plugin.py — Phase B protocol verification
 import json, sys
 
 mock_device_state = {"i2c_scan": "[48, 60]"}
@@ -158,7 +158,7 @@ for line in sys.stdin:
 
 ## Integration Testing Checklist
 
-After both sides pass independent testing, integrate phase by phase in the following order:
+After both sides pass independent testing, integration proceeds phase by phase in the following order:
 
 | Order | Phase | Integration Content | Estimated Time |
 |------|-------|---------|---------|
@@ -175,6 +175,6 @@ After both sides pass independent testing, integrate phase by phase in the follo
 
 ## Communication Mechanism Suggestions
 
-- Skill maintainer notifies the plugin side after completing the interface document for each skill
-- Plugin side implements the UI components for that phase according to the document (can work on other phases in parallel)
-- Integrate and test after each phase is completed; do not wait until all 10 skills are written before integrating
+- When a Skill maintainer completes the interface document for a skill, notify the plugin side
+- The plugin side implements the UI components for that phase according to the document (other phases can be done in parallel)
+- Integrate and test after each phase is completed; do not wait until all 10 skills are finished before integrating

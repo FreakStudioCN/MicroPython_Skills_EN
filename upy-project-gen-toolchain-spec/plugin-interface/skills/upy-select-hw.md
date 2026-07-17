@@ -22,7 +22,7 @@
 | Mode | Trigger | Behavior |
 |------|---------|----------|
 | `full` | upy-analyze completes | New selection + full pin assignment |
-| `incremental` | User adds device in a subsequent phase | Assign pins only for new devices, leave existing pins untouched |
+| `incremental` | User adds a device in a subsequent phase | Assign pins only for the new device(s), leave existing pins untouched |
 
 ---
 
@@ -53,18 +53,18 @@ The plugin sends **1 message** to start this skill:
 
 | Field | Type | Required | Source | Description |
 |-------|------|----------|--------|-------------|
-| `mode` | string | Yes | Server determines | `"full"` full selection / `"incremental"` incremental assignment |
+| `mode` | string | Yes | Server determines | `"full"` for full selection / `"incremental"` for incremental assignment |
 | `manifest` | object | Yes | Upstream phase_complete | Complete content of project-manifest.json |
-| `pre_selected_board` | object? | No | Plugin board selector | Has value if user pre-selected a board, null if LLM should recommend |
+| `pre_selected_board` | object? | No | Plugin board selector | Value if user pre-selected a board, null if LLM should recommend |
 | `previous_pinout` | array | Required for incremental | Current manifest pinout | Existing pin assignments, not modified in incremental mode |
-| `new_devices` | array | Required for incremental | List of devices added by user | Assign pins only for these devices |
+| `new_devices` | array | Required for incremental | User-added device list | Assign pins only for these devices |
 
-**mode determination logic (server-side):**
+**Mode determination logic (server-side):**
 - `manifest.phase === "analyze"` and first entry → `full`
 - User clicks "Add Device" in a subsequent phase → starts a mini pipeline, select-hw receives `incremental`
 
-**pre_selected_board behavior:**
-- Has value → Skip MCU selection, skip firmware verification (firmware_url already determined), go directly to pin assignment
+**Behavior of `pre_selected_board`:**
+- Has value → Skip MCU selection, skip firmware verification (firmware_url is known), proceed directly to pin assignment
 - null → Step 1 executes MCU recommendation + firmware verification
 
 ---
@@ -77,7 +77,7 @@ The plugin sends **1 message** to start this skill:
 full mode:
   Step 1 MCU Selection
     → status_update "Loading board database..."
-    → status_update "Matching best MCU..."
+    → status_update "Matching optimal microcontroller..."
     → approval_request #1: MCU recommendation card (only triggered when pre_selected_board=null)
   
   Step 2 Pin Assignment
@@ -92,7 +92,7 @@ full mode:
     → phase_complete: Result panel
 
 incremental mode:
-    → status_update "Assigning pins for new devices..."
+    → status_update "Assigning pins for new device(s)..."
     → script_run: pin-validator.py incremental validation
     → phase_complete (skips MCU selection and BOM recalculation)
 ```
@@ -103,7 +103,7 @@ incremental mode:
 
 **Trigger Condition:** `pre_selected_board` is null and mode=`full`.
 
-**Not Triggered:** User pre-selected a board → skip this card, go directly to pin assignment.
+**Not Triggered:** User pre-selected a board → skip this card, proceed directly to pin assignment.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -112,9 +112,9 @@ incremental mode:
 │  Your Requirements: Temp/Humidity Monitor + Display + Buzzer Alarm │
 │                                          │
 │  ★ Recommended: ESP32 DevKit V1          │
-│    Reason: WiFi+BLE, Sufficient GPIO(26), Largest Ecosystem │
-│    Price: ~¥25                           │
-│    Firmware: ESP32_GENERIC (v1.24.1)     │
+│     Reason: WiFi+BLE, Ample GPIO (26), Largest Ecosystem │
+│     Price: ~¥25                          │
+│     Firmware: ESP32_GENERIC (v1.24.1)    │
 │                                          │
 │  Alternatives:                           │
 │  ┌────────────────────────────────────┐  │
@@ -135,7 +135,7 @@ incremental mode:
   "payload": {
     "approval_id": "mcu_select",
     "header": "Hardware Selection Recommendation",
-    "question": "Based on your requirements, we recommend the following MCU solutions",
+    "question": "Based on your requirements, we recommend the following microcontroller solution",
     "summary": {
       "project_name": "Temp/Humidity Monitor Alarm",
       "description": "Temp/Humidity monitoring + OLED display + Buzzer alarm, 3 devices total"
@@ -175,12 +175,12 @@ incremental mode:
 }
 ```
 
-**MCU Recommendation Algorithm (Executed by Server-Side LLM):**
+**MCU Recommendation Algorithm (executed by server-side LLM):**
 
 1. Load all `boards/*.json` (except _template.json and matching-rules.json)
 2. Load `boards/matching-rules.json`, trigger rules based on manifest.requirements
-3. For each board: boost rule matches chip_family → +1 point; exclude rule matches → exclude
-4. `beginner_friendly=true` adds an extra +1 in mode=beginner
+3. For each board: boost if rule matches chip_family → +1 point; exclude if rule matches → exclude
+4. `beginner_friendly=true` adds +1 point in mode=beginner
 5. Top 1 score is the recommendation, Top 2~3 are alternatives
 6. Excluded boards are not necessarily bad boards, they may just be unsuitable for the current scenario
 
@@ -189,13 +189,13 @@ incremental mode:
 | step_id | message | level | Trigger Timing |
 |---------|---------|-------|----------------|
 | load_boards | Loading board database... | info | full mode Step 1 start |
-| match_mcu | Matching best MCU (considering WiFi/GPIO/I2C/Budget...) | info | full mode MCU scoring |
+| match_mcu | Matching optimal microcontroller (considering WiFi/GPIO/I2C/Budget...) | info | full mode MCU scoring |
 | mcu_done | ✓ Recommended ESP32 DevKit V1 (WiFi+BLE, GPIO×26, ¥25) | success | full mode MCU selected |
-| mcu_skipped | ✓ MCU selected by user: ESP32 DevKit V1 | success | When pre_selected_board has value |
+| mcu_skipped | ✓ Microcontroller selected by user: ESP32 DevKit V1 | success | When pre_selected_board has value |
 | load_pin_layout | Reading pin constraints from boards/{id}.json... | info | Step 2 start |
 | assign_pins | Assigning pins... (1/3) | info | Each device assignment |
 | pin_assigned | ✓ SHT30 → I2C0 (SDA=21, SCL=22, addr=0x44) | success | Single device assignment complete |
-| pin_conflict | ⚠ SHT30 and SSD1306 share I2C0 bus, addresses do not conflict ✓ | warn | I2C shared bus notification |
+| pin_conflict | ⚠ SHT30 and SSD1306 share I2C0 bus, addresses do not conflict ✓ | warn | I2C shared bus hint |
 | validate_pins | Validating pin scheme... | info | Before pin-validator.py runs |
 | validate_ok | ✓ Pin scheme validation passed (no conflicts, no restricted pins) | success | Validation passed |
 | validate_fail | ✗ Pin validation failed: GPIO12 occupied by both strapping and LED | error | Validation failed (triggers reassignment) |
@@ -222,15 +222,15 @@ incremental mode:
 }
 ```
 
-**Script Responsibilities (Deterministic Validation, LLM Cannot Do):**
+**Script Responsibilities (deterministic validation, things LLM cannot do):**
 
 | Validation Item | Description |
 |-----------------|-------------|
 | GPIO Overlap Detection | Same GPIO cannot be assigned to two non-shared devices |
-| restricted_gpio Violation | Assigned GPIO cannot appear in any category of restricted_gpio (strapping/flash/input_only etc., unless LLM explicitly states a reason) |
+| restricted_gpio Violation | Assigned GPIO cannot be in any category of restricted_gpio (strapping/flash/input_only etc., unless LLM explicitly states a reason) |
 | I2C Address Conflict | Two devices on the same I2C bus cannot have the same address |
-| Bus Count Exceeded | Number of assigned I2C/SPI/UART cannot exceed hardware count in specs (if exceeded, must mark as SoftI2C/SoftSPI) |
-| fixed Model Compliance | For RP2040 etc., pins must be in the pin_options selectable list, and SDA/SCL must be paired |
+| Bus Count Exceeded | Number of assigned I2C/SPI/UART buses cannot exceed hardware count in specs (if exceeded, must mark as SoftI2C/SoftSPI) |
+| fixed Model Compliance | For RP2040 etc., pins must be in the pin_options list, and SDA/SCL must be paired |
 | onboard_occupied Conflict | Assigned GPIO cannot conflict with pins where onboard_peripherals has always_used=true |
 
 **On Validation Failure:** Script returns non-zero exit code + error details JSON. LLM reads the error and reassigns, up to 3 retries.
@@ -265,17 +265,17 @@ incremental mode:
         "title": "Bill of Materials (BOM)",
         "headers": ["#", "Name", "Model", "Qty", "Unit Price", "Notes"],
         "rows": [
-          ["1", "MCU", "ESP32 DevKit V1", "1", "¥25", "Includes USB cable"],
+          ["1", "Microcontroller", "ESP32 DevKit V1", "1", "¥25", "Includes USB cable"],
           ["2", "Temp/Humidity Sensor", "SHT30", "1", "¥8", "I2C"],
           ["3", "OLED Display", "SSD1306 0.96\"", "1", "¥12", "I2C"],
           ["4", "Buzzer Module", "Active Buzzer", "1", "¥2", "GPIO"],
           ["-", "Breadboard", "830 holes", "1", "¥8", "Optional"],
-          ["-", "Dupont Wires", "Male-Female 20pcs each", "1", "¥5", ""]
+          ["-", "Jumper Wires", "Male-Female 20pcs each", "1", "¥5", ""]
         ]
       }
     ],
     "warnings": [
-      "Buzzer occupies strapping GPIO4, may briefly sound at startup (does not affect functionality)"
+      "Buzzer uses strapping GPIO4, may briefly sound at startup (does not affect functionality)"
     ],
     "errors": [],
     "manifest_content": "{Complete updated project-manifest.json JSON text}"
@@ -283,7 +283,7 @@ incremental mode:
 }
 ```
 
-**manifest_content New/Updated Fields:**
+**New/Updated Fields in manifest_content:**
 - `phase`: `"select-hw"`
 - `mcu`: `{model, board, chip_family, firmware_url, flash_tool}`
 - `pinout`: `[{device, pin_name, gpio, physical_pin, type, side, pos, bus, i2c_addr, notes}]`
@@ -295,16 +295,16 @@ incremental mode:
 
 10 changes total, arranged by execution step:
 
-| No. | Location | Current Behavior | Change To | Reason |
-|-----|----------|-----------------|-----------|--------|
+| # | Location | Current Behavior | Change To | Reason |
+|---|----------|-----------------|-----------|--------|
 | 1 | Pre-checks | `python --version` | Delete. Dependency checks guaranteed by server environment | Plugin users cannot see server environment |
 | 2 | Step 1 Case A | Check built-in `KNOWN_FIRMWARE` table + WebSearch for unknown models | `pre_selected_board` has value → skip entire Step 1. null but `mcu_specified` exists → read boards/*.json to find matching chip_family + built-in firmware_url, no WebSearch | Board database already has firmware info; WebSearch is unstable and slow |
-| 3 | Step 1 Case B | LLM freely recommends, scoring logic hardcoded in SKILL.md | Change to read `matching-rules.json` for scoring + filter `beginner_friendly` | Rules managed centrally; adding new boards on plugin side does not require changing SKILL.md |
-| 4 | Step 1 Case B | Plain text output recommendation | Change to `approval_request` #1 (MCU recommendation card), includes 1 recommendation + 2 alternatives | Plugin side cannot render command-line text |
+| 3 | Step 1 Case B | LLM freely recommends, scoring logic hardcoded in SKILL.md | Change to read `matching-rules.json` for scoring + filter `beginner_friendly` | Rules managed centrally; adding new boards on plugin side does not require modifying SKILL.md |
+| 4 | Step 1 Case B | Plain text output for recommendation | Change to `approval_request` #1 (MCU recommendation card), includes 1 recommendation + 2 alternatives | Plugin side cannot render command-line text |
 | 5 | Step 2A Get Pin Diagram | Ask user to upload pin diagram → WebSearch | **Delete entire section.** Change to read `pin_layout` + `onboard_peripherals` from `boards/{id}.json` | Board database already has complete pin constraints; no need for user to upload images |
 | 6 | Step 2B Multimodal Recognition | LLM extracts pin info from image | **Delete entire section.** Structured data reading replaces multimodal recognition | Structured data is 100% more accurate than image recognition |
-| 7 | Step 2C Assign Pins | LLM assigns based on training data, does not consider existing onboard peripherals | Read `pin_layout.restricted_gpio` (avoid restricted areas) + `onboard_peripherals` (avoid pins occupied by onboard peripherals). flexible models prioritize `default_bus_pins`, fixed models select from `pin_options` | Based on structured data, avoid assigning pins already occupied by onboard peripherals |
-| 8 | Step 2C Conflict Detection | LLM manually checks (unreliable) | After LLM assigns, call `pin-validator.py` for deterministic validation. Failure → read error details → reassign (up to 3 times) | LLM enumeration validation is unreliable; script is the last line of defense |
+| 7 | Step 2C Assign Pins | LLM assigns based on training data, does not consider onboard peripherals | Read `pin_layout.restricted_gpio` (avoid restricted areas) + `onboard_peripherals` (avoid pins occupied by onboard peripherals). flexible models prioritize `default_bus_pins`, fixed models select from `pin_options` | Based on structured data, avoid assigning pins already occupied by onboard peripherals |
+| 8 | Step 2C Conflict Detection | LLM manual check (unreliable) | After LLM assignment, call `pin-validator.py` for deterministic validation. Failure → read error details → reassign (up to 3 times) | LLM enumeration validation is unreliable; script is the last line of defense |
 | 9 | New incremental mode | No such mode | Add mode determination: `incremental` only assigns pins for `new_devices`, does not touch `previous_pinout`, does not rerun MCU selection, does not recalculate full BOM (appends rows) | Support users adding devices during deploy phase |
 | 10 | Step 4 Update manifest | `python update_manifest.py --project-dir {dir} --input {json}` writes local file | LLM generates updated manifest JSON → validated by `update_manifest.py` (stdin/stdout) → placed in `phase_complete.manifest_content` | Server side does not write to local disk |
 
@@ -312,17 +312,17 @@ incremental mode:
 
 ## V. Validation Script Changes
 
-### update_manifest.py (Existing, Needs Modification)
+### update_manifest.py (Existing, needs modification)
 
 **Path:** `G:\MicroPython_Skills\upy-select-hw\scripts\update_manifest.py`
 
 | Change | Content |
 |--------|---------|
-| Output method | `--project-dir` made optional. If not provided, reads existing manifest from stdin + LLM output, validates, merges, and outputs to stdout |
+| Output method | `--project-dir` becomes optional. If not provided, reads existing manifest from stdin + LLM output, validates, merges, and outputs to stdout |
 | New I2C address conflict detection | Already exists (in merge_manifest), keep unchanged |
 | New restricted_gpio violation detection | Read restricted_gpio from boards JSON, check if each assigned GPIO is in the restricted area |
 | New onboard_occupied conflict detection | Read onboard_peripherals (always_used=true) from boards JSON, check for conflicts |
-| Support incremental mode | Use `--mode incremental --previous-pinout {json}` to validate only new pins |
+| Support incremental mode | Use `--mode incremental --previous-pinout {json}` to only validate new pins |
 
 ### pin-validator.py (New Script)
 
@@ -331,10 +331,10 @@ incremental mode:
 ```python
 #!/usr/bin/env python3
 """
-Pin assignment deterministic validator.
+Deterministic pin assignment validator.
 
-Validation items:
-  1. GPIO overlap (non-shared pins cannot be assigned repeatedly)
+Validation Items:
+  1. GPIO overlap (non-shared pins cannot be assigned to multiple devices)
   2. restricted_gpio violation (cannot assign restricted pins)
   3. I2C address conflict (same bus cannot have duplicate addresses)
   4. Bus count exceeded (assigned I2C/SPI/UART count vs specs hardware count)
@@ -357,12 +357,12 @@ Exit codes: 0=pass, 1=validation failed (error JSON output to stdout), 2=input f
 ## VI. UI Components Required on Plugin Side
 
 | Component | Corresponding Message | Key Functionality |
-|-----------|----------------------|-------------------|
+|-----------|-----------------------|-------------------|
 | Progress Timeline | status_update × 4~8 messages | Reuse analyze timeline component |
 | MCU Recommendation Card | approval_request #1 (conditional) | Single select + recommendation reason + spec summary + alternatives |
-| Pin Assignment Table | phase_complete artifact[0] | Table: Device/Function/GPIO/Type/Notes, I2C shared rows highlighted |
-| BOM Table | phase_complete artifact[1] | Table: Name/Model/Qty/Unit Price/Notes, total price highlighted |
-| Warning Notification | phase_complete.warnings | Yellow warning bar, e.g., strapping pin warning |
+| Pin Assignment Table | phase_complete artifact[0] | Table: Device/Function/GPIO/Type/Notes, highlight I2C shared rows |
+| BOM Table | phase_complete artifact[1] | Table: Name/Model/Qty/Unit Price/Notes, highlight total price |
+| Warning Prompt | phase_complete.warnings | Yellow warning bar, e.g., strapping pin warning |
 
 ---
 
@@ -371,7 +371,7 @@ Exit codes: 0=pass, 1=validation failed (error JSON output to stdout), 2=input f
 ### Plugin-Side Testing (No Server)
 
 1. Manually send `approval_request` #1 (MCU recommendation card) → Verify:
-   - 3 board options render correctly (spec summary, price, reason)
+   - 3 board options rendered correctly (spec summary, price, reason)
    - Single select + three button behaviors
 2. Manually send `phase_complete` (with pinout table + BOM table) → Verify:
    - I2C shared rows highlighted in pin table
@@ -396,4 +396,4 @@ Exit codes: 0=pass, 1=validation failed (error JSON output to stdout), 2=input f
    - LLM intentionally assigns GPIO12 (strapping) to LED
    - pin-validator.py returns error
    - LLM reads error, reassigns to GPIO13
-   - pin-validator.py validates again and passes
+   - pin-validator.py passes validation again

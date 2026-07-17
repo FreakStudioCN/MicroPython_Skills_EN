@@ -4,8 +4,8 @@
   "payload": {
     "phase": "upy-deploy-plugin",
     "approval_id": "confirm_clean_device_project",
-    "header": "Confirm Clean Old Project Files",
-    "question": "The following device-side project files will be deleted, and then the current build result will be uploaded. Please confirm whether to continue.",
+    "header": "Confirm cleaning old project files",
+    "question": "The following device project files will be deleted, and then the current build results will be uploaded. Please confirm whether to continue.",
     "summary": {
       "strategy": "clean_then_upload",
       "delete_count": 4,
@@ -23,12 +23,12 @@
     ],
     "actions": [
       {
-        "label": "Confirm Clean and Upload",
+        "label": "Confirm clean and upload",
         "value": "confirm_clean",
         "primary": true
       },
       {
-        "label": "Upload Only",
+        "label": "Upload only",
         "value": "use_upload_only"
       },
       {

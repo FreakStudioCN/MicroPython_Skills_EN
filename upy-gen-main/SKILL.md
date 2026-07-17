@@ -9,16 +9,16 @@ description: Use this skill when the user wants to generate a new main.py test f
 
 You are the GraftSense MicroPython test file generation assistant. Given a driver `.py` file, analyze all its public APIs and generate a complete `main.py` test file from scratch that conforms to GraftSense specifications.
 
-## Type Determination (Must be completed before executing any step)
+## Type Determination (must be completed before executing any step)
 
 After reading the driver file, immediately determine its type. Subsequent steps will follow the corresponding branch based on the type:
 
 | Condition | Type |
 |---|---|
-| The driver is located in the `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` and has no I2C/SPI/UART hardware bus operations | **Middleware Library** |
-| All other cases | **Hardware Driver** |
+| Driver located in `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` and has no I2C/SPI/UART hardware bus operations | **Middleware Library** |
+| Other cases | **Hardware Driver** |
 
-**Middleware libraries do not apply "boundary parameter scenarios" and "abnormal parameter scenarios"; replace them with "multi-parameter combination scenarios"**: Cover the various parameter combinations supported by the driver (e.g., different timbres, languages, speech rates, emotional styles). Also skip I2C scanning, replacing it with WiFi connection + credential configuration structure (see upy-norm-main #11a/#11b/#11c).
+**Middleware libraries do not apply "boundary parameter scenarios" and "exception parameter scenarios"; replace them with "multi-parameter combination scenarios"**: Cover the various parameter combinations supported by the driver (e.g., different timbres, languages, speech rates, emotional styles). Also skip I2C scanning, replace it with WiFi connection + credential configuration structure (see upy-norm-main #11a/#11b/#11c).
 
 **Middleware library sensitive data replacement rules**: All credential fields in the generated main.py must use placeholders; real values must not be written:
 | Data Type | Placeholder |
@@ -36,7 +36,7 @@ Add a comment above each placeholder constant: `# Please replace with your actua
 
 1. Read the driver `.py` file specified by the user; **must re-read the complete content of the file, do not use session cache or skip the reading step**
 2. Analyze the driver: extract all public methods, properties, constants, constructor parameters, and communication interface types
-3. Classify APIs by chip function dimension (see dimension table below)
+3. Classify APIs by chip function dimensions (see dimension table below)
 4. Generate test code based on the principle of full coverage
 5. Output the complete `main.py` file
 
@@ -58,10 +58,10 @@ Add a comment above each placeholder constant: `# Please replace with your actua
 | Scenario Type | Requirement |
 |---|---|
 | Normal Parameter Scenario | Basic calls with default/common parameters |
-| Boundary Parameter Scenario | Hardware limit parameters (maximum, minimum) |
-| Abnormal Parameter Scenario | Illegal parameters (out of range, wrong type), verify that exceptions are correctly raised |
+| Boundary Parameter Scenario | Hardware extreme parameters (maximum, minimum) |
+| Exception Parameter Scenario | Illegal parameters (out of range, wrong type), verify that exceptions are correctly raised |
 
-> **Note: Middleware libraries do not apply "boundary parameter scenarios" and "abnormal parameter scenarios" (no hardware limits); replace them with "multi-parameter combination scenarios": Cover the various parameter combinations supported by the driver (e.g., different timbres, languages, speech rates, emotional styles).**
+> **Note: Middleware libraries do not apply "boundary parameter scenarios" and "exception parameter scenarios" (no hardware extreme values); replace them with "multi-parameter combination scenarios": Cover the various parameter combinations supported by the driver (e.g., different timbres, languages, speech rates, emotional styles).**
 
 ### API Feature Handling Methods
 
@@ -78,17 +78,17 @@ Add a comment above each placeholder constant: `# Please replace with your actua
 
 | # | Content | Description |
 |---|---|---|
-| 1 | 7-line file header comment | Contains `@File : main.py`, `@Description : Test XXX driver class`; `@Author` read from the driver file's `__author__` field and reused; if absent, prompt the user to fill it in, do not use placeholders |
+| 1 | File header 7-line comment | Contains `@File : main.py`, `@Description : Test XXX driver class`; `@Author` read from the driver file's `__author__` field and reuse, if absent prompt user to fill in, do not use placeholders |
 | 2 | 6 partition annotation comments | Correct order |
-| 3 | `time.sleep(3)` | At the beginning of the initialization configuration section |
+| 3 | `time.sleep(3)` | At the beginning of the initialization configuration area |
 | 4 | `print("FreakStudio: ...")` | Indicates the driver module currently being tested |
-| 5 | Hardware object instantiation | In the initialization configuration section, generated based on driver constructor parameters |
-| 5a | I2C device scan + ID verification | If the driver uses I2C, the initialization configuration section must include complete scan logic: ① `i2c.scan()` scans the bus; if the list is empty, `raise RuntimeError("No I2C device found")`; ② Iterate through the device list; if the target address is found, record it; if not found, `raise RuntimeError("Device not found at expected address")`; ③ Read the chip ID register and compare with the expected value, print "Device found" or "Device not found"; device ID register address and expected value declared as global variable area constants (`UPPER_CASE`); additional `import` statements required for I2C scanning (e.g., `import micropython`) must be placed in the import section, not within the initialization configuration section |
-| 6 | Call code for all public APIs | Low-frequency auto-execution, high-frequency/mode switching commented out |
-| 7 | `try/except/finally` | Wraps the main program area, includes three catch types: KeyboardInterrupt/OSError/Exception |
+| 5 | Hardware object instantiation | In the initialization configuration area, generate based on driver constructor parameters |
+| 5a | I2C device scan + ID verification | If the driver uses I2C, the initialization configuration area must include complete scan logic: ① `i2c.scan()` scan the bus, if the list is empty then `raise RuntimeError("No I2C device found")`; ② Iterate through the device list, record if target address is found, if not found then `raise RuntimeError("Device not found at expected address")`; ③ Read the chip ID register and compare with the expected value, print "Device found" or "Device not found"; Device ID register address and expected value declared as global variable area constants (`UPPER_CASE`); Additional `import` statements required for I2C scanning (e.g., `import micropython`) must be placed in the import area, not within the initialization configuration area |
+| 6 | Call code for all public APIs | Low-frequency auto-execute, high-frequency/mode switching commented out |
+| 7 | `try/except/finally` | Wrap the main program area, include KeyboardInterrupt/OSError/Exception three types of capture |
 | 8 | finally resource cleanup | `close()`/`deinit()`, `del`, exit prompt |
 | 9 | raise/print all in English | All runtime strings in English |
-| 10 | Inline comments in Chinese | All comments use Chinese; key operation steps inside functions (hardware initialization, data reading, conditional judgment, resource cleanup, etc.) must have Chinese comment explanations; **Comments must be written on the line above the corresponding code (independent comment line); comments at the end of code lines (trailing `#` comments) are prohibited** |
+| 10 | Inline comments in Chinese | All comments use Chinese; key operation steps inside functions (hardware initialization, data reading, conditional judgment, resource cleanup, etc.) must have Chinese comment explanations; **Comments must be written on the line above the corresponding code (independent comment line), it is forbidden to write at the end of the code line (trailing `#` comment)** |
 
 ### Key Specification Summary
 
@@ -99,7 +99,7 @@ Add a comment above each placeholder constant: `# Please replace with your actua
 # @Time    : YYYY/MM/DD
 # @Author  : FreakStudio
 # @File    : main.py
-# @Description : Code to test the XXX driver class
+# @Description : Test XXX driver class code
 # @License : MIT
 ```
 
@@ -114,12 +114,12 @@ print_interval = 2000   # Print interval (ms)
 ```python
 # ======================================== Functions ============================================
 def print_realtime_data():
-    """Print real-time high-frequency data (high-frequency, default commented out, can be called manually via REPL)"""
+    """Print real-time high-frequency data (high frequency, default commented out, can be called manually via REPL)"""
     data = device.read_raw()
     print("Raw data: %s" % str(data))
 
 def switch_to_sleep_mode():
-    """Switch to sleep mode (mode switching, default commented out, can be triggered manually via REPL)"""
+    """Switch to sleep mode (mode switch, default commented out, can be triggered manually via REPL)"""
     device.sleep()
     print("Device entered sleep mode")
 ```
@@ -139,7 +139,7 @@ try:
                 print("Read failed")
             last_print_time = current_time
         # print_realtime_data()    # High-frequency function, commented out by default, can be called manually via REPL
-        # switch_to_sleep_mode()   # Mode switching, commented out by default, can be triggered manually via REPL
+        # switch_to_sleep_mode()   # Mode switch, commented out by default, can be triggered manually via REPL
         time.sleep_ms(10)
 
 except KeyboardInterrupt:
@@ -158,12 +158,12 @@ finally:
 ## Output Format
 
 1. Output the complete `main.py` file content (code block preview).
-2. Attach a brief explanation: list which APIs were covered, which were set to auto-execute, which were commented out for manual calls, and the reason.
+2. Attach a brief explanation: list which APIs are covered, which are set to auto-execute, which are commented out for manual calls and the reason.
 3. Ask the user: "Confirm writing to `main.py` in the same directory?", and write the content to the file after user confirmation.
 
 ## Complete Specification Reference
 
-This skill's rewriting rules are based on the GraftSense driver development specification document. For the complete specification (22 chapters, 2200+ lines), please refer to:
+The rewriting rules of this Skill are based on the GraftSense driver writing specification document. For the complete specification (22 chapters, 2200+ lines), please refer to:
 
 [Complete Specification Document](https://github.com/FreakStudioCN/MicroPython_Skills/blob/main/upy_driver_dev_spec_summary.md)
 

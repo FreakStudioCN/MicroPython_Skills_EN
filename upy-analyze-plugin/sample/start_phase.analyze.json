@@ -3,7 +3,7 @@
   "phase": "analyze",
   "session_id": "demo-session-001",
   "payload": {
-    "user_description": "Make a temperature and humidity monitor, with a buzzer alarm when exceeding the threshold, and display data on OLED",
+    "user_description": "Make a temperature and humidity monitor, with a buzzer alarm when exceeding the threshold, and display data on an OLED",
     "pre_selected_board": null,
     "preferences": {
       "mode": "beginner",

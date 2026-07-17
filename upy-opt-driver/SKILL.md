@@ -1,6 +1,6 @@
 ---
 name: upy-opt-driver
-description: Use this skill when the user wants to optimize the performance of any existing MicroPython .py file (driver, main.py, or any other file) according to the GraftSense performance optimization guide. Invoke when user says things like "优化性能", "optimize", "加速", "对驱动做性能优化", "优化这个文件", or provides any .py file path or directory path and asks for performance improvement.
+description: Use this skill when the user wants to optimize the performance of any existing MicroPython .py file (driver, main.py, or any other file) according to the GraftSense performance optimization guide. Invoke when user says things like "optimize performance", "optimize", "speed up", "optimize driver performance", "optimize this file", or provides any .py file path or directory path and asks for performance improvement.
 ---
 
 # MicroPython Performance Optimization Skill
@@ -12,9 +12,9 @@ You are the GraftSense MicroPython performance optimization assistant. Given any
 ## Core Constraints (Not to be Violated)
 
 - Do not modify the external API names (public method names, attribute names)
-- Do not modify the semantics of method signatures (parameter meaning, return value meaning)
+- Do not modify method signature semantics (parameter meaning, return value meaning)
 - Do not modify hardware communication timing (I2C/SPI/UART read/write order, delays)
-- `@viper` rewrites must annotate integer overflow risks and bit-width limitations in the docstring Notes
+- `@viper` rewrites must annotate integer overflow risk and bit-width limitations in the docstring Notes
 - `@native` rewrites must annotate limitations (no generators, no keyword arguments) in the docstring Notes
 - SIO register operations must be annotated as "RP2040 specific, not available on other platforms"
 
@@ -24,13 +24,13 @@ You are the GraftSense MicroPython performance optimization assistant. Given any
 
 1. Read the driver `.py` file specified by the user; **must re-read the complete file content, do not use session cache**
 2. Analyze the file: identify buffer allocation methods, loop structures, constant declarations, computationally intensive methods, floating-point operations, ISR callbacks
-3. Check and rewrite item by item according to P0→P1→P2 priority
+3. Check and rewrite item by item according to priority P0→P1→P2
 4. Output the complete optimized file content
 
 ### Multi-File Mode (User provides directory path)
 
 1. Scan all `.py` files in the directory (including `main.py`, do not exclude any files)
-2. List all driver files, ask the user: "Confirm to optimize all files, or only select one?"
+2. List all driver files and ask the user: "Confirm optimization for all files, or select only one?"
 3. After user confirmation, execute the single-file mode process for each file sequentially
 4. After each file is completed, pause and display:
    ```
@@ -47,7 +47,7 @@ You are the GraftSense MicroPython performance optimization assistant. Given any
 
 #### P0#1 Pre-allocate Buffers
 
-**Judgment Criteria**: Methods with `readfrom_mem()`, `read()`, `bytearray(n)` dynamic creation — each call triggers heap allocation.
+**Judgment Criteria**: Methods contain `readfrom_mem()`, `read()`, `bytearray(n)` dynamic creation — each call triggers heap allocation.
 
 **Incorrect Writing (Prohibited):**
 ```python
@@ -83,7 +83,7 @@ class SensorDriver:
 
 ---
 
-#### P0#2 `memoryview` to Replace Slice Copying
+#### P0#2 `memoryview` Instead of Slice Copy
 
 **Judgment Criteria**: There is `buf[a:b]` slicing passed to a function, and the slice length > 32 bytes — slicing creates a complete data copy triggering heap allocation.
 
@@ -114,20 +114,20 @@ def process(self) -> None:
 
 #### P0#3 Cache Object References
 
-**Judgment Criteria**: `self.xxx` attribute access within a loop body (each access performs a dictionary lookup), or nested attributes `self.obj.buf` — significant effect when loop count > 100.
+**Judgment Criteria**: Loop body contains `self.xxx` attribute access (dictionary lookup each time), or nested attributes `self.obj.buf` — significant effect when loop count > 100.
 
 **Incorrect Writing (Prohibited):**
 ```python
 def fill_buffer(self) -> None:
     for i in range(1000):
-        # Attribute lookup performed each loop (dictionary operation, has overhead)
+        # Attribute lookup executed each loop (dictionary operation, has overhead)
         self._buf[i] = self._addr + i
 ```
 
 **Correct Writing:**
 ```python
 def fill_buffer(self) -> None:
-    # Cache to local variables before the loop, eliminating attribute lookups within the loop
+    # Cache to local variables before the loop, eliminating attribute lookups inside the loop
     buf = self._buf
     addr = self._addr
     for i in range(1000):
@@ -136,7 +136,7 @@ def fill_buffer(self) -> None:
 
 **Rule Details:**
 - Nested attributes (e.g., `self._display.framebuffer`) have a more significant effect and must be cached
-- Only execute within methods where the loop count > 100; single access does not require caching
+- Only execute in methods with loop count > 100; single access does not require caching
 
 ---
 
@@ -156,17 +156,17 @@ MAX_RETRY = 3
 ```python
 from micropython import const
 
-# const() is replaced with the numeric value at compile time, zero runtime overhead
+# const() is replaced with the value at compile time, zero runtime overhead
 REG_CONFIG = const(0x1A)
 REG_DATA   = const(0x00)
 MAX_RETRY  = const(3)
-# Bitwise operation constants are also supported
+# Bit operation constants are also supported
 PIN_MASK   = const(1 << 5)
 ```
 
 **Rule Details:**
 - The optimization of `const()` is fully effective only when precompiled bytecode (`.mpy`) or `import` is executed; the difference is minimal under REPL
-- Only effective for module-level constants, not applicable to class attributes (class attribute access follows a different path)
+- Only valid for module-level constants, not applicable to class attributes (class attribute access follows a different path)
 
 ---
 
@@ -174,9 +174,9 @@ PIN_MASK   = const(1 << 5)
 
 #### P1#5 Manual GC Control
 
-**Judgment Criteria**: Methods with a large number of dynamic object creations (string concatenation, list comprehensions, temporary bytearrays), or called in high-frequency loops.
+**Judgment Criteria**: Methods have a large number of dynamic object creations (string concatenation, list comprehensions, temporary bytearrays), or are called in high-frequency loops.
 
-**Applicable Conditions**: The method dynamically creates objects and is sensitive to response time.
+**Applicable Conditions**: Methods dynamically create objects and are sensitive to response time.
 
 ```python
 import gc
@@ -193,14 +193,14 @@ def batch_read(self) -> list:
 
 **Rule Details:**
 - Place **before** the performance-critical code segment, not after
-- Do not call `gc.collect()` within ISR callbacks
+- Do not call `gc.collect()` in ISR callbacks
 - Do not add it on every call; only add it before batch operations or methods known to create a large number of objects
 
 ---
 
 #### P1#6 `@micropython.native` Decorator
 
-**Judgment Criteria**: Methods with a large amount of Python bytecode execution (loops, conditional judgments, numerical calculations), and meeting all of the following conditions:
+**Judgment Criteria**: Methods have a large amount of Python bytecode execution (loops, conditional judgments, numerical calculations), and meet all of the following conditions:
 - No generators (no `yield`)
 - No keyword argument calls (no `func(key=val)`)
 - No need for full Python semantic compatibility
@@ -239,11 +239,11 @@ def _decode_data(self, raw: bytearray) -> tuple:
 
 #### P1#7 `@micropython.viper` Decorator
 
-**Judgment Criteria**: Methods primarily involving integer operations (bit operations, accumulation, array traversal counting), and meeting all of the following conditions:
-- No floating-point operations (viper has no speedup effect on floating-point)
+**Judgment Criteria**: Methods primarily involve integer operations (bit operations, accumulation, array traversal counting), and meet all of the following conditions:
+- No floating-point operations (viper has no speedup effect on floating point)
 - No default parameters (viper compiler discards default parameter information)
 - No generators
-- High computational load (effect is significant only when loops > 1000 times)
+- High computational load (effect is significant only when loop > 1000 times)
 
 **Speedup Effect**: Up to 58x for integer operations, approximately 23x for large array traversal.
 
@@ -274,32 +274,32 @@ def _calc_checksum(self, data: bytearray) -> int:
 
 | Limitation | Description | Handling Method |
 |---|---|---|
-| Does not support default parameters | `def f(a: int = 0)` calling `f()` will raise TypeError | Change to explicit parameter passing |
+| Does not support default parameters | `def f(a: int = 0)` calling `f()` raises TypeError | Change to explicit parameter passing |
 | No optimization for floating-point operations | Floating-point operations only speed up by about 15%, not worth changing | Do not add `@viper` to floating-point methods |
-| 32-bit integer overflow | 32-bit is modulo 2^32, large calculations will be truncated | Analyze the maximum value range, annotate in docstring |
+| 32-bit integer overflow | 32-bit operations are modulo 2^32, large calculations will be truncated | Analyze the maximum value range, annotate in docstring |
 | Does not support generators | Function cannot contain `yield` | Rewrite to normal return |
 | Types need explicit annotation | Parameters and local variables need `int`/`uint` annotation | Use `: int` annotation |
-| ptr conversion placed outside the loop | Doing `ptr8(buf)` inside the loop takes a few microseconds each time, 10,000 loops accumulate a 5x performance loss | The conversion statement must be before the loop |
+| ptr conversion outside loop | Doing `ptr8(buf)` inside the loop takes a few microseconds each time, 10,000 loops accumulate a 5x performance loss | The conversion statement must be before the loop |
 
 **viper Type Reference Table:**
 
-| Type | Description | Usage Scenario |
+| Type | Description | Use Case |
 |---|---|---|
-| `int` | Signed 32-bit integer | Normal integer operations |
-| `uint` | Unsigned 32-bit integer | Bit operations, address calculations |
+| `int` | Signed 32-bit integer | General integer operations |
+| `uint` | Unsigned 32-bit integer | Bit operations, address calculation |
 | `ptr8` | Byte pointer | Accessing `bytearray`, `bytes` |
 | `ptr16` | 16-bit integer pointer | Accessing `array('H')` |
-| `ptr32` | 32-bit integer pointer | Directly accessing register addresses |
+| `ptr32` | 32-bit integer pointer | Direct access to register addresses |
 
 ---
 
-#### P1#8 Integers to Replace Floating-Point
+#### P1#8 Integer Instead of Floating Point
 
-**Judgment Criteria**: Floating-point operations within loops, and the target chip has no FPU (floating-point operations are extremely slow on chips without FPU like RP2040, ESP8266).
+**Judgment Criteria**: Loop contains floating-point operations, and the target chip has no FPU (floating-point operations are extremely slow on chips without FPU like RP2040, ESP8266).
 
-**Speedup Effect**: Approximately 57% speedup (effect is not significant on chips with FPU like ESP32-S3).
+**Speedup Effect**: Approximately 57% speedup (effect is not obvious on chips with FPU like ESP32-S3).
 
-**Incorrect Writing (Prohibited, floating-point in loop):**
+**Incorrect Writing (Prohibited, floating point in loop):**
 ```python
 def read_voltage(self) -> list:
     results = []
@@ -318,12 +318,12 @@ def read_voltage(self) -> list:
     raw_data = []
     for i in range(100):
         raw_data.append(self._read_raw(i))
-    # Perform floating-point conversion on the non-performance-critical path
+    # Floating-point conversion on non-performance-critical path
     return [raw / 65535.0 * 3.3 for raw in raw_data]
 ```
 
 **Rule Details:**
-- Only optimize floating-point operations within loops; single-call floating-point conversions do not need rewriting
+- Only optimize floating-point operations inside loops; single-call floating-point conversions do not need rewriting
 - Chips with FPU (ESP32-S3, STM32F4, etc.) do not need this optimization
 
 ---
@@ -332,7 +332,7 @@ def read_voltage(self) -> list:
 
 #### P2#9 `viper ptr8/ptr16/ptr32` Pointer Access
 
-**Judgment Criteria**: Large loop traversal of `bytearray` (> 1000 times), normal `buf[i]` access requires boundary checking and object attribute lookup.
+**Judgment Criteria**: There is a large loop traversal of `bytearray` (> 1000 times), normal `buf[i]` access requires boundary checking and object attribute lookup.
 
 **Speedup Effect**: Approximately 23x (`ptr8` directly calculates memory address, no additional overhead).
 
@@ -366,9 +366,9 @@ def fill_buffer(self, src, dst) -> None:
 
 #### P2#10 SIO Register Direct Write GPIO
 
-**Judgment Criteria**: High-frequency GPIO toggling operations (> 1000 times/second), and the target platform is RP2040.
+**Judgment Criteria**: There is high-frequency GPIO toggling (> 1000 times/second), and the target platform is RP2040.
 
-**Speedup Effect**: Approximately 48% speedup (bypassing the `machine.Pin` hardware abstraction layer).
+**Speedup Effect**: Approximately 48% speedup (skipping the `machine.Pin` hardware abstraction layer).
 
 **⚠️ Platform Limitation: Only available on RP2040**
 
@@ -395,7 +395,7 @@ class GPIODriver:
             - RP2040 specific, not available on other platforms
             - SIO register direct write, approximately 48% faster than machine.Pin
         """
-        # Cache to local variables to avoid global lookups within the loop
+        # Cache to local variables to avoid global lookup inside the loop
         set_reg = _GPIO_OUT_SET
         clr_reg = _GPIO_OUT_CLR
         mask = self._mask
@@ -406,9 +406,9 @@ class GPIODriver:
 
 ---
 
-#### P2#11 `array` to Replace `list`
+#### P2#11 `array` Instead of `list`
 
-**Judgment Criteria**: Lists storing a large number of values of the same type (e.g., ADC samples, sensor batch readings). `list` stores object references (non-contiguous memory), dynamic growth triggers heap allocation.
+**Judgment Criteria**: There is a list storing a large number of values of the same type (e.g., ADC samples, sensor batch readings). `list` stores object references (non-contiguous memory), and dynamic growth triggers heap allocation.
 
 ```python
 import array
@@ -429,7 +429,7 @@ class SensorDriver:
 
 **array Type Code Reference:**
 
-| Type Code | C Type | Bytes | Usage Scenario |
+| Type Code | C Type | Bytes | Use Case |
 |---|---|---|---|
 | `'B'` | unsigned char | 1 | Byte data, register values |
 | `'h'` | signed short | 2 | ADC raw values, signed 16-bit |
@@ -439,18 +439,18 @@ class SensorDriver:
 
 ---
 
-## Optimization Effect Reference (To Determine if Rewriting is Worthwhile)
+## Optimization Effect Reference (Determine if Rewriting is Worthwhile)
 
 | Optimization Method | Typical Scenario | Speedup Factor | Rewrite Cost |
 |---|---|---|---|
 | `@viper` integer operations | 1 million accumulations | **~58x** | Medium (requires type annotations) |
 | `viper ptr8` pointer access | 10,000 bytearray traversals | **~23x** | Medium |
 | ptr conversion moved outside loop | 10,000 pointer accesses | **~5x** | Low |
-| Integers to replace floating-point | 100 ADC acquisitions | **~57%** | Low |
+| Integer instead of floating point | 100 ADC acquisitions | **~57%** | Low |
 | SIO register direct write | 1000 GPIO toggles | **~48%** | High (platform limitation) |
-| `memoryview` to replace slicing | Large buffer slice passing | ~20% | Low |
-| Cache object references | Attribute access within large loops | ~5-20% | Low |
-| Pre-allocate buffers | I2C/SPI reads/writes | Eliminates GC jitter | Low |
+| `memoryview` instead of slicing | Large buffer slice passing | ~20% | Low |
+| Cache object references | Attribute access in large loops | ~5-20% | Low |
+| Pre-allocate buffers | I2C/SPI read/write | Eliminates GC jitter | Low |
 
 ---
 
@@ -461,7 +461,7 @@ class SensorDriver:
    - **P0 Execution Status**: List all 4 items, annotate "Executed" or "Not applicable (reason)"
    - **P1 Execution Status**: List the actually executed P1 items and the judgment basis (why applicable)
    - **P2 Execution Status**: List the actually executed P2 items and the judgment basis
-3. Ask the user: "Confirm writing to the original file?", and overwrite the content into the original file after user confirmation.
+3. Ask the user: "Confirm writing to the original file?", and overwrite the content to the original file after user confirmation.
 
 ---
 

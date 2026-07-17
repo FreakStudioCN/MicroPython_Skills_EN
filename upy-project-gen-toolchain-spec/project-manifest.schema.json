@@ -102,7 +102,7 @@
           "type": "array",
           "items": {"type": "string"},
           "default": [],
-          "description": "List of user's existing hardware (model or generic name)"
+          "description": "List of user's existing hardware (model or common name)"
         },
         "experience": {
           "type": "string",
@@ -276,7 +276,7 @@
 
     "diagrams": {
       "type": "object",
-      "description": "[Phase 7b] Architecture diagram and flowchart generation results",
+      "description": "[Phase 7b] Architecture and flowchart generation results",
       "properties": {
         "architecture_md": {"type": "string"},
         "flowchart_md": {"type": "string"}

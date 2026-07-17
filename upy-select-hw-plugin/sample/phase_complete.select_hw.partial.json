@@ -25,7 +25,7 @@
       "updated_at": "2026-06-21T13:58:55Z",
       "project_name": "Voice Dialogue Assistant",
       "requirements": {
-        "description": "When PIR infrared sensor detects a person, trigger dialogue mode. Touch the device to emit voice. Use I2S microphone and WiFi cloud API for voice dialogue (ASR+LLM+TTS), and also query ambient temperature and humidity.",
+        "description": "When the PIR infrared sensor detects a person, it triggers dialogue mode. Touching the device produces voice. Voice dialogue (ASR+LLM+TTS) is conducted via I2S microphone and WiFi cloud API, while also querying ambient temperature and humidity.",
         "scene": "indoor",
         "power": "usb",
         "network": "wifi",
@@ -154,7 +154,7 @@
           "bus": "i2c0",
           "i2c_addr": "0x38",
           "source": "default_bus",
-          "notes": "Use the i2c0 default SDA defined by the board"
+          "notes": "Use the default SDA of i2c0 defined by the board"
         },
         {
           "device": "AHT20",
@@ -164,7 +164,7 @@
           "bus": "i2c0",
           "i2c_addr": "0x38",
           "source": "default_bus",
-          "notes": "Use the i2c0 default SCL defined by the board"
+          "notes": "Use the default SCL of i2c0 defined by the board"
         },
         {
           "device": "HC-SR501",
@@ -189,7 +189,7 @@
           "type": "i2s_bck",
           "bus": "i2s0",
           "source": "auto_assigned",
-          "notes": "I2S BCK automatically assigned to free GPIO"
+          "notes": "I2S BCK automatically assigned to a free GPIO"
         },
         {
           "device": "INMP441",
@@ -198,7 +198,7 @@
           "type": "i2s_ws",
           "bus": "i2s0",
           "source": "auto_assigned",
-          "notes": "I2S WS automatically assigned to free GPIO"
+          "notes": "I2S WS automatically assigned to a free GPIO"
         },
         {
           "device": "INMP441",
@@ -207,7 +207,7 @@
           "type": "i2s_data_in",
           "bus": "i2s0",
           "source": "user_wiring",
-          "notes": "User wiring confirms using USB serial RX pin; avoid occupying USB CDC during subsequent debugging"
+          "notes": "User wiring confirmed using USB serial RX pin; subsequent debugging must avoid occupying USB CDC"
         },
         {
           "device": "MAX98357",
@@ -216,7 +216,7 @@
           "type": "i2s_data_out",
           "bus": "i2s0",
           "source": "user_wiring",
-          "notes": "User wiring confirms using USB serial TX pin; avoid occupying USB CDC during subsequent debugging"
+          "notes": "User wiring confirmed using USB serial TX pin; subsequent debugging must avoid occupying USB CDC"
         },
         {
           "device": "power",

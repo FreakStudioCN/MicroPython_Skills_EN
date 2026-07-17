@@ -70,7 +70,7 @@
           ["Total Modules", "5"],
           ["Total Dependency Edges", "5"],
           ["Maximum Depth", "4"],
-          ["Circular Dependencies", "None"],
+          ["Cyclic Dependencies", "None"],
           ["Direct import machine", "main"]
         ]
       }

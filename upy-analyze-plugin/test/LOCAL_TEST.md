@@ -1,4 +1,4 @@
-# `upy-analyze-plugin` Native Mock Test Guide
+# `upy-analyze-plugin` Local Mock Test Guide
 
 ## Purpose
 
@@ -27,7 +27,7 @@ The local mock exercise already follows the new rules:
 - Specific device drivers simulate `upy-pkg-guide` results via `pkg_guide_adapter`
 - The real server flow should call `upy-pkg-guide`; the local adapter is only used for deterministic mock exercises
 - `micropython_lib` is mainly used for official ecosystem general-purpose libraries/middleware such as `aioble`
-- For broad device categories like "soil sensors", first split into implementation families, e.g. `ADC` / `Modbus` / `I2C`
+- For broad device categories like "soil sensors", first split into implementation families, e.g., `ADC` / `Modbus` / `I2C`
 
 ## Current Behavior of mock_plugin.py
 
@@ -54,7 +54,7 @@ The local mock exercise already follows the new rules:
 
 ### phase_complete
 
-- Prints results and `summary`
+- Prints the result and `summary`
 
 ## Recommended Test Scenarios
 
@@ -69,7 +69,7 @@ Covers:
 - Test module imports
 - `sample/*.json` format
 - `phase_complete.manifest_content` can be validated by `scripts/init_manifest.py`
-- Runner/mock bridge can reach `phase_complete`
+- Runner/mock bridge reaches `phase_complete`
 
 ### Scenario A: Happy Path
 
@@ -78,7 +78,7 @@ Goal:
 - Complete flow through:
   - Intent decomposition
   - Device confirmation
-  - requirement_supplement
+  - Requirement supplement
   - Driver search
   - Manifest validation
   - `phase_complete(success)`
@@ -104,7 +104,7 @@ Goal:
 
 - Input soil-related requirements
 - Distinguish between `ADC` / `RS485/Modbus` based on the description
-- Specific device drivers are simulated by the adapter querying `upy-pkg-guide` results
+- Specific device drivers are simulated by the adapter from `upy-pkg-guide` query results
 
 ### Scenario E: Manifest Validation Fails
 

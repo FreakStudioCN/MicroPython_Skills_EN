@@ -1,11 +1,11 @@
 ---
 name: upy-wiring
-description: Wiring diagram generation. Reads all .py source files in firmware/ to extract actual pins/addresses/buses, cross-validates with project-manifest.json, then LLM generates an intermediate JSON, and scripts render a Mermaid wiring diagram (.md code block, CLI natively readable) + SVG + PNG + HTML (double-click to view in browser). Triggered after upy-scaffold or upy-generate completes.
+description: Wiring diagram generation. Reads all .py source files in firmware/ to extract actual pins/addresses/buses, cross-validates with project-manifest.json, then LLM generates an intermediate JSON, and scripts render a Mermaid wiring diagram (.md code block, CLI natively readable) + SVG + PNG + HTML (double-click in browser to view). Triggered after upy-scaffold or upy-generate completes.
 ---
 
 # Wiring Diagram Generation Skill
 
-## Role Definition
+## Role
 
 **Read all `.py` source files in `firmware/` + `project-manifest.json`**, using firmware as the authoritative data source and manifest as the design reference. After cross-validation, the LLM fills in the intermediate JSON, and scripts validate and render the Mermaid wiring diagram + SVG + PNG + HTML + pin cross-reference table. **The LLM is responsible for understanding the data and filling in the JSON; scripts only perform validation and rendering.**
 
@@ -26,7 +26,7 @@ SVG rendering requires network (mermaid.ink API, zero local dependencies).
 
 ## Execution Steps
 
-### Step 1: LLM Reads Schema → Understands Structure
+### Step 1: LLM reads Schema → understands structure
 
 Read the intermediate JSON schema:
 
@@ -36,11 +36,11 @@ G:/MicroPython_Skills/upy-project-gen-toolchain-spec/wiring.schema.json
 
 Understand the 6 required fields: `meta`, `mcu`, `buses`, `standalone`, `power`, `alerts`, and the optional field `canvas`.
 
-### Step 2: LLM Reads All .py Source Files in firmware/ → Extracts Hardware Facts
+### Step 2: LLM reads all .py source files in firmware/ → extracts hardware facts
 
-**This is the core data source for this skill.** Read all `.py` files under `{project_dir}/firmware/`, extracting hardware connection facts according to the following priority:
+**This is the core data source for this skill.** Read all `.py` files under `{project_dir}/firmware/` and extract hardware connection facts according to the following priority:
 
-#### 2A: main.py — Hardware Initialization (Highest Priority)
+#### 2A: main.py — Hardware initialization (highest priority)
 
 Search for patterns and extract:
 
@@ -51,13 +51,13 @@ Search for patterns and extract:
 | `UART(id, tx=Pin(n), rx=Pin(n), baudrate=b)` | UART bus signal lines | buses[].signals |
 | `Pin(n, Pin.OUT)` / `Pin(n, Pin.IN)` | GPIO number, direction | standalone[].type, mcu.pins[].type |
 | `Pin(n, Pin.IN, Pin.PULL_UP)` | GPIO number, pull-up | standalone[].type=gpio_in_pullup |
-| `create_*(i2c, ...)` / `create_*(pin, ...)` | Device factory call, actual address parameters | buses[].devices / standalone[] |
+| `create_*(i2c, ...)` / `create_*(pin, ...)` | Device factory call, actual address parameter | buses[].devices / standalone[] |
 | Address constants / logs near `i2c.scan()` | Actual I2C address used | buses[].devices[].addr |
 | `Pin.OUT` initial value `Pin(n).value(0)` | Initial level | standalone[].active_level |
 
 **Example**: `I2C(0, scl=Pin(5), sda=Pin(4), freq=400000)` → I2C0 bus, SCL=GP5, SDA=GP4, 400kHz.
 
-#### 2B: board.py — Pin Mapping Table
+#### 2B: board.py — Pin mapping table
 
 Extract all pin definitions from the `BOARDS` dictionary:
 
@@ -71,31 +71,31 @@ Extract all pin definitions from the `BOARDS` dictionary:
 
 **Even if a device is not used in main.py, fixed pins defined in board.py (such as the onboard LED) should appear in mcu.pins[].**
 
-#### 2C: drivers/*/__init__.py — Default I2C Address & Device Information
+#### 2C: drivers/*/__init__.py — Default I2C address & device information
 
 For each driver's `__init__.py`, look for:
 
 | Pattern | Extraction |
 |------|------|
-| `_XXXX_DEFAULT_ADDR = 0xNN` | Device default I2C address (**this is the most authoritative source for the address**) |
+| `_XXXX_DEFAULT_ADDR = 0xNN` | Device default I2C address (**this is the most authoritative address source**) |
 | `create_*(i2c, address=...)` | Overridable address parameter, confirms the actual address used |
 | Class name / import statements | Device model and driver source |
 
-#### 2D: conf.py — Project Identity
+#### 2D: conf.py — Project identity
 
 Extract `PROJECT_NAME`, `BOARD_NAME` → fill into `meta.project`, `meta.mcu_model`.
 
-#### 2E: tasks/*.py — Supplementary Pin Usage
+#### 2E: tasks/*.py — Supplementary pin usage
 
 Task files may contain additional Pin references (e.g., GPIO operations in alarm tasks). Scan to ensure nothing is missed.
 
-#### 2F: lib/*.py — Third-party Drivers
+#### 2F: lib/*.py — Third-party drivers
 
 Check driver files under `firmware/lib/` for hardcoded pins or addresses. These are usually consistent with `drivers/*/__init__.py`, but sometimes driver authors hardcode default values.
 
-### Step 3: LLM Reads Manifest → Extracts Design Intent + Cross-Validation
+### Step 3: LLM reads manifest → extracts design intent + cross-validation
 
-Read `{project_dir}/project-manifest.json`, extracting `mcu`, `pinout`, `devices`, `bom`.
+Read `{project_dir}/project-manifest.json`, extract `mcu`, `pinout`, `devices`, `bom`.
 
 **Cross-validation rules (firmware is authoritative):**
 
@@ -107,9 +107,9 @@ Read `{project_dir}/project-manifest.json`, extracting `mcu`, `pinout`, `devices
 | I2C address mismatch | Use driver `_DEFAULT_ADDR` as authoritative; if main.py explicitly passes an address, use main.py |
 | GPIO number mismatch | Use main.py `Pin(x)` as authoritative, add alert for mismatch with manifest |
 
-#### 3A: Field Inference Rules (When manifest.pinout Lacks Fields)
+#### 3A: Field inference rules (when manifest.pinout lacks fields)
 
-**Physical Pin Number (physical_pin) Inference:**
+**Physical pin number (physical_pin) inference:**
 
 | MCU | Rule |
 |-----|------|
@@ -117,9 +117,9 @@ Read `{project_dir}/project-manifest.json`, extracting `mcu`, `pinout`, `devices
 | ESP32 | Consult pinout diagram (WebSearch `ESP32 pinout diagram`) |
 | ESP32-S3 | Consult pinout diagram (WebSearch `ESP32-S3 pinout diagram`) |
 
-**Pin Electrical Type (type) Inference (Combining firmware Pin Initialization Mode and manifest pin_name):**
+**Pin electrical type (type) inference (combining firmware Pin initialization mode and manifest pin_name):**
 
-| Basis for Judgment | type Value |
+| Basis for Judgment | type value |
 |---|---|
 | `3V3` / `3.3V` | `power_3v3` |
 | `5V` / `VBUS` | `power_5v` |
@@ -132,46 +132,46 @@ Read `{project_dir}/project-manifest.json`, extracting `mcu`, `pinout`, `devices
 | `SPI` + `CS` / `SS` | `spi_cs` |
 | `UART` + `TX` | `uart_tx` |
 | `UART` + `RX` | `uart_rx` |
-| `Pin(x, Pin.OUT)` — LED/Buzzer/Relay | `gpio_out` |
-| `Pin(x, Pin.IN)` — Button | `gpio_in` |
+| `Pin(x, Pin.OUT)` — LED/buzzer/relay | `gpio_out` |
+| `Pin(x, Pin.IN)` — button | `gpio_in` |
 | `Pin(x, Pin.IN, Pin.PULL_UP)` | `gpio_in_pullup` |
-| `ADC` / `Pin(x, Pin.IN)` + Analog Sensor | `adc` |
-| `PWM` / `Pin(x, Pin.OUT)` + Servo/Dimming | `pwm` |
+| `ADC` / `Pin(x, Pin.IN)` + analog sensor | `adc` |
+| `PWM` / `Pin(x, Pin.OUT)` + servo/dimming | `pwm` |
 | I2S | `i2s` |
 
-**Pin Side (side) Inference:**
+**Pin side (side) inference:**
 
 | MCU | Rule |
 |-----|------|
-| Pico (40-pin DIP) | Left side=Pin1~20 (GP0~GP15), Right side=Pin21~40 (GP16~GP28 + Power) |
+| Pico (40-pin DIP) | Left side=Pin1~20 (GP0~GP15), Right side=Pin21~40 (GP16~GP28 + power) |
 | ESP32 (38-pin) | Left side=Pin1~19, Right side=Pin20~38 |
 
-**Pin Position (pos) Inference:** Start from 0, increment by physical_pin within the side.
+**Pin position (pos) inference:** Start from 0, increment by physical_pin within the side.
 
-#### 3B: Power Pin Supplementation
+#### 3B: Power pin supplementation
 
 **The manifest usually lacks power pins; the LLM must actively supplement them:**
 
 - 3V3(OUT) pin: VCC for all I2C/SPI sensors, screens
-- GND pin: Common ground for all devices
+- GND pin: common ground for all devices
 - If there are high-power devices (servos/motors), supplement 5V/VBUS pins
 
-#### 3C: Bus Categorization (Based on firmware)
+#### 3C: Bus classification (based on firmware)
 
 - I2C devices → `buses[]` type=`i2c`, signal lines SDA/SCL. I2C address uses driver `_DEFAULT_ADDR` as authoritative; if main.py explicitly passes an address, use the actual passed value
 - SPI devices → `buses[]` type=`spi`, signal lines MOSI/MISO/SCK/CS
 - UART devices → `buses[]` type=`uart`, signal lines TX/RX
 - GPIO devices (no bus, `Pin.OUT`/`Pin.IN`) → `standalone[]`
 
-#### 3D: Automatic Alert Generation
+#### 3D: Automatic alert generation
 
 **Alert messages must be concise, each `msg` ≤60 English characters** (alert boxes in the wiring diagram have a fixed width of ~260px; overly long text will be truncated or crowd the entire layout).
 
-**Hardware Alerts:**
+**Hardware alerts:**
 
 | Condition | level | category | msg |
 |------|-------|----------|-----|
-| I2C address conflict (multiple devices same address) | `danger` | `conflict` | "{d1} and {d2} both at {addr} — address conflict" |
+| I2C address conflict (multiple devices at same address) | `danger` | `conflict` | "{d1} and {d2} both at {addr} — address conflict" |
 | I2C no pull-up resistor description | `warning` | `pullup` | "Verify I2C pull-up resistors on SDA/SCL (4.7kΩ to 3.3V)" |
 | 5V device connected to 3.3V pin | `danger` | `level_shift` | "{device}: 5V device on 3.3V pin — level shifter needed" |
 | 3.3V device connected to 5V pin | `danger` | `level_shift` | "{device}: 3.3V device on 5V pin — risk of damage" |
@@ -180,20 +180,20 @@ Read `{project_dir}/project-manifest.json`, extracting `mcu`, `pinout`, `devices
 | LED without resistor | `warning` | `current_limit` | "Add 220Ω current-limiting resistor in series with LED" |
 | SPI device missing CS pin | `warning` | `general` | "SPI device {name}: missing CS pin assignment" |
 
-**Cross-validation Alerts (firmware vs manifest):**
+**Cross-validation alerts (firmware vs manifest):**
 
 | Condition | level | category | msg |
 |------|-------|----------|-----|
-| Pin used in firmware, not declared in manifest.pinout | `warning` | `firmware_only` | "GP{n} used in firmware but missing from manifest pinout" |
-| Declared in manifest.pinout, not used in firmware | `info` | `manifest_only` | "{device}: in manifest but not found in firmware code" |
+| Pin used in firmware but not declared in manifest.pinout | `warning` | `firmware_only` | "GP{n} used in firmware but missing from manifest pinout" |
+| Pin declared in manifest.pinout but not used in firmware | `info` | `manifest_only` | "{device}: in manifest but not found in firmware code" |
 | I2C address mismatch between firmware and manifest | `danger` | `conflict` | "{device}: firmware uses {addr1}, manifest says {addr2}" |
 | GPIO number mismatch between firmware and manifest | `danger` | `conflict` | "{device}: firmware uses GP{n1}, manifest says GP{n2}" |
 
-### Step 4: LLM Generates wiring.json
+### Step 4: LLM generates wiring.json
 
 Based on the schema and data extracted/validated in Steps 2/3, generate `{project_dir}/docs/wiring.json`.
 
-**Data Priority: firmware > manifest > LLM inference**
+**Data priority: firmware > manifest > LLM inference**
 
 **LLM decides autonomously:** `canvas` layout coordinates (can be an empty object), `mcu.orientation`, `mcu.pins[].pos` ordering, alert supplementation.
 
@@ -207,9 +207,9 @@ python G:/MicroPython_Skills/upy-project-gen-toolchain-spec/scripts/validate_jso
 
 Validation fails → modify wiring.json → re-validate until pass.
 
-### Step 6: Generate Mermaid .md + SVG + PNG + HTML Files (Combined Required Output)
+### Step 6: Generate Mermaid .md + SVG + PNG + HTML files (combined required output)
 
-**This is the main output of this skill.** The script generates the Mermaid wiring diagram .md + SVG + PNG + HTML + pin cross-reference table from wiring.json. The architecture is consistent with `upy-diagram`: JSON → Mermaid code → .md + SVG + PNG + HTML.
+**This is the main output of this skill.** The script generates Mermaid wiring diagram .md + SVG + PNG + HTML + pin cross-reference table from wiring.json. The architecture is consistent with `upy-diagram`: JSON → Mermaid code → .md + SVG + PNG + HTML.
 
 ```bash
 python G:/MicroPython_Skills/upy-wiring/scripts/render_wiring_local.py \
@@ -224,10 +224,10 @@ The script defaults to `--format all`, outputting simultaneously:
 | `docs/wiring.md` | Mermaid `graph TB` wiring diagram: MCU pin subgraph + bus subgraph + standalone GPIO + power connections + notes |
 | `docs/wiring.svg` | SVG wiring diagram (vector format, clear and not blurry) |
 | `docs/wiring.png` | PNG wiring diagram (bitmap format, universally compatible) |
-| `docs/wiring.html` | Self-contained HTML page (Mermaid.js CDN dynamic rendering, Tab switching between wiring diagram/source code, double-click to view in browser) |
-| `docs/wiring_pins.md` | Markdown pin cross-reference table (GPIO → Device → Type → Notes) |
+| `docs/wiring.html` | Self-contained HTML page (Mermaid.js CDN dynamic rendering, tab switching between wiring diagram/source code, double-click in browser to view) |
+| `docs/wiring_pins.md` | Markdown pin cross-reference table (GPIO → device → type → notes) |
 
-### Step 7: SVG Rendering (Required, Already Included in Step 6's --format all)
+### Step 7: SVG rendering (required, already included in Step 6's --format all)
 
 The script defaults to using the mermaid.ink API for SVG rendering (zero local dependencies, requires network):
 
@@ -243,7 +243,7 @@ Principle: Mermaid code Base64 encoded → GET `https://mermaid.ink/img/{base64}
 
 HTML uses Mermaid.js CDN to render directly in the browser, independent of mermaid.ink.
 
-### Step 8: Update Manifest
+### Step 8: Update manifest
 
 ```bash
 cd {project_dir} && python -c "
@@ -271,7 +271,7 @@ print('[OK] manifest wiring updated')
 
 - ← `upy-scaffold` / `upy-generate`: Input firmware/ source code + manifest (including pinout/mcu/devices/bom)
 - Parallel with `upy-diagram`: Can be generated simultaneously, sharing the mermaid.ink SVG rendering pipeline
-- → VS Code Extension WebView: Display Mermaid diagram (Markdown preview) or PNG
+- → VS Code extension WebView: Display Mermaid diagram (Markdown preview) or PNG
 
 ---
 
@@ -284,18 +284,18 @@ print('[OK] manifest wiring updated')
 - **Schema is the sole contract**: wiring.json must pass validation by `validate_json.py`
 - **LLM must infer missing fields**: When manifest.pinout data is incomplete, prioritize completion from firmware, then based on Pico/ESP32 pinout diagram knowledge
 - **LLM must supplement power pins**: 3V3, GND must always be added to mcu.pins[]
-- **Pin type enum must match**: `mcu.pins[].type` must be an enum value defined by the schema
+- **Pin type enum must match**: `mcu.pins[].type` must be an enum value defined in the schema
 - **I2C devices must have `addr`**: Format `0x00`, regex `^0x[0-9a-fA-F]{2}$`. Address uses driver `_DEFAULT_ADDR` as authoritative
 - **SPI devices must have `cs_gpio`**: Chip select pin
-- **Alerts are determined by the LLM according to rules and written into alerts[]**
+- **Alerts are judged by the LLM according to rules and written into alerts[]**
 - **SVG + PNG + HTML are required outputs**: The script defaults to `--format all`, generating .md, .svg, .png, and .html simultaneously; only `--format md` can skip image rendering
 - **canvas can be an empty object**: The renderer auto-layouts, does not require the LLM to calculate coordinates
 - **Rendering script reads defensively**: Missing fields will not cause a crash, but will output warnings to stderr
-- **Shares the mermaid.ink pipeline with upy-diagram**: Both use the same PNG rendering method
+- **Shares mermaid.ink pipeline with upy-diagram**: Both use the same PNG rendering method
 - **Readability constraints (ensuring PNG is clearly readable at ~1200px width)**:
 
   | Field | Upper Limit | Description |
   |------|------|------|
-  | `alerts[].msg` | ≤60 English characters | Alert box width ~260px; overly long text gets truncated or crowds the layout |
+  | `alerts[].msg` | ≤60 English characters | Alert box width ~260px; overly long text is truncated or crowds the layout |
   | `standalone[].external_components` | ≤20 characters | Device accessory description; overly long text expands the standalone device box |
-  | `buses[].devices[].notes` | ≤20 characters | Device notes, keep concise |
+  | `buses[].devices[].notes` | ≤20 characters | Device notes; keep concise |

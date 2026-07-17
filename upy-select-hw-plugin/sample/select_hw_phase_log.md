@@ -13,10 +13,10 @@ Sample select-hw phase log.
 
 | Step ID | Level | Message |
 |---------|-------|---------|
-| upstream_manifest_loaded | info | Read analyze manifest_content |
-| board_matching | info | Matching board based on MCU preferences and requirements |
+| upstream_manifest_loaded | info | Analyzed manifest content loaded |
+| board_matching | info | Matching boards based on MCU preferences and requirements |
 | board_definition_loaded | info | Loaded upy-analyze-plugin/boards/esp32-c3-devkitm.json |
-| board_selected | success | Confirmed ESP32-C3-DevKitM-1 |
+| board_selected | success | ESP32-C3-DevKitM-1 confirmed |
 | firmware_check | info | Verifying MicroPython firmware |
 | firmware_ok | success | Firmware entry ESP32_GENERIC_C3 available |
 | pin_assignment | info | Assigning I2C/GPIO/I2S/power pins |

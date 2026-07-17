@@ -27,7 +27,7 @@
   "typical_use_cases": ["Smart Home", "Environmental Monitoring", "IoT", "WiFi Applications", "Beginner Learning"],
   "beginner_friendly": true,
   "price_yuan": 25,
-  "notes": "The most universal ESP32 development board, with the richest community resources, the first choice for beginners",
+  "notes": "The most versatile ESP32 development board, with the richest community resources, top choice for beginners",
 
   "onboard_peripherals": [
     {
@@ -36,7 +36,7 @@
       "interface": "GPIO",
       "occupied_pins": { "led": 2 },
       "always_used": false,
-      "notes": "Onboard indicator LED. Most projects do not need to control it, GPIO2 can be released"
+      "notes": "Onboard indicator LED. Most projects do not need to control it, GPIO2 can be freed"
     }
   ],
 
@@ -59,10 +59,10 @@
     },
     "pin_options": {},
     "notes": [
-      "All I2C/SPI/UART/I2S can be remapped to any free GPIO via the GPIO Matrix",
+      "All I2C/SPI/UART/I2S can be remapped to any free GPIO via GPIO Matrix",
       "GPIO 34-39 are input-only, with no internal pull-up/pull-down resistors",
-      "GPIO 0 must be pulled high at startup; pulling it low enters download mode",
-      "GPIO 2/5/12/15 are strapping pins; their level at startup affects the operating mode",
+      "GPIO 0 must be pulled high at startup; pulling low enters download mode",
+      "GPIO 2/5/12/15 are strapping pins; their level at startup affects operating mode",
       "GPIO 6-11 are occupied by internal Flash and cannot be used externally",
       "ADC2 shares circuitry with WiFi; when WiFi is enabled, ADC2 readings are unreliable. Prefer ADC1 (GPIO 32-33/36-39)"
     ]

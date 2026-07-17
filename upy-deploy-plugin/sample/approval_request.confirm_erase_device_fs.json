@@ -4,7 +4,7 @@
   "payload": {
     "phase": "upy-deploy-plugin",
     "approval_id": "confirm_erase_device_fs",
-    "header": "Confirm Full Erase of Device Files",
+    "header": "Confirm full cleanup of device files",
     "question": "The following files and directories will be deleted from the device, and then the project will be re-uploaded. Please confirm whether to proceed.",
     "summary": {
       "strategy": "erase_then_upload",
@@ -23,12 +23,12 @@
     ],
     "actions": [
       {
-        "label": "Confirm Erase and Upload",
+        "label": "Confirm deletion and upload",
         "value": "confirm_erase",
         "primary": true
       },
       {
-        "label": "Use Regular Cleanup",
+        "label": "Use regular cleanup",
         "value": "use_clean_then_upload"
       },
       {

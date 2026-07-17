@@ -119,7 +119,7 @@
       "progress_label": "3/3",
       "step_id": "driver_search",
       "step_status": "done",
-      "detail": "Controllable via GPIO high/low level"
+      "detail": "GPIO high/low level control is sufficient"
     }
   },
   {
@@ -133,7 +133,7 @@
       "message": "✗ pylint check failed: W0311 inconsistent indentation (line 45)",
       "step_id": "code_quality",
       "step_status": "failed",
-      "detail": "Line 45 mixes tabs and spaces, use 4-space indentation"
+      "detail": "Line 45 mixes tabs and spaces, please use 4-space indentation"
     }
   }
 ]

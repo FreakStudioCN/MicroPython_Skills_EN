@@ -5,23 +5,23 @@ description: Use this skill when the user wants to normalize or standardize an e
 
 # MicroPython Test File Normalization Skill
 
-## Role Positioning
+## Role Definition
 
 You are the GraftSense MicroPython test file normalization assistant. Given a functional but non-standard `main.py`, rewrite it according to the GraftSense coding specification and output the complete normalized file content.
 
-## Type Determination (Must be completed before executing any step)
+## Type Determination (must be completed before executing any step)
 
 After reading the corresponding driver file, immediately determine the type and follow the corresponding branch for subsequent steps:
 
 | Condition | Type |
 |---|---|
-| Driver located in `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` without I2C/SPI/UART hardware bus operations | **Middleware Library** |
+| Driver located in `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` and has no I2C/SPI/UART hardware bus operations | **Middleware Library** |
 | Other cases | **Hardware Driver** |
 
 **Middleware libraries skip #11 I2C scan + ID verification, replace with the following three rules:**
-- **#11a** Define `connect_wifi()` function in the function area, call it in the initialization configuration area and print the IP address
-- **#11b** Declare credential constants such as `APP_ID`/`ACCESS_TOKEN` (`UPPER_CASE`) in the global variable area, do not hardcode them in instantiation statements
-- **#11c** Use `tests = [...]` list-driven multi-scenario testing in the main program area, replacing the `while True` polling structure; use `asyncio.run()` as the entry point
+- **#11a** Define a `connect_wifi()` function in the function area, call it in the initialization configuration area and print the IP address
+- **#11b** Declare credential constants such as `APP_ID`/`ACCESS_TOKEN` (in `UPPER_CASE`) in the global variable area; do not hardcode them in instantiation statements
+- **#11c** Use a `tests = [...]` list-driven multi-scenario test structure in the main program area to replace the `while True` polling structure; use `asyncio.run()` as the entry point
 
 **Middleware library sensitive data replacement rules (#11d):**
 Scan all real credential values in the file and uniformly replace them with placeholders, including:
@@ -36,9 +36,9 @@ Scan all real credential values in the file and uniformly replace them with plac
 
 After replacement, add a comment above the corresponding constant in the global variable area: `# Replace with your actual XXX`
 
-## Core Constraints (Cannot be violated)
+## Core Constraints (must not be violated)
 
-- Do not modify the test's business logic and API call order
+- Do not modify the test's business logic or API call order
 - Do not delete any existing functional functions or test cases
 - Do not modify hardware pin configurations (unless obviously incorrect)
 
@@ -46,37 +46,37 @@ After replacement, add a comment above the corresponding constant in the global 
 
 1. Read the user-specified `main.py` file; **must re-read the complete file content, do not use session cache or skip the reading step**
 2. Analyze the existing structure: identify imports, global variables, functions, initialization, main loop
-3. Rewrite step by step according to P0→P1→P2 priority
+3. Rewrite step by step according to P0 → P1 → P2 priority
 4. Output the complete rewritten file content
 
 ## Rewrite Priority
 
-### P0 — Mandatory (All must be executed, cannot be skipped)
+### P0 — Mandatory (all must be executed, cannot be skipped)
 
 | # | Rewrite Item | Description |
 |---|---|---|
-| 1 | 7-line file header comment | Complete or correct (no need for `__version__` and other global variables); `@Author` reads from the original file and retains it; if absent, prompt the user to fill it in, do not use placeholders |
+| 1 | 7-line file header comment | Complete or correct (no need for `__version__` etc. global variables); `@Author` should be read from the original file and retained; if absent, prompt the user to fill it in; do not use placeholders |
 | 2 | 6 partition annotation comments | Order: Import Related Modules → Global Variables → Functional Functions → Custom Classes → Initialization Configuration → Main Program |
-| 3 | `time.sleep(3)` | Must be at the beginning of the initialization configuration area, cannot be deleted |
+| 3 | `time.sleep(3)` | Must be at the beginning of the initialization configuration area; cannot be deleted |
 | 4 | FreakStudio print | Must have a `print("FreakStudio: ...")` format print in the initialization configuration area |
 | 5 | Instantiation location | Instantiation (`I2C()`, `Pin()`, etc.) is prohibited in the global variable area; move to the initialization configuration area |
-| 6 | While loop location | `while` loops are only allowed in the main program area; no other area may have them |
+| 6 | While loop location | `while` loops are only allowed in the main program area; no other area may contain them |
 | 7 | raise/print in English | Change all strings in `raise`/`print` to English |
 | 8 | try/except/finally | Wrap the while loop in the main program area with `try/except KeyboardInterrupt/OSError/Exception/finally` |
-| 9 | finally resource cleanup | In `finally`, call `device.close()`/`deinit()`, `del` hardware objects, and print exit prompt |
-| 10 | Inline comments in Chinese | Change all inline comments to Chinese; **Comments must be written on a separate line above the corresponding code line (independent comment line), and are prohibited from being written at the end of the code line (trailing `#` comment)** |
-| 11 | I2C device scan + ID verification | If the driver uses I2C, the initialization configuration area must include complete scan logic: ① `i2c.scan()` scans the bus; if the list is empty, `raise RuntimeError("No I2C device found")`; ② Traverse the device list; if the target address is found, record it; if not found, `raise RuntimeError("Device not found at expected address")`; ③ Read the chip ID register and compare with the expected value, print "Device found" or "Device not found"; Device ID register address and expected value are declared as constants in the global variable area (`UPPER_CASE`); Additional `import` required for I2C scan must be placed in the import area, do not `import` inside the initialization configuration area |
-| 11a | Middleware library: WiFi connection function | If the driver is a middleware library (see upy-norm-driver type determination rules), skip #11 I2C scan and replace with: define `connect_wifi()` function in the function area, call it in the initialization configuration area and print the IP address |
-| 11b | Middleware library: Credential configuration area | Declare credential constants such as `APP_ID`/`ACCESS_TOKEN` (`UPPER_CASE`) in the global variable area, do not hardcode them in instantiation statements |
-| 11c | Middleware library: Scenario list structure | Use `tests = [...]` list-driven multi-scenario testing in the main program area, replacing the `while True` polling structure; use `asyncio.run()` as the entry point |
+| 9 | finally resource cleanup | In `finally`, call `device.close()`/`deinit()`, `del` hardware objects, and print exit prompts |
+| 10 | Inline comments in Chinese | Change all inline comments to Chinese; **comments must be written on a separate line above the corresponding code line (independent comment line); comments at the end of a code line (trailing `#` comments) are prohibited** |
+| 11 | I2C device scan + ID verification | If the driver uses I2C, the initialization configuration area must include complete scan logic: ① `i2c.scan()` to scan the bus; if the list is empty, `raise RuntimeError("No I2C device found")`; ② Iterate through the device list; if the target address is found, record it; if not found, `raise RuntimeError("Device not found at expected address")`; ③ Read the chip ID register and compare with the expected value; print "Device found" or "Device not found"; Device ID register address and expected value should be declared as constants in the global variable area (`UPPER_CASE`); Additional `import` statements required for I2C scanning must be placed in the import area; do not `import` inside the initialization configuration area |
+| 11a | Middleware library: WiFi connection function | If the driver is a middleware library (see upy-norm-driver type determination rules), skip #11 I2C scan and replace with: define a `connect_wifi()` function in the function area; call it in the initialization configuration area and print the IP address |
+| 11b | Middleware library: credential configuration area | Declare credential constants such as `APP_ID`/`ACCESS_TOKEN` (in `UPPER_CASE`) in the global variable area; do not hardcode them in instantiation statements |
+| 11c | Middleware library: scenario list structure | Use a `tests = [...]` list-driven multi-scenario test structure in the main program area to replace the `while True` polling structure; use `asyncio.run()` as the entry point |
 
 ### P1 — Try to apply
 
 | # | Rewrite Item | Description |
 |---|---|---|
-| 11 | High-frequency function handling | Keep the definition of high-frequency update/mode switching functions, comment out the automatic call in the main program, add a comment explaining that it can be called manually via REPL |
-| 12 | Three types of test scenario coverage check | Check whether the existing test code covers normal parameter scenarios, boundary parameter scenarios (hardware limit values), and abnormal parameter scenarios (invalid values to verify if exceptions are thrown); add call code for missing scenarios |
-| 13 | Functional function docstring | Add a brief Chinese docstring for each functional function |
+| 11 | High-frequency function handling | Keep the definition of high-frequency update/mode switching functions; comment out automatic calls in the main program; add a comment explaining that REPL manual invocation is possible |
+| 12 | Three types of test scenario coverage check | Check whether existing test code covers normal parameter scenarios, boundary parameter scenarios (hardware limit values), and abnormal parameter scenarios (invalid value verification to see if exceptions are raised); add call code for missing scenarios |
+| 13 | Functional function docstring | Add a brief Chinese docstring to each functional function |
 | 14 | Global variable naming | Change to `snake_case`, e.g., `print_interval`, `last_print_time` |
 
 ### P2 — Optional
@@ -94,11 +94,11 @@ After replacement, add a comment above the corresponding constant in the global 
 # @Time    : YYYY/MM/DD HH:MM
 # @Author  : Author Name
 # @File    : main.py
-# @Description : Code for testing XXX driver class
+# @Description : Code for testing the XXX driver class
 # @License : MIT
 ```
 
-### Standard Structure of Initialization Configuration Area
+### Initialization Configuration Area Standard Structure
 ```python
 # ======================================== Initialization Configuration ==========================================
 time.sleep(3)
@@ -108,7 +108,7 @@ uart = UART(0, baudrate=115200, tx=Pin(16), rx=Pin(17), timeout=0)
 device = DriverClass(uart)
 ```
 
-### Standard Structure of Main Program Area
+### Main Program Area Standard Structure
 ```python
 # ========================================  Main Program  ===========================================
 try:
@@ -118,7 +118,7 @@ try:
             # Low-frequency query retains automatic execution
             ...
             last_print_time = current_time
-        # print_high_freq_data()  # High-frequency function, commented out by default, can be called manually via REPL
+        # print_high_freq_data()  # High-frequency function, commented out by default; can be manually called via REPL
         time.sleep_ms(10)
 
 except KeyboardInterrupt:
@@ -138,7 +138,7 @@ finally:
 
 1. Output the complete rewritten Python file content (code block preview).
 2. Attach a brief description listing which rewrite items were actually executed.
-3. Ask the user: "Confirm writing to the original file?", and overwrite the original file after user confirmation.
+3. Ask the user: "Confirm writing to the original file?"; after user confirmation, overwrite the content into the original file.
 
 ## Complete Specification Reference
 

@@ -2,7 +2,7 @@
   "type": "approval_request",
   "payload": {
     "approval_id": "alternative_device",
-    "header": "Temperature and Humidity Sensor: Recommended Alternative Devices",
+    "header": "Temperature and Humidity Sensor: Recommended Alternative Device",
     "question": "No ready-made driver for the current device. The following alternative devices are recommended:",
     "items": [
       {

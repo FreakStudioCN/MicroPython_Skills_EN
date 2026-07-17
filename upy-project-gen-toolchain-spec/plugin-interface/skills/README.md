@@ -2,11 +2,11 @@
 
 Each skill has one interface document, filled in according to the `_template.md` format.
 
-| # | Skill | Phase | Document Status | Filled by | Notes |
+| # | Skill | Phase | Document Status | Author | Notes |
 |---|-------|-------|---------|--------|------|
 | 1 | upy-analyze | Phase 1 | ✅ Finalized | — | Requirements analysis + driver search |
 | 2 | upy-select-hw | Phase 2 | ✅ Finalized | — | MCU selection + pin assignment + BOM |
-| 3 | upy-scaffold | Phase 3 | ✅ Finalized | — | Project scaffold generation |
+| 3 | upy-scaffold | Phase 3 | ✅ Finalized | — | Project skeleton generation |
 | 4 | upy-generate | Phase 4 | ✅ Finalized | — | Business code generation (heaviest) |
 | 5 | upy-simulate | Phase 4.5 | ✅ Finalized | — | Full PC-side simulation |
 | 6 | upy-deploy | Phase 5 | ✅ Finalized | — | Flashing and execution |
@@ -21,11 +21,11 @@ Status description: ⚠ Pending → 📝 In progress → ✅ Finalized → 🔄 
 
 ## Suggested Filling Order
 
-No need to follow the Phase order. It is recommended to follow **plugin-side dependency priority**:
+It is not necessary to follow the Phase order. It is recommended to fill in based on **plugin-side dependency priority**:
 
-1. **Fill upy-analyze first** — Contains the first approval_request (device confirmation card), allowing the plugin side to develop the approval card component based on this.
-2. **Then fill upy-deploy** — Contains device_command and stream, allowing the plugin side to develop device passthrough and terminal panels.
-3. **Then fill upy-generate** — Contains a large number of status_update + file_operation, verifying the progress timeline and file operations.
-4. Fill the rest as needed.
+1. **Fill in upy-analyze first** — Contains the first approval_request (device confirmation card), allowing the plugin side to develop the approval card component based on this.
+2. **Then fill in upy-deploy** — Contains device_command and stream, allowing the plugin side to develop device passthrough and terminal panels.
+3. **Then fill in upy-generate** — Contains a large number of status_update + file_operation, verifying the progress timeline and file operations.
+4. Fill in the rest as needed.
 
 This way, the plugin side can develop the most core UI components at the earliest stage.

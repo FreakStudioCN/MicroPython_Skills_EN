@@ -1,6 +1,6 @@
 # How to Minimize MicroPython Memory Usage
 
-# 1. Prerequisite Concepts
+# 1. Prerequisites
 
 MicroPython's core application scenario is **microcontrollers (such as Raspberry Pi Pico, ESP32, ESP8266)**, whose hardware resources are orders of magnitude different from computers/servers — typically RAM (runtime memory) is only tens of KB to hundreds of KB, and Flash (storage memory) is only a few MB. Python code itself is dynamic and consumes certain memory resources at runtime. Therefore, when using MicroPython on microcontrollers, memory optimization is key to ensuring stable program operation. This article will detail MicroPython memory optimization methods, annotating and explaining specialized terms that may be difficult for beginners to understand, while providing test code that can be run in the REPL (MicroPython interactive command line) for core knowledge points, helping you learn and verify simultaneously.
 
@@ -14,20 +14,20 @@ Before learning specific optimization methods, understanding the following core 
 
 Before learning specific optimization methods, understanding the following core specialized terms will make subsequent content easier to grasp:
 
-- **RAM (Random Access Memory)**: Also known as runtime memory, it is the area in the microcontroller used for temporarily storing running code and data. It is characterized by fast read/write speeds, but data is lost when power is off, and its capacity is extremely small (the Raspberry Pi Pico has 264KB of RAM).
-- **Flash**: Also known as storage memory, it is the area in the microcontroller used for permanently storing firmware, user code, and data. It is characterized by data retention after power loss, larger capacity than RAM, but slower read/write speeds (the Raspberry Pi Pico has 2MB of Flash).
+- **RAM (Random Access Memory)**: Also known as runtime memory, it is the area in the microcontroller used for temporarily storing running code and data. It is characterized by fast read/write speeds, but data is lost when power is off, and its capacity is extremely small (Raspberry Pi Pico has 264KB of RAM).
+- **Flash**: Also known as storage memory, it is the area in the microcontroller used for permanently storing firmware, user code, and data. It is characterized by data retention when power is off, has larger capacity than RAM, but slower read/write speeds (Raspberry Pi Pico has 2MB of Flash).
 - **Bytecode**: MicroPython does not directly execute human-written source code (.py files). Instead, it first compiles the source code into an intermediate code between source code and machine code (i.e., bytecode), which is then executed by the MicroPython interpreter. Bytecode is smaller in size and more efficient to execute.
 - **Firmware**: The underlying software burned into the microcontroller's Flash, containing core functions such as the MicroPython interpreter and hardware drivers. It is the foundation for MicroPython operation.
-- **REPL**: Read-Eval-Print Loop, which is MicroPython's interactive command-line tool (such as Thonny's Shell panel or the interactive window of a serial tool). It allows you to input code line by line and execute it immediately, making it an essential tool for beginners to debug and test code.
-- **SPI Bus**: A Serial Peripheral Interface, a common protocol for communication between microcontrollers and external devices (such as SD cards, sensors), characterized by simple wiring and fast transmission speeds.
+- **REPL**: Read-Eval-Print Loop, which is MicroPython's interactive command-line tool (such as Thonny's Shell panel, serial tool's interactive window). It allows you to input code line by line and execute it immediately, making it an essential tool for beginners to debug and test code.
+- **SPI Bus**: A Serial Peripheral Interface, a common protocol for communication between microcontrollers and external devices (such as SD cards, sensors), characterized by simple wiring and fast transmission speed.
 
 ---
 
 ## 2.2 Installing an SD Card
 
-Development boards that support MicroPython can expand memory by inserting an SD card. First, the card needs to be formatted as **FAT/FAT32 format (a common file system format supported by most devices and a necessary format for MicroPython to recognize SD cards)**. It is usually mounted using the SPI bus. After inserting the card, MicroPython will boot from the SD card. If there are boot.py and main.py files on the SD card, they will also be automatically executed at startup.
+Development boards that support MicroPython can expand memory by inserting an SD card. First, the card needs to be formatted as **FAT/FAT32 format (a common file system format supported by most devices, and the necessary format for MicroPython to recognize the SD card)**. Usually, the SD card is mounted via the SPI bus. After inserting the card, MicroPython will boot from the SD card. If there are `boot.py` and `main.py` on the SD card, they will also be automatically executed at startup.
 
-We can also boot from internal flash while using the SD card to save data. In this case, you need to create a SKIPSD file in the root directory of the SD card. When the system starts and detects this file on the SD card, it will ignore the SD card and still boot from the internal Flash.
+We can also boot from internal flash while using the SD card to save data. In this case, you need to create a `SKIPSD` file in the root directory of the SD card. When the system starts and detects this file on the SD card, it will ignore the SD card and still boot from internal Flash.
 
 For more information on using SD cards with MicroPython, see the following tutorial:
 
@@ -39,13 +39,13 @@ For using SD cards on the Raspberry Pi Pico, refer to the tutorial: (To be added
 
 ## 2.3 Using Frozen Modules and Frozen Bytecode
 
-In actual development, we often have multiple .py files storing different code. The main.py file runs the main business process, and main.py references other .py files/modules/packages through import statements to complete the entire work (e.g., classes for other sensors). The main.py file and other files are often located in the root directory of the development board's file system.
+In actual development, we often have multiple .py files storing different code. The `main.py` file runs the main business process, and `main.py` references other .py files/modules/packages through `import` statements to complete the entire work (e.g., classes for other sensors). The `main.py` file and other files are often located in the root directory of the development board's file system.
 
-Loading modules and packages from Python files on the file system to store and run code has some significant limitations. This Python code must be loaded and processed by the MicroPython interpreter, a process that consumes time and memory. In some cases, these code files are too large to be loaded into Flash memory and processed by the MicroPython interpreter. Frozen modules and frozen bytecode can compile Python code into native code/bytecode and store it with the firmware, which compresses memory. Once the code is frozen, MicroPython can quickly load and interpret it without requiring much memory or processing time.
+Loading modules and packages from Python files on the file system to store and run code has some significant limitations. This Python code must be loaded and processed by the MicroPython interpreter, a process that consumes time and memory. In some cases, these code files are too large to be loaded into Flash memory and processed by the MicroPython interpreter. Frozen modules and frozen bytecode can compile Python code into native code/bytecode and store it with the firmware, thereby compressing memory. Once the code is frozen, MicroPython can quickly load and interpret it without requiring much memory and processing time.
 
 ### 2.3.1 Python Bytecode
 
-MicroPython code is first compiled into bytecode, and then the interpreter executes the bytecode. MicroPython bytecode is an intermediate language similar to assembly instructions. One MicroPython statement corresponds to several bytecode instructions, and the interpreter executes the bytecode instructions sequentially, thereby completing program execution.
+MicroPython code is first compiled into bytecode, and then the interpreter executes the bytecode. MicroPython's bytecode is an intermediate language similar to assembly instructions. One MicroPython statement corresponds to several bytecode instructions. The interpreter executes the bytecode instructions sequentially, thereby completing program execution.
 
 The code is pre-compiled into bytecode, avoiding the need to compile MicroPython source code at load time. Bytecode can be executed directly from Flash without needing to be copied into RAM. Similarly, any constant objects (such as strings, tuples, etc.) are also loaded from ROM. This allows more memory to be available for the application. On devices without a file system, this is the only way to load Python code.
 
@@ -53,20 +53,20 @@ The code is pre-compiled into bytecode, avoiding the need to compile MicroPython
 
 The steps to generate frozen modules and bytecode are typically as follows:
 
-1. **Prepare MicroPython Source Code**: Clone the MicroPython repository from GitHub, ensuring a complete compilation environment (e.g., `arm-none-eabi-gcc`) is available locally.
-2. **Place Modules in the `ports/<platform>/modules/` Directory**: For example, `ports/rp2/modules/`, place the `.py` files to be frozen in this directory.
-3. **Compile the Firmware**: Execute the `make` command to recompile the firmware. The compilation process will automatically compile the `.py` files in this directory into frozen bytecode and embed them into the firmware.
-4. **Flash the Firmware to the Development Board**: Flash the generated `.uf2` or `.bin` firmware to the device.
-5. **Import Normally in Code**: Frozen modules can be loaded using the `import` statement like regular modules, requiring no additional operations.
+1. **Prepare MicroPython Source Code**: Clone the MicroPython repository from GitHub, ensuring a complete compilation environment locally (e.g., `arm-none-eabi-gcc`).
+2. **Place Modules in `ports/<platform>/modules/` Directory**: For example, `ports/rp2/modules/`, place the `.py` files to be frozen in this directory.
+3. **Compile Firmware**: Execute the `make` command to recompile the firmware. The compilation process will automatically compile the `.py` files in this directory into frozen bytecode and embed them into the firmware.
+4. **Burn Firmware to the Development Board**: Burn the generated `.uf2` or `.bin` firmware to the device.
+5. **Normal `import` in Code**: The frozen module can be loaded using the `import` statement like a regular module, no additional operations required.
 
 ### 2.3.3 Main Features of MicroPython's Frozen Modules
 
 The main features of MicroPython's frozen modules are:
 
 - **Storage Location**: Frozen modules are stored in Flash (ROM) rather than RAM, not occupying precious runtime memory.
-- **Fast Loading Speed**: No runtime compilation is needed; they are executed directly by the interpreter, resulting in faster startup.
-- **RAM Savings**: Bytecode and constant objects run directly from Flash, eliminating the need to copy them into RAM.
-- **Suitable for Devices Without a File System**: On devices without a file system, this is the only way to load Python code.
+- **Fast Loading Speed**: No need for runtime compilation; executed directly by the interpreter, resulting in faster startup.
+- **RAM Saving**: Bytecode and constant objects run directly from Flash, eliminating the need to copy them into RAM.
+- **Suitable for Devices Without File System**: On devices without a file system, this is the only way to load Python code.
 - **Determined at Compile Time**: Frozen modules are determined when the firmware is compiled and cannot be dynamically modified at runtime.
 
 For tutorials on using frozen modules and frozen bytecode, refer to: (To be added)
@@ -75,9 +75,9 @@ For tutorials on using frozen modules and frozen bytecode, refer to: (To be adde
 
 ## 2.4 Using .mpy Files
 
-Pre-compile Python modules into bytecode (also known as .mpy files (MicroPython's pre-compiled bytecode file format, distinct from standard Python's .pyc files)), and then copy them to the development board. **The advantage of this is that it skips the pre-compilation stage on the development board, thus avoiding the lack of RAM resources during this process. Unfortunately, this method still requires the development board to load the module into RAM.**
+Pre-compile Python modules into bytecode (also known as .mpy files (MicroPython's pre-compiled bytecode file format, different from standard Python's .pyc files)), and then copy them to the development board. **The advantage of this is that it skips the pre-compilation phase on the development board, thereby avoiding the lack of RAM resources during this process. Unfortunately, this method still requires the development board to load the module into RAM.**
 
-Convert the Python module into a .c file, which is compiled into the firmware itself. This has the advantages of the above method + the advantage of running the module from flash memory instead of loading it into RAM.
+Convert the Python module into a .c file, which is compiled into the firmware itself. This has the advantages of the above method + the advantage of running the module from flash instead of loading it into RAM.
 
 For steps on generating and using .mpy files, refer to: [How to Speed Up MicroPython Execution](https://f1829ryac0m.feishu.cn/docx/BVTZdXCMCobRbFxuM8jcNCEMndc)
 
@@ -89,25 +89,25 @@ For steps on generating and using .mpy files, refer to: [How to Speed Up MicroPy
 
 All modules loaded into RAM in MicroPython are placed in `sys.modules`. `sys.modules` is a global dictionary that is loaded into memory from the start of the Python program. It is used to store the names and objects of all currently imported (loaded) modules. In MicroPython's module lookup, it acts as a cache, avoiding repeated loading of modules.
 
-When a program imports a module, it first checks whether `sys.modules` contains the module name. If it does, it only needs to add the module's name to the current module's `Local` namespace. If it does not, it needs to search for the module file in the `sys.path` directories according to the module name. Once found, the module is loaded into memory, added to the `sys.modules` dictionary, and finally, the module's name is added to the current module's `Local` namespace.
+When a program imports a module, it first checks whether `sys.modules` contains this module name. If it exists, it only needs to add the module's name to the current module's `Local` namespace. If it does not exist, it needs to search for the module file in the `sys.path` directories according to the module name. After finding it, the module is loaded into memory and added to the `sys.modules` dictionary. Finally, the module's name is added to the current module's `Local` namespace.
 
 Next, let's test this in the terminal's `REPL`:
 
 ```python
 import sys
 
-# sys.modules displays all currently imported (loaded) module names and module objects
+# sys.modules shows all currently imported (loaded) module names and module objects
 print("Initial modules:")
 print(list(sys.modules.keys()))
 
 # Define a global variable
 global_var = "I am a global variable"
 
-# enclosing_var is a variable in the outer scope of a closure
-# local_var is a local variable inside the function inner_function
+# enclosing_var is a closure outer variable
+# local_var is a local variable inside the inner_function
 # len is a built-in function
 # Attempt to modify the global variable global_var (not using global creates a local variable)
-# The outer scope of a closure cannot access inner local variables
+# The closure outer layer cannot access the inner local variable
 def scope_demo():
     enclosing_var = "I am an enclosing variable (outer of closure)"
     
@@ -131,7 +131,7 @@ def scope_demo():
     except:
         print("Cannot access local variable")
 
-# Use global to modify a global variable
+# Use global to modify the global variable
 def modify_global():
     global global_var
     global_var = "Modified global variable"
@@ -284,26 +284,26 @@ Built-in module: <module 'builtins'>
 
 Constants are values that do not change during program execution. They are generally used to store immutable data, such as mathematical constants, configuration information, etc. In microcontrollers, constants are stored in ROM/Flash memory, which can save RAM space.
 
-The `const` keyword in MicroPython is used to declare that an expression is a constant so that the compiler can optimize it. In the two cases where a constant is assigned to a variable, the compiler will avoid writing a lookup for the constant name by substituting the constant's literal value. This saves bytecode, thereby saving RAM.
+The `const` keyword in MicroPython is used to declare that an expression is a constant so that the compiler can optimize it. In the two cases where a constant is assigned to a variable, the compiler will avoid writing a lookup for the constant name by substituting the literal value of the constant. This saves bytecode, thereby saving RAM.
 
-**However, it is important to note that when using the `const` keyword, you need to compile it into an .mpy file using the mpy-cross tool for it to take effect.**
+**However, it is important to note that when using the `const` keyword, you need to compile it into an .mpy file using the `mpy-cross` tool for it to take effect.**
 
 ```python
 from micropython import const
-# Garbage collection module, used to check memory usage
+# Garbage collection module, used to view memory usage
 import gc
 
-# Step 1: Check initial memory usage
+# Step 1: View initial memory usage
 # Force garbage collection to free unused memory
 gc.collect()
 initial_free = gc.mem_free()
 print(f"Initial free RAM: {initial_free} bytes")
 
 # Step 2: Define const constants
-# Public constant (accessible outside the module, occupies very little RAM)
+# Public constants (accessible outside the module, only occupy minimal RAM)
 CONST_X = const(123)
 CONST_Y = const(2 * 123 + 1)
-# Private constant (starts with underscore, inaccessible outside the module, occupies no RAM)
+# Private constants (start with underscore, not accessible outside the module, occupy no RAM)
 _COLS = const(0x10)
 ROWS = const(33)
 
@@ -313,13 +313,13 @@ b = _COLS
 print(f"CONST_X: {CONST_X}, CONST_Y: {CONST_Y}")
 print(f"a: {a}, b: {b}")
 
-# Step 4: Check memory usage after defining constants
+# Step 4: View memory usage after defining constants
 gc.collect()
 after_free = gc.mem_free()
 print(f"Free RAM after defining constants: {after_free} bytes")
 print(f"RAM change: {after_free - initial_free} bytes (positive means memory freed)")
 
-# Comparison: Difference between normal variable and const constant
+# Supplement: Compare the difference between normal variables and const constants
 # Normal variable, stored in RAM
 normal_var = 123  
 gc.collect()
@@ -328,7 +328,7 @@ print(f"Free RAM after defining normal variable: {after_normal} bytes")
 print(f"Normal variable uses {after_free - after_normal} more bytes than const")
 ```
 
-The `ROWS` value will occupy at least two machine words, one for the key and one for the value in the global dictionary. The existence in the dictionary is necessary because another module might import or use it. This RAM can be saved by prefixing the name with an underscore, as shown with `_COLS`: this symbol is not visible outside the module, so it does not occupy RAM.
+The `ROWS` value will occupy at least two machine words, one each for the key and value in the global dictionary. The existence in the dictionary is necessary because another module might import or use it. This RAM can be saved by prefixing the name with an underscore, as shown with `_COLS`: this symbol is not visible outside the module, so it does not occupy RAM.
 
 Terminal output is as follows:
 
@@ -338,9 +338,9 @@ Terminal output is as follows:
 Windows PowerShell
 Copyright (C) Microsoft Corporation. All rights reserved.
 
-Trying the new cross-platform PowerShell https://aka.ms/pscore6
+Try the new cross-platform PowerShell https://aka.ms/pscore6
 
-Loading personal and system configuration files took 570 ms.
+Loading personal and system profiles took 570 milliseconds.
 (base) PS G:\test_microMLP> mpremote
 Connected to MicroPython at COM65
 Use Ctrl-] or Ctrl-x to exit this shell
@@ -393,7 +393,7 @@ The argument to `const()` must be any value that evaluates to an integer at comp
 from micropython import const
 
 ROWS = const(33)
-# The following usage will cause an error
+# The following usage throws an error
 COLS = const(0x10+ROWS)
 # Correct usage
 COLS = const(0x10+33)
@@ -407,9 +407,9 @@ Terminal output is as follows:
 Windows PowerShell
 Copyright (C) Microsoft Corporation. All rights reserved.
 
-Trying the new cross-platform PowerShell https://aka.ms/pscore6
+Try the new cross-platform PowerShell https://aka.ms/pscore6
 
-Loading personal and system configuration files took 808 ms.
+Loading personal and system profiles took 808 milliseconds.
 (base) PS G:\test_microMLP> mpremote
 Connected to MicroPython at COM65
 Use Ctrl-] or Ctrl-x to exit this shell
@@ -430,15 +430,15 @@ SyntaxError: not a constant
 
 ## 2.6 Reducing Unnecessary Object Creation
 
-In MicroPython, **the creation of objects (such as strings, lists, dictionaries, bytearrays, numeric containers, etc.) consumes RAM resources. Due to the extremely small RAM capacity of microcontrollers, frequently creating and destroying objects not only directly consumes memory but also leads to memory fragmentation** (i.e., many small free memory blocks appear in RAM that cannot be used by large objects), ultimately causing out-of-memory issues.
+In MicroPython, **the creation of objects (such as strings, lists, dictionaries, bytearrays, numeric containers, etc.) consumes RAM resources. Due to the extremely small RAM capacity of microcontrollers, frequently creating and destroying objects not only directly consumes memory but also leads to memory fragmentation** (i.e., many small free memory blocks appear in RAM, which cannot be used by large objects), ultimately causing out-of-memory issues.
 
-It is important to note that the `sys.getsizeof()` function from standard Python is not supported on most MicroPython platforms (this is a MicroPython feature to keep the firmware lean). Therefore, we can use the `struct` module to pack variables/data into a byte stream and then use the `len()` function to get the length of the byte stream, thereby testing the byte size occupied by the data. At the same time, we can use the `gc` module (garbage collection) to view the actual changes in RAM usage, completing the comparison before and after optimization.
+It is important to note that the `sys.getsizeof()` function from standard Python is not supported on most MicroPython platforms (this is a MicroPython feature to keep the firmware lean). Therefore, we can use the `struct` module to pack variables/data into a byte stream, then use the `len()` function to get the length of the byte stream, thereby testing the byte size occupied by the data. At the same time, we can use the `gc` module (garbage collection) to view the actual changes in RAM usage, completing the comparison before and after optimization.
 
 ### 2.6.1 String Operation Optimization (Avoid Temporary String Objects)
 
-Strings in MicroPython are immutable objects. When using `+` to concatenate strings, each `+` creates a temporary string object (e.g., `"a"+"b"+"c"` first creates `"ab"`, then creates `"abc"`, resulting in 2 temporary objects). These temporary objects consume additional RAM and are frequently cleaned up by the garbage collector, impacting performance.
+Strings in MicroPython are immutable objects. When using `+` to concatenate strings, each `+` creates a temporary string object (e.g., `"a"+"b"+"c"` first creates `"ab"`, then creates `"abc"`, totaling 2 temporary objects). These temporary objects consume additional RAM and are frequently cleaned up by the garbage collector, affecting performance.
 
-Optimization approach:
+Optimization idea:
 
 ```python
 # Static string concatenation (merged at compile time, no temporary objects)
@@ -454,7 +454,7 @@ print("Dynamic string:", dynamic_str)
 
 ### 2.6.2 Buffer Reuse in Hardware Operations (UART/SPI/I2C Scenarios)
 
-In MicroPython hardware operations (such as SPI reading sensor data, UART receiving data), frequently creating new byte buffers (`bytearray`/`bytes`) consumes a lot of RAM. For example, creating `buf = bytearray(10)` for each sensor read, looping 100 times creates 100 buffer objects.
+In MicroPython hardware operations (such as SPI reading sensor data, UART receiving data), frequently creating new byte buffers (`bytearray`/`bytes`) consumes a lot of RAM. For example, creating `buf = bytearray(10)` each time you read a sensor, and looping 100 times, creates 100 buffer objects.
 
 We can pre-allocate a buffer and reuse it in loops/multiple operations, creating the object only once, completely avoiding the creation of temporary buffers.
 
@@ -492,9 +492,9 @@ for _ in range(5):
 
 ### 2.6.3 Numeric Storage Optimization (Use struct/bytearray Instead of Lists)
 
-In MicroPython, storing numeric values in a list (e.g., `[1, 2, 3, 255]`) consumes more RAM because each integer object in the list has additional memory overhead (e.g., an `int` type occupies 4 bytes in MicroPython, and the list itself has pointer overhead).
+In MicroPython, storing numeric values in a list (e.g., `[1, 2, 3, 255]`) consumes more RAM because each integer object in the list has additional memory overhead (e.g., an `int` type in MicroPython occupies 4 bytes, and the list itself has pointer overhead).
 
-Optimization approach:
+Optimization idea:
 
 ```python
 # 1. str vs bytes (memory usage is the same for ASCII scenarios)
@@ -526,9 +526,9 @@ Terminal output is as follows:
 ```
 Copyright (C) Microsoft Corporation. All rights reserved.
 
-Trying the new cross-platform PowerShell https://aka.ms/pscore6
+Try the new cross-platform PowerShell https://aka.ms/pscore6
 
-Loading personal and system configuration files took 685 ms.
+Loading personal and system profiles took 685 milliseconds.
 (base) PS G:\test_microMLP> mpremote
 Connected to MicroPython at COM65
 Use Ctrl-] or Ctrl-x to exit this shell
@@ -554,7 +554,7 @@ Stripped bytes: b'empty whitespace'
 
 ### 2.6.4 Avoid Creating Temporary Containers in Loops
 
-Frequently creating temporary containers in loops (e.g., `for _ in range(100): temp = [1,2,3]`) creates a large number of temporary objects, consuming RAM. The optimization approach is to move the temporary container outside the loop, reuse the object, or use generators/iterators instead of temporary lists.
+Frequently creating temporary containers in loops (e.g., `for _ in range(100): temp = [1,2,3]`) creates a large number of temporary objects, consuming RAM. The optimization idea is to move the temporary container outside the loop, reuse the object, or use generators/iterators instead of temporary lists.
 
 ```python
 import gc
@@ -567,8 +567,8 @@ ram_init = gc.mem_free()
 # Define the number of loop iterations (simulate multiple iteration scenarios)
 loop_times = 100
 
-# ---------------------- Inefficient Implementation: Create temporary list inside loop ----------------------
-# A new list container is created each time inside the loop, generating many temporary objects
+# ---------------------- Inefficient Implementation: Create Temporary List Inside Loop ----------------------
+# Create a new list container each time inside the loop, generating many temporary objects
 gc.collect()
 ram_slow_before = gc.mem_free()
 total_slow = 0
@@ -583,8 +583,8 @@ for _ in range(loop_times):
 # Record RAM after inefficient implementation
 ram_slow_after = gc.mem_free()
 
-# ---------------------- Efficient Implementation 1: Create list outside loop, reuse container ----------------------
-# The list is created only once, reused inside the loop
+# ---------------------- Efficient Implementation 1: Create List Outside Loop, Reuse Container ----------------------
+# List created only once, reused inside the loop
 gc.collect()
 ram_fast1_before = gc.mem_free()
 total_fast1 = 0
@@ -599,8 +599,8 @@ for _ in range(loop_times):
 # Record RAM after efficient implementation 1
 ram_fast1_after = gc.mem_free()
 
-# ---------------------- Efficient Implementation 2: Use generator, replace temporary list ----------------------
-# Define a generator function (created only once, iterator reused in loop)
+# ---------------------- Efficient Implementation 2: Use Generator, Replace Temporary List ----------------------
+# Define generator function (created only once, iterator reused inside loop)
 # Yield elements directly, avoiding tuple creation
 def num_generator():
     yield 1
@@ -609,7 +609,7 @@ def num_generator():
     yield 4
     yield 5
     
-# The generator does not create a complete list, only generates elements iteratively, lowest memory overhead
+# Generator does not create a complete list, only generates elements iteratively, lowest memory overhead
 gc.collect()
 ram_fast2_before = gc.mem_free()
 total_fast2 = 0
@@ -622,7 +622,7 @@ for _ in range(loop_times):
 # Record RAM after efficient implementation 2
 ram_fast2_after = gc.mem_free()
 
-# Output test results
+# Output test results (no Chinese)
 print("Slow total:", total_slow)
 print("Slow RAM change:", ram_slow_before - ram_slow_after)
 print("Slow data size:", size_slow)
@@ -682,14 +682,14 @@ Fast2 data size: 20
 > | Implementation Method | RAM Change (bytes) | Description |
 > |---|---|---|
 > | Create temporary list inside loop (inefficient) | 10528 | 100 loops create 100 list objects, highest RAM consumption |
-> | Reuse list outside loop (efficient 1) | 5888 | List created only once, lowest memory overhead |
+> | Reuse list outside loop (efficient 1) | 5888 | List created only once, minimal memory overhead |
 > | Use generator (efficient 2) | 8720 | Generator object created each call, overhead between the two |
 >
-> In the scenario of repeating 100 times with a small data set (5 fixed numbers), list reuse is indeed more memory-efficient than a generator; when dealing with large amounts of data or streaming data, generators avoid loading all data at once.
+> In the scenario of repeating 5 fixed numbers 100 times, list reuse is indeed more memory-efficient than generators; when dealing with large amounts of data or streaming data, generators avoid loading all data at once.
 
 ### 2.6.5 Avoid Runtime Compiler Execution (`eval`/`exec`)
 
-`eval()`/`exec()` calls the MicroPython compiler at runtime, creating many temporary objects and consuming a lot of RAM. Direct calculation or using `json` serialization instead can reduce memory overhead.
+`eval()`/`exec()` calls the MicroPython compiler at runtime, creating many temporary objects and consuming a lot of RAM. Replacing them with direct calculation or `json` serialization can reduce memory overhead.
 
 ```python
 import gc
@@ -699,17 +699,17 @@ import json
 # ---------------------- Inefficient: Using eval ----------------------
 gc.collect()
 ram_eval_before = gc.mem_free()
-# Avoid using eval, shown here only for comparison
+# Avoid using eval, here only for comparison
 res_eval = eval("1 + 2 * 3 + 4 / 2")
 ram_eval_after = gc.mem_free()
 
-# ---------------------- Efficient: Direct calculation ----------------------
+# ---------------------- Efficient: Direct Calculation ----------------------
 gc.collect()
 ram_calc_before = gc.mem_free()
 res_calc = 1 + 2 * 3 + 4 / 2
 ram_calc_after = gc.mem_free()
 
-# ---------------------- Efficient: ujson serialization ----------------------
+# ---------------------- Efficient: ujson Serialization ----------------------
 gc.collect()
 ram_json_before = gc.mem_free()
 # Serialization
@@ -729,7 +729,7 @@ print("JSON RAM change:", ram_json_before - ram_json_after)
 
 Terminal output is as follows:
 
-**Figure 10: Memory comparison of eval vs direct calculation vs json**
+**Figure 10: eval vs direct calculation vs json memory comparison**
 
 ```
 >>> import gc
@@ -773,7 +773,7 @@ JSON RAM change: 1488
 
 ### 2.6.6 Storing Strings in Flash (qstr Mechanism)
 
-MicroPython's qstr (quantified string) mechanism stores repeated strings in flash memory instead of RAM, reducing RAM usage. We can use `micropython.qstr_info()` to view the string storage status, `struct` to test the byte size of strings, and `gc` to view RAM changes.
+MicroPython's `qstr` (quantified string) mechanism stores repeated strings in Flash instead of RAM, reducing RAM usage. We can use `micropython.qstr_info()` to view the string storage status, `struct` to test the byte size of strings, and `gc` to view RAM changes.
 
 ```python
 import gc
@@ -786,7 +786,7 @@ ram_init = gc.mem_free()
 
 # Define test strings (will be processed by the qstr mechanism)
 s1 = "MicroPython"
-# Repeated string, reuses the qstr in flash
+# Repeated string, reuses the qstr in Flash
 s2 = "MicroPython"  
 
 # struct tests the byte size of the string
@@ -811,9 +811,9 @@ Terminal output is as follows:
 Windows PowerShell
 Copyright (C) Microsoft Corporation. All rights reserved.
 
-Trying the new cross-platform PowerShell https://aka.ms/pscore6
+Try the new cross-platform PowerShell https://aka.ms/pscore6
 
-Loading personal and system configuration files took 675 ms.
+Loading personal and system profiles took 675 milliseconds.
 (base) PS G:\test_microMLP> mpremote
 Connected to MicroPython at COM65
 Use Ctrl-] or Ctrl-x to exit this shell
@@ -841,9 +841,9 @@ RAM free: 227152
 >>>
 ```
 
-We can see that the two strings `s1` and `s2` have the same content, both being `"MicroPython"`. MicroPython's qstr mechanism reuses the same string. In fact, `s1` and `s2` point to the same string object in memory, saving the memory required to store the same string repeatedly.
+We can see that the two strings `s1` and `s2` have the same content, both being `"MicroPython"`. MicroPython's qstr mechanism reuses the same string. In fact, `s1` and `s2` point to the same string object in memory, saving the memory required for storing the same string repeatedly.
 
-The `qstr` information analysis is as follows:
+`qstr` information analysis is as follows:
 
 ```
 >>> micropython.qstr_info(1)
@@ -864,7 +864,7 @@ Key information parsing:
 | `n_str_data_bytes` | 26 | Total bytes of variable name string data (sum of bytes for `ram_init`+`s1`+`s2`+`size_s`+`{}s`) |
 | `n_total_bytes` | 170 | Total bytes occupied by the qstr pool (including metadata, alignment, etc.) |
 
-> **Note**: The string `"MicroPython"` is not listed in the qstrs because MicroPython stores it as read-only data in Flash, not in RAM. The listed `Q(s1)`, `Q(s2)` are the variable names `s1`, `s2` themselves being interned as qstrs, not the string value `"MicroPython"`.
+> **Note**: The string `"MicroPython"` is not listed in the qstrs because MicroPython stores it as read-only data in Flash, not in RAM. The listed `Q(s1)` and `Q(s2)` are the variable names `s1` and `s2` themselves being interned as qstrs, not the string value `"MicroPython"`.
 
 ---
 
@@ -875,7 +875,7 @@ The heap is a dynamically allocated memory region used to store object instances
 When you execute `lst = [1,2,3]`, Python will:
 
 1. Allocate a memory region in the **heap** to store the list object `[1,2,3]`
-2. Create a variable `lst` in the **stack** as a reference (pointer) pointing to that heap memory region
+2. Create the variable `lst` on the **stack**, which serves as a reference (pointer) to that heap memory region
 
 If an object in the heap has no references pointing to it (i.e., the program can no longer access the object), that object becomes "garbage": for example, after executing `lst = None`, the `[1,2,3]` object originally in the heap loses its reference and becomes garbage.
 
@@ -883,22 +883,22 @@ In MicroPython, the GC (Garbage Collection) can automatically identify and clean
 
 Garbage collection can be triggered in the following two ways:
 
-1. **Automatic Triggering**: Automatically detected and triggered by the MicroPython runtime when allocating memory (enabled via `gc.enable()`, enabled by default). You can set a cumulative allocation threshold using `gc.threshold(n)`. When the cumulative allocation reaches the threshold, a GC is automatically triggered.
-2. **Manual Triggering**: Manually trigger garbage collection by calling `gc.collect()`. This is suitable for actively freeing memory before performing large memory operations.
+1. **Automatic Trigger**: Automatically detected and triggered by the MicroPython runtime when allocating memory (enabled via `gc.enable()`, enabled by default). You can set a cumulative allocation threshold using `gc.threshold(n)`. When the cumulative allocation reaches the threshold, a GC is automatically triggered.
+2. **Manual Trigger**: Manually trigger garbage collection by calling `gc.collect()`, suitable for actively freeing memory before performing large memory operations.
 
-Common core methods of MicroPython's `gc` module are as follows:
+The core methods of MicroPython's `gc` module are as follows:
 
 | Method | Description |
 |---|---|
 | `gc.collect()` | Manually trigger garbage collection, clean up all unreachable objects |
-| `gc.mem_free()` | Returns the current free heap memory size in bytes |
-| `gc.mem_alloc()` | Returns the current allocated heap memory size in bytes |
+| `gc.mem_free()` | Returns the current free heap memory in bytes |
+| `gc.mem_alloc()` | Returns the current allocated heap memory in bytes |
 | `gc.enable()` | Enable automatic garbage collection |
 | `gc.disable()` | Disable automatic garbage collection (for manual control of GC timing) |
 | `gc.isenabled()` | Check if automatic GC is enabled, returns True/False |
-| `gc.threshold(n)` | Set the GC trigger threshold (bytes). Automatic GC is triggered after cumulative allocation reaches n bytes. Calling without arguments returns the current threshold. Passing -1 disables the threshold. |
+| `gc.threshold(n)` | Set the GC trigger threshold (bytes). When cumulative allocation reaches n bytes, automatic GC is triggered. Calling without arguments returns the current threshold. Passing -1 disables the threshold. |
 
-Here is our test code:
+Below is our test code:
 
 ```python
 # Import the gc module for garbage collection operations (mpy version)
@@ -911,33 +911,33 @@ print(gc.isenabled())
 gc.disable()
 print(gc.isenabled())
 
-# 3. Check initial free heap and allocated heap memory (mpy-specific methods)
+# 3. View initial free heap memory and allocated heap memory (mpy-specific methods)
 print(f"Free heap: {gc.mem_free()} bytes")
 print(f"Allocated heap: {gc.mem_alloc()} bytes")
 
 # 4. Demonstrate gc.threshold() method: set and query the GC allocation threshold (mpy-specific method)
-# Set threshold to 1024 bytes, trigger GC after cumulative allocation of 1024 bytes (early collection reduces fragmentation)
+# Set threshold to 1024 bytes, trigger GC when cumulative allocation reaches 1024 bytes (early collection reduces fragmentation)
 gc.threshold(1024)
-# Query current threshold without arguments
+# Query current threshold when called without arguments
 current_threshold = gc.threshold()  
 print(f"Current GC threshold: {current_threshold} bytes")
 
-# 5. Create normal objects, occupying heap memory (variables are references in the stack, pointing to heap objects)
+# 5. Create normal objects, occupying heap memory (variables are references on the stack, pointing to heap objects)
 # Create a larger list for more noticeable memory changes
 obj1 = [1, 2, 3, 4, 5]  
 obj2 = {"name": "test", "age": 18}
 print("Objects created")
 
-# 6. Check memory changes after creating objects
+# 6. View memory changes after creating objects
 print(f"Free heap after create: {gc.mem_free()} bytes")
 print(f"Allocated heap after create: {gc.mem_alloc()} bytes")
 
-# 7. Cut references, making objects garbage (objects in heap have no references)
+# 7. Cut references, making objects garbage (objects in heap have no references pointing to them)
 obj1 = None
 obj2 = None
 print("References cut, objects become garbage")
 
-# 8. Check memory after cutting references (GC not run, memory not freed)
+# 8. View memory after cutting references (GC not run, memory not freed)
 print(f"Free heap before collect: {gc.mem_free()} bytes")
 print(f"Allocated heap before collect: {gc.mem_alloc()} bytes")
 
@@ -946,7 +946,7 @@ print(f"Allocated heap before collect: {gc.mem_alloc()} bytes")
 gc.collect()  
 print("Garbage collection executed")
 
-# 10. Check memory changes after GC (garbage cleaned, free memory increases)
+# 10. View memory changes after GC (garbage cleaned up, free memory increases)
 print(f"Free heap after collect: {gc.mem_free()} bytes")
 print(f"Allocated heap after collect: {gc.mem_alloc()} bytes")
 
@@ -958,7 +958,7 @@ a.append(b)
 b.append(a) 
 print("Circular reference objects created")
 
-# 12. Check memory after creating circular reference objects
+# 12. View memory after creating circular reference objects
 print(f"Free heap after circular ref: {gc.mem_free()} bytes")
 print(f"Allocated heap after circular ref: {gc.mem_alloc()} bytes")
 
@@ -971,7 +971,7 @@ print("External references cut (circular ref remains)")
 gc.collect()
 print("Garbage collection for circular ref executed")
 
-# 15. Check memory after cleaning circular references
+# 15. View memory after cleaning up circular references
 print(f"Free heap after circular collect: {gc.mem_free()} bytes")
 print(f"Allocated heap after circular collect: {gc.mem_alloc()} bytes")
 
@@ -987,9 +987,9 @@ Running the terminal, the output is as follows:
 **Figure 12: GC test output (Part 1)**
 
 ```
-Trying the new cross-platform PowerShell https://aka.ms/pscore6
+Try the new cross-platform PowerShell https://aka.ms/pscore6
 
-Loading personal and system configuration files took 810 ms.
+Loading personal and system profiles took 810 milliseconds.
 (base) PS G:\test_microMLP> mpremote
 Connected to MicroPython at COM65
 Use Ctrl-] or Ctrl-x to exit this shell
@@ -1057,7 +1057,7 @@ External references cut (circular ref remains)
 >>> gc.collect()
 >>> print("Garbage collection for circular ref executed")
 Garbage collection for circular ref executed
->>> print(f"Free heap after circular collect: {gc.mem_free()} bytes)
+>>> print(f"Free heap after circular collect: {gc.mem_free()} bytes")
 Free heap after circular collect: 227664 bytes
 >>> print(f"Allocated heap after circular collect: {gc.mem_alloc()} bytes")
 Allocated heap after circular collect: 5792 bytes
@@ -1070,7 +1070,7 @@ True
 >>>
 ```
 
-The overall process is shown in the following diagram:
+The overall flow is shown in the following diagram:
 
 **Figure 14: GC overall flow diagram**
 
@@ -1102,7 +1102,7 @@ The overall process is shown in the following diagram:
   Garbage collection executed
   Free ↑4224B → 227696B
   Allocated ↓4224B → 5744B
-  Freed memory: 4224B
+  Memory freed: 4224B
        ↓
 [Create circular reference]
   a = [], b = []
@@ -1115,11 +1115,11 @@ The overall process is shown in the following diagram:
   a = None, b = None
   Circular reference island formed
        ↓
-[Execute GC to collect circular reference]
+[Execute GC to reclaim circular reference]
   Mark-sweep algorithm works
   Free ↑1760B → 227664B
   Allocated ↓1760B → 5792B
-  Freed memory: 1760B
+  Memory freed: 1760B
        ↓
 [Reset GC configuration]
   GC threshold = -1 (automatic management)
@@ -1132,11 +1132,11 @@ The memory changes are shown in the following table:
 |---|---|---|---|
 | Initialization | 227040 | 6368 | Total ~233KB |
 | Create obj1, obj2 | 224832 | 8608 | Free decreased by 2208B |
-| Cut references (no GC) | 223472 | 9968 | Garbage not collected, memory continues to be consumed |
+| Cut references (GC not run) | 223472 | 9968 | Garbage not reclaimed, memory continues to be consumed |
 | After manual GC | 227696 | 5744 | Freed 4224B, memory restored |
 | Create circular reference | 225904 | 7552 | Free decreased by 1792B |
-| Cut external references (no GC) | 225904 | 7552 | Island not collected, memory unchanged |
-| GC collects circular reference | 227664 | 5792 | Mark-sweep algorithm freed 1760B |
+| Cut external references (GC not run) | 225904 | 7552 | Island not reclaimed, memory unchanged |
+| GC reclaims circular reference | 227664 | 5792 | Mark-sweep algorithm freed 1760B |
 
 We can also use the `micropython.mem_info(1)` method to view the heap utilization table:
 
@@ -1161,7 +1161,7 @@ GC memory layout; from 200071c0:
 00038c00: ..............................
 ```
 
-This is the detailed memory information output of MicroPython, used to view the overall status of the stack and heap. It is the foundation for memory analysis:
+This is the detailed memory information output of MicroPython, used to view the overall state of the stack and heap. It is the foundation for memory analysis:
 
 ```yaml
 stack: 516 out of 7936
@@ -1170,7 +1170,7 @@ GC: total: 233024, used: 7168, free: 225856
 ... (memory layout omitted)
 ```
 
-- **stack: 516 out of 7936**: Stack memory used is 516 bytes, total size is 7936 bytes. Stack memory is used to store local variables and function call contexts. Here, the stack usage is very small and in a safe state.
+- **stack: 516 out of 7936**: Stack memory has used 516 bytes, total size 7936 bytes. Stack memory is used to store local variables and function call contexts. Here, the stack usage is very small and in a safe state.
 - **GC: total: 233024, used: 7168, free: 225856**: Core statistics of heap memory (unit: bytes):
   - `total`: Total heap memory size (233024 bytes).
   - `used`: Currently allocated heap memory (7168 bytes), i.e., the heap space occupied by objects in the program.

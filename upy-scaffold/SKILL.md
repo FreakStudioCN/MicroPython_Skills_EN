@@ -24,18 +24,18 @@ No external dependencies (Python 3 standard library + flake8).
 
 ## Execution Steps
 
-### Step 1: Approval Selection — Scheduling Mode + Additional Files
+### Step 1: Approval Selection — Scheduling Mode + Extra Files
 
-Read `project-manifest.json`, use **AskUserQuestion** to present a multi-select approval interface.
+Read `project-manifest.json` and use **AskUserQuestion** to present a multi-select approval interface.
 
 #### 1A: Scheduling Mode (single select, with recommended marking)
 
 ```
-Recommendation rules (only for marking Recommended, does not affect available options):
-  devices contains display and includes LVGL              → async
-  requirements.network = wifi                             → async
-  requirements.special_requirements contains "lcd"        → async
-  default                                                 → timer
+Recommendation rules (only used to mark Recommended, does not affect available options):
+  devices contains display and includes LVGL → async
+  requirements.network = wifi → async
+  requirements.special_requirements contains "lcd" → async
+  default → timer
 ```
 
 AskUserQuestion:
@@ -49,17 +49,17 @@ options:
   - _thread — multi-threading, suitable for blocking operations
 ```
 
-_The mode is only used for selecting the form of main.py and task stubs during skeleton generation. Driver conversion (synchronous → asynchronous) is handled by `upy-generate`._
+_The mode is only used for selecting the main.py and task stub form during skeleton generation. Driver conversion (synchronous → asynchronous) is handled by `upy-generate`._
 
-#### 1B: Additional Modules (multi-select)
+#### 1B: Extra Modules (multi-select)
 
 ```
-header: "Additional Modules"
+header: "Extra Modules"
 question: "Do you need to inject the following optional modules? (multi-select)"
 multiSelect: true
 options:
   - Logging system (lib/logger/*) — logging + rotating_logger, device-side log recording and rotation
-  - Performance timer (lib/time_helper.py) — timed_function / timed_coro decorators, function timing statistics
+  - Performance timer (lib/time_helper.py) — timed_function / timed_coro decorators, function timing
   - Maintenance task (tasks/maintenance.py) — GC check + idle callback
   - Deployment tool (tools/flash_device.py) — mpy compilation + firmware flashing + file upload
   - PC log reader (tools/read_device_log.py + log_report.py) — read device logs from PC and generate JSON report
@@ -71,7 +71,7 @@ options:
 header: "Custom"
 question: "Do you need to generate additional custom files?"
 options:
-  - No additional files needed
+  - No extra files needed
   - Custom directories/files (please enter in Other, e.g., firmware/lib/my_utils.py, host/gui.py)
 ```
 
@@ -92,7 +92,7 @@ WebFetch: https://docs.micropython.org/en/latest/library/asyncio.html
 Extract: create_task, run, sleep_ms, gather, Event, Queue and other APIs
 ```
 
-**Do not inject scheduler.py.** main.py directly uses `uasyncio` native APIs.
+**Do not inject scheduler.py.** main.py uses `uasyncio` native API directly.
 
 #### Mode C: _thread
 
@@ -103,7 +103,7 @@ WebFetch: https://docs.python.org/3.5/library/_thread.html#module-_thread
 Extract: start_new_thread, allocate_lock, exit and other APIs
 ```
 
-**Do not inject scheduler.py.** main.py directly uses `_thread` native APIs.
+**Do not inject scheduler.py.** main.py uses `_thread` native API directly.
 
 ---
 
@@ -117,22 +117,22 @@ python G:/MicroPython_Skills/upy-scaffold/scripts/init_scaffold.py \
   --mode {timer|async|thread}
 ```
 
-**The script automatically completes:**
+**Script automatically completes:**
 
 | Step | File | Method |
 |------|------|--------|
 | board.py | pinout → BOARDS dictionary + query function | Generate |
 | conf.py | requirements → sampling rate/log/watchdog constants | Generate |
 | boot.py | WDT + emergency_exception_buf | Generate |
-| main.py | Generate different entry points based on mode | Generate |
+| main.py | Generate different entry points by mode | Generate |
 | lib/logger/* | logging + rotating_logger + __init__ | Copy template |
 | lib/time_helper.py | timed_function + timed_coro | Copy template |
 | lib/scheduler/* | timer_sched.py + __init__ | **Timer mode only** |
 | tasks/maintenance.py | GC check + error callback | Copy template |
 | drivers/* | One stub package per device | Generate |
 | tools/flash_device.py | .py→.mpy compilation + flashing + upload | Copy template |
-| tools/read_device_log.py | PC-side device log reader | Copy template |
-| tools/log_report.py | Log→JSON report parser | Copy template |
+| tools/read_device_log.py | PC-side device log reading | Copy template |
+| tools/log_report.py | Log→JSON report parsing | Copy template |
 | host/ | PC host code (no constraints) | .gitkeep |
 | test/device/ | Device-side unittest test framework | .gitkeep |
 | test/pc/ | PC-side test scripts | .gitkeep |
@@ -142,13 +142,13 @@ python G:/MicroPython_Skills/upy-scaffold/scripts/init_scaffold.py \
 | README.md | Project name + BOM + pin table | Generate |
 | LICENSE | MIT | Generate |
 | .flake8 | F821/F401 exemptions + max-line=120 | Generate |
-| — | flake8 verification | Automatically executed at script end |
+| — | flake8 verification | Automatically executed at end of script |
 
 ---
 
 ### main.py Forms for the Three Modes
 
-The scaffold generates main.py **only with hardware instantiation + scheduler framework**. Task registration is left for `upy-generate`.
+main.py is generated by scaffold **only with hardware instantiation + scheduler framework**. Task registration is left for `upy-generate`.
 
 **Timer:**
 ```python
@@ -165,7 +165,7 @@ sc = Scheduler(timer_id=<port_timer_id>, tick_ms=100, idle_cb=maintenance_tick)
 sc.start()
 ```
 
-`<port_timer_id>` must be selected according to the MicroPython port: only RP2/Pico/RP2040/RP2350 and Zephyr use `-1` virtual Timer; other MCUs/ports default to `0` or another verified non-negative hardware Timer ID.
+`<port_timer_id>` must be selected according to the MicroPython port: only RP2/Pico/RP2040/RP2350 and Zephyr use `-1` virtual Timer; other MCU/ports default to `0` or another verified non-negative hardware Timer ID.
 
 **asyncio:**
 ```python
@@ -214,10 +214,10 @@ while True:
 
 ## Hard Constraints
 
-- **Do not generate business task files**: Only place general-purpose tools (`maintenance.py` + `__init__.py`) under `tasks/`. Business tasks (sensor/display/alarm/network) are created by `upy-generate`
+- **Do not generate business task files**: Only place general utilities (`maintenance.py` + `__init__.py`) under `tasks/`. Business tasks (sensor/display/alarm/network) are created by `upy-generate`
 - **Do not convert drivers**: Driver synchronous/asynchronous conversion is the responsibility of `upy-generate`
-- **asyncio / _thread modes do not inject scheduler.py**: Use native APIs directly, no additional wrapper
+- **asyncio / _thread modes do not inject scheduler.py**: Use native API directly, no extra wrapper
 - **Timer mode uses existing Scheduler.py reference implementation**: ISR only counts, main loop executes
 - **board.py does not perform hardware initialization**: Only stores constant mappings; instance creation is in main.py
 - **conf.py does not contain sensitive data**: No Wi-Fi passwords, API Keys
-- **Automatic flake8 at generation end**: Automatically verified at script end; prints warning if not passed
+- **Automatic flake8 at end of generation**: Script automatically verifies at the end; prints warning if it fails

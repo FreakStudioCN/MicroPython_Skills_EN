@@ -6,10 +6,10 @@ Board definition: `upy-analyze-plugin/boards/esp32-c3-devkitm.json`
 
 ## GPIO Usage Summary
 
-- Used GPIO: GPIO4, GPIO5, GPIO6, GPIO7, GPIO10, GPIO11, GPIO20, GPIO21
-- Unused GPIO: GPIO0, GPIO1, GPIO2, GPIO3, GPIO8, GPIO9, GPIO12, GPIO13, GPIO18, GPIO19
-- Conditional/Reserved GPIO: GPIO2, GPIO8, GPIO9 (strapping boot pins)
-- Forbidden GPIO: (none)
+- Used GPIOs: GPIO4, GPIO5, GPIO6, GPIO7, GPIO10, GPIO11, GPIO20, GPIO21
+- Unused GPIOs: GPIO0, GPIO1, GPIO2, GPIO3, GPIO8, GPIO9, GPIO12, GPIO13, GPIO18, GPIO19
+- Conditional/Reserved GPIOs: GPIO2, GPIO8, GPIO9 (strapping boot pins)
+- Forbidden GPIOs: (none)
 
 ## Pin Assignment Details
 
@@ -29,5 +29,5 @@ Board definition: `upy-analyze-plugin/boards/esp32-c3-devkitm.json`
 ## Risks and Notes
 
 - GPIO4, GPIO5 belong to ADC2/WiFi conflict pins; used only for digital purposes (gpio_in/i2c_data), no functional impact
-- GPIO20, GPIO21 are USB serial pins, reserved per user wiring; subsequent debugging should avoid occupying USB CDC
+- GPIO20, GPIO21 are USB serial pins, retained per user wiring; subsequent debugging must avoid occupying USB CDC
 - I2S BCK/WS are shared by the microphone and amplifier

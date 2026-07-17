@@ -8,7 +8,7 @@
   "payload": {
     "phase": "analyze",
     "result": "partial",
-    "summary": "User cancelled during device confirmation phase, current requirement analysis checkpoint has been saved.",
+    "summary": "User cancelled during device confirmation phase. Current requirement analysis checkpoint has been saved.",
     "next_phase": null,
     "checkpoint": {
       "checkpoint_id": "b8f23d64-1b77-42ab-b7df-36f0d7e2a010",
@@ -22,7 +22,7 @@
       "phase": "analyze",
       "project_name": "Temperature and Humidity Monitoring Alarm",
       "requirements": {
-        "description": "Periodically collect temperature and humidity, buzzer alarm when threshold is exceeded",
+        "description": "Periodically collect temperature and humidity, trigger buzzer alarm when threshold is exceeded",
         "scene": "indoor",
         "power": "usb",
         "network": "none",

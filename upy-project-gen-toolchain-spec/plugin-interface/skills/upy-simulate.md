@@ -2,7 +2,7 @@
 
 > Status: ✅ Finalized
 >
-> Phase 4.5 — Full-process business simulation on PC. Reads all code from firmware/ as context, LLM autonomously designs Mock assembly + scheduling + visualization + data scenarios, generates test/pc/sim_main.py and runs verification.
+> Phase 4.5 — PC-side full-process business simulation. Reads all code from firmware/ as context, LLM autonomously designs Mock assembly + scheduling + visualization + data scenarios, generates test/pc/sim_main.py and runs verification.
 
 ---
 
@@ -13,7 +13,7 @@
 | Phase | simulate |
 | Upstream Skill | upy-generate (manual trigger) or upy-autofix (auto-triggered in verify mode) |
 | Downstream Skill | upy-deploy (manual) or back to upy-autofix (on FAIL) |
-| One-line Responsibility | Full-process PC simulation — LLM reads code → autonomously designs Mock/scheduling/scenarios → generates sim_main.py → validates → runs → outputs coverage report |
+| One-line Responsibility | PC-side full-process simulation — LLM reads code → autonomously designs Mock/scheduling/scenarios → generates sim_main.py → validates → runs → outputs coverage report |
 
 **Two Operation Modes:**
 
@@ -26,13 +26,13 @@
 - Do not modify any files under firmware/
 - All new code written to test/pc/
 - sim_main.py must support `--plain` flag (disables rich formatting, outputs plain text for streaming)
-- Default generation is CLI mode (rich), no GUI mode
+- Default generation is CLI mode (rich), no GUI mode generated
 
 ---
 
 ## II. Plugin Input → Skill (P→S)
 
-Plugin sends **1 message** to server to start this skill:
+Plugin sends **1 message** to the server to start this skill:
 
 ### Full Mode (User Manual Trigger)
 
@@ -115,7 +115,7 @@ Step 5 Scenario Selection (Conditional)
 Step 6 Run
   → script_run(sim_main.py --plain --ticks N --scenario X)
   → stream multiple (script_stdout, one line per tick)
-  → script_result (run complete)
+  → script_result (run finished)
 
 Step 7 Output
   → phase_complete: Coverage report panel
@@ -126,26 +126,26 @@ Step 7 Output
 #### approval_request — Scenario Selection Card (Conditional)
 
 **Trigger Condition:** `skip_approval` = false
-**No Trigger:** `skip_approval` = true (directly run recommended scenario)
+**Not Triggered:** `skip_approval` = true (directly run recommended scenario)
 
 ```
 ┌──────────────────────────────────────────┐
-│  Simulation Run                           │
+│  Simulation Run                          │
 │                                          │
-│  Project Type: Sensors ×2, Alarm, OLED Display │
-│  5 scenarios generated:                   │
-│    normal, temp_rising, temp_dropping,    │
-│    intermittent_failure, sensor_death     │
+│  Project Type: Sensors ×2, Alarm, OLED Display |
+│  5 scenarios generated:                  │
+│    normal, temp_rising, temp_dropping,   │
+│    intermittent_failure, sensor_death    │
 │                                          │
-│  Recommended: temp_rising --ticks 60      │
-│  (Covers complete alarm cycle: trigger→cooldown→recovery) │
+│  Recommended: temp_rising --ticks 60     │
+│  (Covers complete alarm cycle: trigger→cooldown→recovery) |
 │                                          │
-│  ⚠ normal scenario only validates data flow, │
-│     does not trigger any business branch. │
+│  ⚠ normal scenario only verifies data flow, |
+│     does not trigger any business branch.|
 │                                          │
 │  [Run Recommended]  [Run normal]         │
-│  [Switch Scenario...]   [Custom Scenario...] │
-│  [Skip for Now]                           │
+│  [Switch Scenario...] [Custom Scenario...]|
+│  [Skip for Now]                          │
 └──────────────────────────────────────────┘
 ```
 
@@ -162,10 +162,10 @@ Step 7 Output
         { "name": "temp_rising", "description": "Temperature continuously rises → crosses high threshold → alarm triggers", "recommended": true, "min_ticks": 60 },
         { "name": "temp_dropping", "description": "Temperature continuously drops → crosses low threshold", "recommended": false, "min_ticks": 30 },
         { "name": "normal", "description": "Data fluctuates within normal range, no thresholds triggered", "recommended": false, "min_ticks": 30 },
-        { "name": "intermittent_failure", "description": "SHT30 intermittent failure → validates independent fault tolerance", "recommended": false, "min_ticks": 30 },
-        { "name": "sensor_death", "description": "SHT30 permanent failure → validates degraded behavior", "recommended": false, "min_ticks": 30 }
+        { "name": "intermittent_failure", "description": "SHT30 intermittent failure → verifies independent fault tolerance", "recommended": false, "min_ticks": 30 },
+        { "name": "sensor_death", "description": "SHT30 permanent failure → verifies degraded behavior", "recommended": false, "min_ticks": 30 }
       ],
-      "warning": "normal scenario only validates data flow, does not trigger any business branch."
+      "warning": "normal scenario only verifies data flow, does not trigger any business branch."
     },
     "items": [],
     "allow_add": false,
@@ -190,12 +190,12 @@ Step 7 Output
 | `run_normal` | Run normal scenario, `--ticks` default 30 |
 | `custom_scenario` | User writes scenario name in `notes` (e.g., `--scenario sensor_death`) |
 | `custom_user` | User writes natural language description in `notes` → LLM maps to mock API → generates new scenario → runs |
-| `skip` | Do not run, directly phase_complete (result="partial"), keep sim_main.py |
+| `skip` | Don't run, directly phase_complete (result="partial"), keep sim_main.py |
 
 #### status_update List
 
-| step_id | level | message | Trigger Time |
-|---------|-------|---------|--------------|
+| step_id | level | message | Trigger Timing |
+|---------|-------|---------|----------------|
 | read_context | info | Reading firmware/ code... (N/15) | Step 1 start |
 | read_context_done | success | Read 15 files, total XXXX lines | Step 1 complete |
 | classify | info | Analyzing project type... | Step 1B start |
@@ -215,7 +215,7 @@ Step 7 Output
 | lint_max_retry | error | Failed after 5 rounds, please check manually | Exceeds 5 rounds |
 | sim_running | info | Running sim_main.py --scenario temp_rising --ticks 60 | Step 6 start |
 | sim_tick | info | (Real-time output via stream) | Output per tick |
-| sim_done_pass | success | ✓ Simulation passed — all @Coverage events triggered at expected ticks | PASS |
+| sim_done_pass | success | ✓ Simulation passed — All @Coverage events triggered at expected ticks | PASS |
 | sim_done_weak | warn | ⚠ Weak pass — 3/5 dimensions covered, 2 uncovered | WEAK_PASS |
 | sim_done_fail | error | ✗ Simulation failed — Python Traceback | FAIL |
 
@@ -233,7 +233,7 @@ Step 7 Output
       {
         "type": "markdown",
         "title": "Coverage Report",
-        "content": "### Simulation Coverage Report\n\n| Dimension | Status | Description |\n|-----------|--------|-------------|\n| [sensor] Sensor Read | ✅ | 60/60 ticks normal |\n| [sensor] Sensor Fault Tolerance | ✅ | Triggered → OSError at ticks 3,6,9... |\n| [alarm] High Temp Alarm Trigger | ✅ | Triggered → temp ≥ 35.0 at tick 21 |\n| [alarm] Actuator Activation | ✅ | Buzzer ON + LED ON at tick 21 |\n| [alarm] Alarm Cooldown | ✅ | cooling active ticks 21-50 |\n| [alarm] Low Temp Alarm | ⚠ Not Covered | Current scenario does not cover |\n| [alarm] Humidity Alarm | ⚠ Not Covered | No scenario covers 80%/20% humidity thresholds |\n\n**Result: WEAK_PASS**\n\nSuggestion: `python test/pc/sim_main.py --scenario temp_dropping --ticks 30`\nSuggestion: Add humidity_high scenario to cover 80% humidity threshold"
+        "content": "### Simulation Coverage Report\n\n| Dimension | Status | Description |\n|-----------|--------|-------------|\n| [sensor] Sensor Read | ✅ | 60/60 ticks normal |\n| [sensor] Sensor Fault Tolerance | ✅ | Triggered → OSError at ticks 3,6,9... |\n| [alarm] High Temp Alarm Trigger | ✅ | Triggered → temp ≥ 35.0 at tick 21 |\n| [alarm] Actuator Activation | ✅ | Buzzer ON + LED ON at tick 21 |\n| [alarm] Alarm Cooldown | ✅ | cooling active ticks 21-50 |\n| [alarm] Low Temp Alarm | ⚠ Not covered | Current scenario does not cover |\n| [alarm] Humidity Alarm | ⚠ Not covered | No scenario covers 80%/20% humidity thresholds |\n\n**Result: WEAK_PASS**\n\nSuggestion: `python test/pc/sim_main.py --scenario temp_dropping --ticks 30`\nSuggestion: Add humidity_high scenario to cover 80% humidity threshold"
       }
     ],
     "warnings": [
@@ -259,13 +259,13 @@ Step 7 Output
 
 Total 6 changes:
 
-| No. | Location | Current Behavior | Changed To | Reason |
-|-----|----------|-----------------|------------|--------|
+| No. | Location | Current Behavior | Change To | Reason |
+|-----|----------|-----------------|-----------|--------|
 | 1 | Step 1 Full Read | LLM directly calls Read tool to read files | Read files one by one via `file_operation(read)` (server reads local files through plugin) | Server has no local filesystem access |
 | 2 | Step 4 Validation | `Bash: python -m flake8 ...` + `python -m pylint ...` | `script_run(flake8)` + `script_run(pylint)`, parse script_result.stdout/stderr | Script execution unified through plugin |
 | 3 | Step 5 Ask User | `AskUserQuestion(...)` (CLI Q&A) | `approval_request` scenario selection card | Plugin renders approval card, not command-line interaction |
-| 4 | Step 6 Run | `Bash: python test/pc/sim_main.py --ticks N ...` | `script_run(sim_main.py --plain --ticks N ...)`, output per tick pushed in real-time via `stream` | `--plain` disables rich formatting to make output pipeable; stream enables real-time display on plugin |
-| 5 | sim_main.py Generation Constraint | No `--plain` requirement | LLM must support `--plain` flag in sim_main.py: when `--plain`, disable rich Live/Table/Panel, use `print()` for line-by-line JSON output (`{"tick": N, ...}`) | No TTY when running via script_run, rich Live produces ANSI garbage |
+| 4 | Step 6 Run | `Bash: python test/pc/sim_main.py --ticks N ...` | `script_run(sim_main.py --plain --ticks N ...)`, each tick output pushed in real-time via `stream` | `--plain` disables rich formatting to make output pipeable; stream enables real-time display on plugin side |
+| 5 | sim_main.py generation constraint | No `--plain` requirement | LLM must support `--plain` flag in sim_main.py: when `--plain`, disable rich Live/Table/Panel, use `print()` for line-by-line JSON output (`{"tick": N, ...}`) | No TTY when running via script_run, rich Live produces ANSI garbage |
 | 6 | New verify mode | No such mode | Add `mode=verify` entry: only read changed_files + sim_main.py, detect signature changes → update sim_main.py → directly run recommended scenario (skip_approval=true) | autofix→simulate fast verification loop |
 
 ### sim_main.py `--plain` Output Format Specification
@@ -285,7 +285,7 @@ Fields are determined by LLM based on the project, but must include `tick`. `dis
 
 ## V. Validation Script Changes
 
-No new validation scripts needed. sim_main.py itself goes through flake8 + pylint validation, which is equivalent to validation.
+No new validation scripts needed. sim_main.py itself passes flake8 + pylint double validation, which is equivalent to validation.
 
 ### Impact on upy-generate Templates
 
@@ -295,18 +295,18 @@ In upy-generate's scaffold templates, `sim_main.py` is not a template file (dyna
 
 ## VI. UI Components Needed on Plugin Side
 
-| Component | Corresponding Message | Key Functionality |
-|-----------|----------------------|-------------------|
-| Progress Timeline | status_update × N | Six-stage progress: file read → classification → design → generation → validation → run |
-| Scenario Selection Card | approval_request | Scenario list + recommended marker + "Run Recommended"/"Custom"/"Skip for Now" buttons |
+| Component | Corresponding Message | Key Function |
+|-----------|----------------------|--------------|
+| Progress Timeline | status_update × N | Six-stage progress: file read → classify → design → generate → validate → run |
+| Scenario Selection Card | approval_request | Scenario list + recommended marker + "Run Recommended"/"Custom"/"Skip" buttons |
 | Terminal Output Panel | stream (script_stdout) | Real-time display of JSON lines per tick, switchable to table view |
 | Coverage Report Panel | phase_complete (markdown artifact) | Render coverage table, PASS/WEAK_PASS/FAIL status markers |
-| [PC Simulation] Button | Trigger start_phase(mode="full") | Enable after upy-generate completes |
-| [Re-simulate] Button | Trigger start_phase(mode="full") | Replace "PC Simulation" button after simulation completes, can re-run |
+| [PC Simulation] Button | Trigger start_phase(mode="full") | Enabled after upy-generate completes |
+| [Re-simulate] Button | Trigger start_phase(mode="full") | Replaces "PC Simulation" button after simulation completes, allows re-running |
 
 ### Terminal Output Panel Description
 
-Plugin renders in real-time upon receiving `stream` message (`stream_type: "script_stdout"`). When `--plain`, each line is JSON, plugin can parse into structured data:
+Plugin renders in real-time upon receiving `stream` messages (`stream_type: "script_stdout"`). When `--plain`, each line is JSON, plugin can parse into structured data:
 - **Default View**: Raw text scrolling (like terminal)
 - **Table View**: Parse JSON lines, render as dynamic table (one row per tick, columns = JSON keys)
 - User can switch between the two views
@@ -315,7 +315,7 @@ Plugin renders in real-time upon receiving `stream` message (`stream_type: "scri
 
 ## VII. Independent Test Scenarios
 
-### Plugin-Side Testing (No Server)
+### Plugin-side Testing (No Server)
 
 1. Manually send `status_update` sequence → verify six-stage timeline rendering
 2. Manually send `approval_request` (scenario selection card) → verify:
@@ -325,7 +325,7 @@ Plugin renders in real-time upon receiving `stream` message (`stream_type: "scri
 3. Manually send `stream` sequence (simulate `--plain` per-tick JSON lines) → verify terminal panel real-time update + table view switching
 4. Manually send `phase_complete` (markdown coverage report) → verify coverage table + PASS/WEAK_PASS/FAIL marker rendering
 
-### Skill-Side Testing (No Plugin)
+### Skill-side Testing (No Plugin)
 
 1. Use mock_plugin.py to simulate plugin responses:
    - Manually construct start_phase (mode="full", manifest, skip_approval=true)

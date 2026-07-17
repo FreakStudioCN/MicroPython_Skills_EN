@@ -17,7 +17,7 @@
     "items": [],
     "actions": [
       {"label": "Allow", "value": "allow", "primary": true},
-      {"label": "Generate Markdown/HTML only", "value": "deny"}
+      {"label": "Generate only Markdown/HTML", "value": "deny"}
     ]
   }
 }

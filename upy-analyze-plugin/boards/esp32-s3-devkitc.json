@@ -24,10 +24,10 @@
     "ble": true,
     "usb_otg": true
   },
-  "typical_use_cases": ["AI voice", "Camera", "Display", "USB device", "High-performance computing"],
+  "typical_use_cases": ["AI voice", "camera", "display", "USB device", "high-performance computing"],
   "beginner_friendly": false,
   "price_yuan": 45,
-  "notes": "Comes with 8MB PSRAM, suitable for large memory applications. USB-OTG can directly emulate keyboard/mouse/USB drive. Onboard RGB LED",
+  "notes": "With 8MB PSRAM, suitable for large memory applications. USB-OTG can directly emulate keyboard/mouse/USB drive. Onboard RGB LED",
 
   "onboard_peripherals": [
     {
@@ -69,9 +69,9 @@
     "pin_options": {},
     "notes": [
       "All I2C/SPI/UART can be remapped to any free GPIO via GPIO Matrix",
-      "GPIO 0 is a strapping pin (Boot button), cannot change function",
-      "GPIO 3 is JTAG strapping, recommended to keep",
-      "GPIO 45/46 are strapping pins, affect startup voltage",
+      "GPIO 0 is a strapping pin (Boot button), function cannot be changed",
+      "GPIO 3 is JTAG strapping, it is recommended to keep it",
+      "GPIO 45/46 are strapping pins, affecting startup voltage",
       "GPIO 26-32 are occupied by Octal PSRAM (WROOM-1 module), cannot be used externally",
       "GPIO 19/20 are dedicated to USB OTG; using them as regular GPIO will lose USB functionality",
       "ADC2 conflicts with WiFi, prefer ADC1 (GPIO 1-10)"

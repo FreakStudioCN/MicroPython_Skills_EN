@@ -1,24 +1,24 @@
 ---
 name: upy-autofix
-description: Step 6 – Orchestration & Coordination Layer. Reads device logs, parses errors, makes tiered decisions, and delegates to upstream skills for repair (generate/select-hw/analyze), with a maximum of 3 attempts. Triggered automatically when upy-deploy fails.
+description: Step 6 — Orchestration & Coordination Layer. Reads device logs, parses errors, makes tiered decisions, and delegates fixes to upstream skills (generate/select-hw/analyze), with a maximum of 3 attempts. Triggered automatically after upy-deploy fails.
 ---
 
 # Automated Debugging Loop Skill
 
 ## Role
 
-**Orchestration & Coordination Layer, not an independent repair machine.** Core logic: `triage.py` collects structured data → LLM reads JSON + raw logs → tiered decision → delegates to upstream skill for repair → verification.
+**Orchestration & Coordination Layer, not an independent fixer.** Core logic: `triage.py` collects structured data → LLM reads JSON + raw logs → tiered decision → delegates fix to upstream skill → verification.
 
-The script only handles data collection, git management, and hardware signal driving; it does **not** make repair decisions. All judgments are made by the LLM.
+The script only handles data collection, git management, and hardware signal driving; it does not make fix decisions. All judgments are made by the LLM.
 
-**New: Hardware Signal Verification Capability** — After 2 failed software repair attempts, autofix can actively drive peripherals (LED blink/buzzer sound/sensor reading/display fill color) to determine hardware health via self-test or user feedback, preventing infinite code repair loops on faulty hardware.
+**New: Hardware Signal Verification** — After 2 failed software fixes, autofix can actively drive peripherals (LED blink/buzzer sound/sensor reading/display fill color) to determine hardware health via self-test or user feedback, preventing infinite code-fix loops on faulty hardware.
 
 ---
 
 ## Prerequisites
 
-- `upy-deploy` Phase 6 determines FAIL
-- Raw device log files (`run_*.log`) exist in the `deploy_logs/` directory
+- `upy-deploy` Phase 6 result: FAIL
+- `deploy_logs/` directory contains raw device log files (`run_*.log`)
 - `triage.py` is available (script included with this skill)
 
 ---
@@ -29,14 +29,14 @@ The script only handles data collection, git management, and hardware signal dri
 
 ```bash
 python G:/MicroPython_Skills/upy-autofix/scripts/triage.py \
-  --log-dir {path_to_deploy_logs} \
+  --log-dir {deploy_logs_path} \
   --port {COM} \
   --attempt 1
 ```
 
 Outputs JSON to stdout, which the LLM captures and parses. The JSON structure is described in the header comments of `triage.py`.
 
-**Every field has a default value** — the script uses try/except and will not crash due to malformed log formats. The `warnings` field lists all degradation cases.
+**Every field has a default value** — the script uses try/except and will not crash on malformed log formats. The `warnings` field lists all degradation cases.
 
 ### Step 2: LLM Comprehensive Analysis
 
@@ -44,17 +44,17 @@ The LLM reads two information sources simultaneously:
 
 | Source | Purpose | When to Read |
 |--------|---------|--------------|
-| triage.py JSON | Quick localization: error type, P-level, I2C status, attempt count | Every time |
+| triage.py JSON | Quick localization: error type, P-level, I2C status, attempt count | Always |
 | deploy_logs/*.log raw logs | Deep understanding: full traceback, print timing, context | When JSON is insufficient |
 
 **Analysis Order:**
 
-1. First, check the JSON `i2c_ok` field
+1. Check JSON's `i2c_ok` field first
    - `false` → Hardware issue, jump to Step 5 (output troubleshooting guide), **do not fix code**
    - `true` or `null` (no I2C device) → Software issue, continue
 
-2. Check JSON `p_level` + `error_type`
-   - P0 spelling/import → LLM directly Edit file (one-line fix, not worth starting an upstream skill)
+2. Check JSON's `p_level` + `error_type`
+   - P0 spelling/import → LLM directly Edit file (one-line fix, not worth starting upstream skill)
    - P0 driver API error → Step 3 delegate to upy-generate
    - P1 pin/address conflict → Step 3 delegate to upy-select-hw
    - P1 watchdog/memory → Step 3 delegate to upy-generate
@@ -69,11 +69,11 @@ The LLM reads two information sources simultaneously:
 
 ### Step 2.5: Hardware Signal Verification
 
-When the trigger conditions in Step 2 are met, do not proceed directly to software repair. Perform hardware diagnostics first.
+When the trigger conditions in Step 2 are met, do not proceed directly to software fixes. Perform hardware diagnostics first.
 
-#### Step 2.5A: LLM Reads Source Code + Generates Diagnostic Configuration
+#### Step 2.5A: LLM Reads Source Code & Generates Diagnostic Configuration
 
-The LLM reads all .py source code in firmware/ and the project-manifest.json:
+The LLM reads all `.py` source files in `firmware/` plus `project-manifest.json`:
 
 ```
 Identify objects:
@@ -89,9 +89,9 @@ Identify objects:
 Then, following the template in **Appendix A**, generate `sanity_config.json` for each peripheral:
 
 **Generation Principles:**
-- Self-verifying types preferred: I2C/SPI sensors, ADC/DAC, UART (command-response type) use automatic determination
+- Self-verifying types first: I2C/SPI sensors, ADC/DAC, UART (command-response type) use automatic determination
 - Feedback type only for pure outputs: LED/Buzzer/Relay/Display/Motor require user questions
-- Onboard LED tested first: If even the LED cannot light up → MCU power/reset issue
+- Onboard LED tested first: If even the LED won't light → MCU power/reset issue
 - Maximum 8 tests, single timeout 10s
 
 ```bash
@@ -106,13 +106,13 @@ Outputs JSON to stdout, which the LLM captures.
 
 ```
 Read JSON:
-  ├── All PASS → Hardware is normal, problem is in code logic → Continue to Step 3, delegate repair
+  ├── All PASS → Hardware is normal, problem is in code logic → Continue to Step 3, delegate fix
   │
   ├── Specific peripheral FAIL (I2C sensor scan failed / WHO_AM_I mismatch)
   │     → Output targeted troubleshooting guide for that peripheral (wiring/power/address conflict)
   │     → Do not continue fixing code
   │
-  ├── Specific peripheral FAIL (User feedback type: LED not lit/buzzer not sounding)
+  ├── Specific peripheral FAIL (user feedback type: LED not lit/buzzer not sounding)
   │     → Output targeted troubleshooting guide for that peripheral
   │     → Do not continue fixing code
   │
@@ -126,30 +126,30 @@ Read JSON:
 
 #### Step 2.5C: Handle User Feedback
 
-`hardware_sanity.py` marks tests in `user_feedback` mode with `_pending_question` in the result. The LLM reads this:
+`hardware_sanity.py` marks tests in `user_feedback` mode with `_pending_question` in the results. The LLM reads this:
 
 ```
 For each pending item:
   AskUserQuestion(
     question: result._pending_question,
     header: "Hardware Diagnostics",
-    options: ["Yes, normal", "No, no response"]
+    options: ["Yes, it's normal", "No, no response"]
   )
 
 After user answers:
-  "Yes" → peripheral status = "pass"
-  "No" → peripheral status = "fail"
+  "Yes" → that peripheral status = "pass"
+  "No" → that peripheral status = "fail"
 ```
 
 **Re-evaluate after collecting all feedback**:
-- All PASS → Continue with software repair
+- All PASS → Continue with software fix
 - Any FAIL → Output troubleshooting guide for that peripheral
 
-**Maximum of 3 user questions**. If there are 4+ feedback-type peripherals, prioritize testing the one "most likely to be faulty" (based on the triage error_type).
+**Maximum 3 user questions**. If there are 4+ feedback-type peripherals, prioritize testing the one "most likely to be faulty" (based on the triage error_type).
 
 ---
 
-### Step 3: Delegate Repair to Upstream Skill
+### Step 3: Delegate Fix to Upstream Skill
 
 The LLM uses the `Skill` tool to call upstream skills, **packaging the error context**:
 
@@ -168,12 +168,12 @@ The LLM uses the `Skill` tool to call upstream skills, **packaging the error con
 - Missing sensor/function description
 - User's original requirement description
 
-### Step 4: Verify Repair Results
+### Step 4: Verify Fix Result
 
-Verification path after each repair:
+Verification path after each fix:
 
 ```
-Repair complete
+Fix complete
   ↓
 Optional: Skill("upy-simulate") PC-side quick verification (2-3s, avoids serial flash delay)
   ↓
@@ -183,21 +183,21 @@ Run triage.py again (--attempt N+1)
   ↓
 Read JSON:
   ├─ status="pass" → Success, output PASS summary
-  └─ status="fail" → Return to Step 2 for re-analysis (may escalate or fall back a level)
+  └─ status="fail" → Return to Step 2 for re-analysis (may escalate/fallback)
 ```
 
-**Escalation Rule**: Consecutive failures with the same strategy → fall back one level (P0 direct edit → P0 delegate generate → P1 delegate select-hw → requirement-level analyze).
+**Escalation Rule**: Consecutive failures with the same strategy → fallback to the next higher level (P0 direct edit → P0 delegate generate → P1 delegate select-hw → requirement-level analyze).
 
 ### Step 5: Hardware Issue — Output Troubleshooting Guide
 
 When `i2c_ok: false` (software I2C + speed reduction already attempted, both ineffective), the LLM directly outputs the following Chinese guide, **do not fix code**:
 
 ```
-I2C bus cannot scan any device. Software I2C and low-speed mode have been tried, both with no response. This is a hardware connection issue. Please troubleshoot in the following order:
+I2C bus scan found no devices. Software I2C and low-speed mode have been attempted, both with no response. This is a hardware connection issue. Please troubleshoot in the following order:
 
 1. Wiring Check:
    - Use a multimeter in continuity mode to confirm each wire (SDA/SCL/VCC/GND) is conductive
-   - VCC must be 3.3V (not 5V!)
+   - VCC must be connected to 3.3V (not 5V!)
    - GND must share a common ground with the MCU
 
 2. Power Check:
@@ -210,7 +210,7 @@ I2C bus cannot scan any device. Software I2C and low-speed mode have been tried,
 
 4. Sensor Itself:
    - Is it abnormally hot?
-   - Test by replacing it with another sensor of the same model
+   - Test with another sensor of the same model
 
 5. Conflict Check:
    - Disconnect all other peripherals, test with only this sensor connected
@@ -221,13 +221,13 @@ After troubleshooting, send "redeploy" to retry.
 ### Step 6: All 3 Attempts Failed — Rollback + Summary
 
 ```bash
-python G:/MicroPython_Skills/upy-autofix/scripts/triage.py --rollback --log-dir {path_to_deploy_logs}
+python G:/MicroPython_Skills/upy-autofix/scripts/triage.py --rollback --log-dir {deploy_logs_path}
 ```
 
 Then the LLM outputs a Chinese bottleneck report:
 
 ```
-Automatic repair failed 3 times.
+Automatic fix failed 3 times.
 
 Error Type: {error_type}
 3 Attempts:
@@ -235,16 +235,16 @@ Error Type: {error_type}
   2. {strategy2} → {result2}
   3. {strategy3} → {result3}
 
-Git has been rolled back to the pre-repair state.
+Git has been rolled back to the pre-fix state.
 
 Suggested manual troubleshooting direction: {specific suggestions}
 ```
 
 ### Step 7: Error Data Logging
 
-`triage.py` automatically appends the history of each repair to `logs/error_report.json`, including: timestamp, MCU model, error type, traceback, strategy and result for each attempt, and the skill version used.
+`triage.py` automatically appends the history of each fix to `logs/error_report.json`, including: timestamp, MCU model, error type, traceback, strategy and result for each attempt, and the skill version used.
 
-On the 3rd total failure, the LLM additionally populates the `llm_analysis` field (root cause analysis + knowledge gap marker).
+On the 3rd consecutive failure, the LLM additionally populates the `llm_analysis` field (root cause analysis + knowledge gap markers).
 
 ---
 
@@ -257,45 +257,45 @@ upy-autofix (this skill)
     ├── triage.py → Collect data
     ├── LLM analysis
     ├── [New] hardware_sanity.py → Hardware signal-driven verification
-    ├── Delegate → upy-generate (code repair)
-    ├── Delegate → upy-select-hw (pin/address repair)
+    ├── Delegate → upy-generate (code fix)
+    ├── Delegate → upy-select-hw (pin/address fix)
     ├── Delegate → upy-analyze (requirement re-analysis)
     ├── Optional verification → upy-simulate (PC quick verification)
     ├── Re-deploy → upy-deploy
-    └── Failure feedback → CI/CD feeds back to each skill's SKILL.md
+    └── Failure feedback → CI/CD feedback to each skill's SKILL.md
 ```
 
-- ← `upy-deploy`: Receives FAIL determination + deploy_logs/ logs
-- ⇄ `upy-generate`: Delegates code repair
+- ← `upy-deploy`: Receives FAIL judgment + deploy_logs/ logs
+- ⇄ `upy-generate`: Delegates code fixes
 - ⇄ `upy-select-hw`: Delegates pin/address reallocation
 - ⇄ `upy-analyze`: Delegates requirement re-analysis
 - ⇄ `upy-simulate`: Optional PC verification
-- ⇄ `upy-deploy`: Re-flash after repair
+- ⇄ `upy-deploy`: Re-flash after fix
 
 ---
 
 ## Hard Constraints
 
-- **triage.py does not make repair decisions**: Only collects data and outputs JSON; the LLM reads JSON + raw logs and makes independent judgments
-- **hardware_sanity.py does not make diagnostic decisions**: Only executes test code + collects results/user feedback; the LLM makes determinations based on the result JSON
-- **Hardware check must be done first**: I2C scan empty → directly output troubleshooting guide, do not enter the repair loop
+- **triage.py does not make fix decisions**: Only collects data and outputs JSON; the LLM reads JSON + raw logs and makes independent judgments
+- **hardware_sanity.py does not make diagnostic decisions**: Only executes test code + collects results/user feedback; the LLM makes decisions based on the result JSON
+- **Hardware check must be done first**: I2C scan empty → directly output troubleshooting guide, do not enter the fix loop
 - **Hardware signal verification trigger conditions**: `attempt >= 2` with same consecutive error / `NoOutput` / `OSError_19/110` — do not waste user time
-- **Self-verifying types preferred over feedback types**: Never ask the user if automatic determination is possible; a single sanity check asks the user a maximum of 3 questions
-- **Onboard LED tested first**: If even the LED cannot light up → MCU power/reset issue, do not test other peripherals
-- **Peripheral clearly FAIL (self-test failed or user answered NO)**: Immediately terminate the repair loop, output troubleshooting guide, do not continue fixing code
-- **Git commit snapshot before each repair** (triage.py `--snapshot`)
+- **Self-verifying types take priority over feedback types**: Never ask the user if automatic determination is possible; a single sanity check can ask the user a maximum of 3 questions
+- **Onboard LED tested first**: If even the LED won't light → MCU power/reset issue, do not test other peripherals
+- **Peripheral clearly FAIL (self-test failed OR user answered NO)**: Immediately terminate the fix loop, output troubleshooting guide, do not continue fixing code
+- **Git commit snapshot before each fix** (triage.py `--snapshot`)
 - **Maximum 3 attempts**: All 3 failed → git rollback + output bottleneck report
 - **LLM must read raw logs**: triage.py JSON may have `error_type: "unknown"`; in this case, the LLM must independently determine the error type from the raw logs
 - **P0 spelling/import fixed directly by LLM Edit**: Not worth the overhead of starting an upstream skill
-- **All other repairs must be delegated to upstream skills**: autofix does not write repair code itself
-- **Error data feedback**: Each repair is recorded in `error_report.json`, driving continuous CI/CD improvement
-- **Windows platform: Do not read device logs while main.py is running**: `mpremote fs cp` and `resume exec` enter raw REPL mode on Windows (sends Ctrl+C), which kills the running main.py. Furthermore, the killed process may not have flushed the log file, leading to reading an empty file and incorrectly judging "no log output". The correct approach is to let main.py run to its natural end or crash → soft reset (program stopped) → then `fs cp` to grab logs. To check device status at runtime, use `hardware_sanity.py`'s I2C scan (independent of the main.py process)
+- **All other fixes must be delegated to upstream skills**: autofix does not write fix code itself
+- **Error data feedback**: Each fix is recorded in `error_report.json`, driving continuous CI/CD improvement
+- **Windows platform: Do not read device logs while main.py is running**: `mpremote fs cp` and `resume exec` enter raw REPL mode on Windows (sends Ctrl+C), which kills the running main.py. Furthermore, the killed process may not have flushed the log file, leading to reading an empty file and incorrectly judging "no log output". The correct approach is to let main.py run to its natural end or crash → then, after a soft reset (program stopped), use `fs cp` to fetch the logs. To check device status at runtime, use `hardware_sanity.py`'s I2C scan (independent of the main.py process)
 
 ---
 
 ## Appendix A: Peripheral Hardware Verification Code Templates
 
-After the LLM reads the firmware/ source code and identifies the peripheral type, it generates the test code in `sanity_config.json` according to the following templates.
+After the LLM reads the `firmware/` source code and identifies the peripheral type, it generates the test code in `sanity_config.json` according to the following templates.
 
 **Template Structure:**
 ```json
@@ -624,11 +624,11 @@ else:
 `pass_pattern: "DAC_OK"`, `fail_pattern: "DAC_FAIL"`
 
 **Variant — DAC without read()** (e.g., some MCP4725 implementations):
-Do not test readback; instead, do `write(0) → write(2048) → write(0)` and measure voltage with a multimeter. In this case, downgrade to `user_feedback` mode. `question: "Does the DAC output pin voltage change between write(0) and write(2048)?"`
+Do not test readback; instead, do `write(0) → write(2048) → write(0)` and measure voltage with a multimeter. In this case, downgrade to `user_feedback` mode. `question: "Does the voltage on the DAC output pin change between write(0) and write(2048)?"`
 
 ---
 
-### A8: Input Device (user_feedback, semi-auto)
+### A8: Input Device (user_feedback, semi-self-test)
 
 **Identification Signal**: `__init__(pin, ...)` + includes callback/idle_state/debounce
 
@@ -643,7 +643,7 @@ print('INIT_VAL:' + str(p.value()))
 time.sleep(6)  # Give user time to act
 print('FINAL_VAL:' + str(p.value()))
 ```
-`question: "Please {action description} within 6 seconds (press button/rotate encoder/move in front of PIR). Did the INIT_VAL and FINAL_VAL values change in the REPL output?"`
+`question: "Please {action description} within 6 seconds (press button/rotate encoder/move in front of PIR). Did the INIT_VAL and FINAL_VAL values printed in the REPL change?"`
 
 **Example — Button**:
 ```python
@@ -655,7 +655,7 @@ time.sleep(6)
 print('FINAL:' + str(p.value()))
 print('TEST_DONE')
 ```
-`question: "Please press the button within 6 seconds. Did the INIT and FINAL values change in the REPL?"`
+`question: "Please press the button within 6 seconds. Did the INIT and FINAL values in the REPL change?"`
 
 ---
 
@@ -674,7 +674,7 @@ print('LED_OK')
 ```
 `pass_pattern: "LED_OK"`, `question: "Did the onboard LED blink?"`
 
-Note: Although the onboard LED is a GPIO output, it is the most basic indicator of MCU power/reset/flash success. If `LED_OK` is not printed → the device never entered REPL.
+Note: Although the onboard LED is a GPIO output, it is the most basic indicator of MCU power/reset/flash success. If `LED_OK` is not printed → the device did not enter REPL.
 
 ---
 
@@ -683,34 +683,34 @@ Note: Although the onboard LED is a GPIO output, it is the most basic indicator 
 ```
 LLM reads firmware/ source code:
     │
-    ├── Finds Pin(x, Pin.OUT) / PWM(Pin(x)) and variable name contains "led"
+    ├── Found Pin(x, Pin.OUT) / PWM(Pin(x)) and variable name contains "led"
     │     → A9: Onboard LED basic test (highest priority, place at config.tests[0])
     │
-    ├── Finds I2C(0, scl=Pin(x), sda=Pin(y))
+    ├── Found I2C(0, scl=Pin(x), sda=Pin(y))
     │     └── Iterate over all I2C driver class instances
     │           → A1: I2C sensor (self_verify)
     │
-    ├── Finds SPI(1, sck=Pin(x), ...)
+    ├── Found SPI(1, sck=Pin(x), ...)
     │     └── Iterate over all SPI driver class instances
     │           → A2: SPI sensor (self_verify)
     │
-    ├── Finds UART(1, baudrate=..., tx=Pin(x), rx=Pin(y))
+    ├── Found UART(1, baudrate=..., tx=Pin(x), rx=Pin(y))
     │     └── Iterate over all UART driver class instances
     │           → A3: UART peripheral (self_verify or user_feedback)
     │
-    ├── Finds Pin(x, Pin.OUT) / PWM(Pin(x)) and variable name contains "buzzer"/"relay"/"motor"
+    ├── Found Pin(x, Pin.OUT) / PWM(Pin(x)) and variable name contains "buzzer"/"relay"/"motor"
     │     → A4: GPIO output (user_feedback)
     │
-    ├── Finds I2C/SPI driver with .fill() / .show() methods
+    ├── Found I2C/SPI driver with .fill() / .show() methods
     │     → A5: Display (user_feedback)
     │
-    ├── Finds I2C driver with .read() + channel/gain parameters
+    ├── Found I2C driver with .read() + channel/gain parameters
     │     → A6: ADC (self_verify)
     │
-    ├── Finds I2C driver with .write() + .read()
+    ├── Found I2C driver with .write() + .read()
     │     → A7: DAC (self_verify)
     │
-    └── Finds Pin(x, Pin.IN) with callback/idle_state
+    └── Found Pin(x, Pin.IN) with callback/idle_state
           → A8: Input device (semi_auto)
 ```
 

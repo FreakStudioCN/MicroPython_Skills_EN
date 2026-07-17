@@ -4,7 +4,7 @@
   "payload": {
     "approval_id": "generate_behavior_detail",
     "header": "Supplement Device Behavior",
-    "question": "Before generating business code, you can supplement sampling period, thresholds, alarms, display, network, logs, and simulation scenarios.",
+    "question": "Before generating business code, you can supplement sampling period, thresholds, alarms, display, network, logging, and simulation scenarios.",
     "allow_text": true,
     "items": [
       {"id": "next_deploy", "name": "Deploy after generation", "group": "next_phase", "selected": true},

@@ -9,4 +9,4 @@ Currently provided:
 - `approval_request.alternative_device.json`
 - `phase_complete.analyze.success.json`
 
-These samples are not the final frozen protocol version, but merely the first batch of local verification samples.
+These samples are not the final frozen protocol version, but only the first batch of local verification samples.

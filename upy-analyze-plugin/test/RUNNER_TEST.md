@@ -1,6 +1,6 @@
 # `upy-analyze-plugin` Runner Walkthrough Guide
 
-## Objective
+## Goal
 
 Use the minimal `analyze_runner.py` to:
 
@@ -8,11 +8,11 @@ Use the minimal `analyze_runner.py` to:
 - `mock_plugin.py`
 - `scripts/init_manifest.py`
 
-Chain them into a locally walkable analyze protocol flow.
+Chain them into a locally walkable analyze protocol chain.
 
 ## Current Positioning
 
-`analyze_runner.py` is not a full server-side analyze implementation.
+`analyze_runner.py` is NOT a full server-side analyze implementation.
 
 It currently handles:
 
@@ -28,7 +28,7 @@ It currently handles:
 10. Complete local manifest validation
 11. Output `phase_complete`
 
-The focus is on getting the protocol chain working.
+The focus is on getting the protocol chain working first.
 
 ## Current Driver Search Display Rules
 
@@ -53,7 +53,7 @@ Full smoke check:
 python test/smoke_tests.py
 ```
 
-Do not use directly:
+Do NOT use directly:
 
 ```text
 python test/analyze_runner.py | python test/mock_plugin.py
@@ -63,7 +63,7 @@ Because this is a unidirectional pipe, not a bidirectional protocol bridge.
 
 ## Current Walkthrough Scope
 
-The current runner covers:
+The runner currently covers:
 
 - Happy path
 - Device confirmation card
@@ -77,17 +77,17 @@ The current runner covers:
 Not yet fully covered:
 
 - Real `upy-pkg-guide` skill invocation and network queries
-- Complex paths after user-supplemented information re-analysis
+- Complex re-analysis paths after user provides supplementary information
 - More complex failure recovery paths
 - Deep board consumption and selection rule participation
 
 ## How to Understand It
 
-The most valuable aspect currently is not "it is already a complete analyze service", but rather:
+The most valuable aspect right now is NOT "it's already a complete analyze service", but rather:
 
-- Protocol message order is already established
-- Mock plugin integration point is already in place
-- Manifest validation step is already chained in
-- Alternative and cold-driver entry branches can already be walked through
+- The protocol message order is already established
+- The mock plugin integration point is already in place
+- The manifest validation step is already chained in
+- The alternative and cold-driver entry branches can already be walked through
 
-In other words, `upy-analyze-plugin` has moved from "static documentation" to "walkable structure".
+In other words, `upy-analyze-plugin` has moved from "static documentation" to a "walkable structure".

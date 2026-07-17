@@ -69,7 +69,7 @@
           {
             "name": "tasks.monitor_task",
             "path": "firmware/tasks/monitor_task.py",
-            "role": "Data Collection and Alarm",
+            "role": "Acquisition and Alarm",
             "provides": ["monitor_tick"],
             "depends_on": ["drivers.sht30_driver"],
             "depends_on_machine": false,
@@ -108,7 +108,7 @@
     ]
   },
   "flow": [
-    {"seq": 1, "phase": "boot", "action": "Boot", "detail": "boot.py", "source_line": 1, "on_error": "fatal"},
+    {"seq": 1, "phase": "boot", "action": "Startup", "detail": "boot.py", "source_line": 1, "on_error": "fatal"},
     {"seq": 2, "phase": "init", "action": "Initialize I2C", "detail": "GP4/GP5", "source_line": 12, "on_error": "fatal"},
     {"seq": 3, "phase": "scan", "action": "Scan SHT30", "detail": "0x44", "source_line": 18, "depends_on_step": 2, "on_error": "skip_device", "is_conditional": true, "branches": [{"condition": "found", "goto_step": 4}, {"condition": "missing", "goto_step": 6}]},
     {"seq": 4, "phase": "create", "action": "Create Driver", "detail": "SHT30", "source_line": 25, "depends_on_step": 3, "on_error": "fatal"},

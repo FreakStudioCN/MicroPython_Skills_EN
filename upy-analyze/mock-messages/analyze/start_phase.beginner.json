@@ -6,7 +6,7 @@
   "timestamp": "2026-06-21T00:00:00Z",
   "type": "start_phase",
   "payload": {
-    "user_description": "Make a temperature and humidity monitor, buzzer alarm when threshold is exceeded",
+    "user_description": "Make a temperature and humidity monitor, buzzer alarm when exceeding threshold",
     "pre_selected_board": null,
     "preferences": {
       "mode": "beginner",

@@ -35,7 +35,7 @@
             "required": ["gpio", "side", "label", "type"],
             "properties": {
               "gpio": { "type": "string", "description": "Pin number, e.g., GP4, GP5, 3V3" },
-              "physical_pin": { "type": "integer", "description": "Physical pin position number (for DIP package, e.g., Pico's pin 6 = GP4)" },
+              "physical_pin": { "type": "integer", "description": "Physical pin position number (for DIP packages, e.g., Pico's pin 6 = GP4)" },
               "side": { "type": "string", "enum": ["left", "right", "top", "bottom"], "description": "Which side of the chip the pin is on" },
               "pos": { "type": "integer", "description": "Sequential position on the side (0-based or 1-based)" },
               "label": { "type": "string", "description": "Pin function label, e.g., I2C0 SDA, Buzzer" },
@@ -45,7 +45,7 @@
                          "spi_mosi", "spi_miso", "spi_sck", "spi_cs",
                          "uart_tx", "uart_rx", "gpio_out", "gpio_in", "gpio_in_pullup",
                          "adc", "pwm", "i2s", "special"],
-                "description": "Pin electrical type, determines rendering color and icon"
+                "description": "Electrical type of the pin, determines rendering color and icon"
               },
               "conflict": { "type": "string", "description": "Conflict description (e.g., 'Startup sensitive, avoid using')" }
             }
@@ -56,7 +56,7 @@
 
     "buses": {
       "type": "array",
-      "description": "List of shared communication buses. One bus = a set of shared physical lines + all devices attached to it",
+      "description": "List of shared communication buses. One bus = a set of shared physical lines + all devices attached to them",
       "items": {
         "type": "object",
         "required": ["type", "id", "signals", "devices"],
@@ -116,11 +116,11 @@
         "type": "object",
         "required": ["id", "name", "type"],
         "properties": {
-          "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$", "description": "Stable component ID, connections reference components via this ID" },
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$", "description": "Stable component ID, referenced by connections" },
           "name": { "type": "string", "description": "Display name, e.g., ESP32 DevKit, INMP441 Mic" },
           "type": { "type": "string", "description": "Component category, e.g., mcu, microphone, audio_amplifier, led, button, sensor" },
           "model": { "type": "string", "description": "Device model" },
-          "interface": { "type": "string", "description": "Primary interface, e.g., GPIO, I2C, SPI, I2S, UART" },
+          "interface": { "type": "string", "description": "Main interface, e.g., GPIO, I2C, SPI, I2S, UART" },
           "notes": { "type": "string" },
           "pins": {
             "type": "array",
@@ -142,13 +142,13 @@
 
     "connections": {
       "type": "array",
-      "description": "Actual electrical connections between components. Each item represents a signal line, power line, or ground line, and retains the pin names at both ends.",
+      "description": "Actual electrical connections between components. Each item represents a signal line, power line, or ground line, preserving pin names at both ends.",
       "items": {
         "type": "object",
         "required": ["signal", "from", "to"],
         "properties": {
           "net": { "type": "string", "description": "Optional net name, for idempotency and deduplication" },
-          "signal": { "type": "string", "description": "Line name or signal name, e.g., I2S1 BCK, 3V3, GND" },
+          "signal": { "type": "string", "description": "Wire name or signal name, e.g., I2S1 BCK, 3V3, GND" },
           "kind": { "type": "string", "enum": ["signal", "power", "ground"], "default": "signal", "description": "Connection category" },
           "protocol": { "type": "string", "description": "Protocol or electrical group, e.g., I2S, I2C, GPIO" },
           "direction": { "type": "string", "enum": ["mcu_to_device", "device_to_mcu", "bidirectional", "power", "ground"], "description": "Signal direction" },
@@ -200,7 +200,7 @@
 
     "canvas": {
       "type": "object",
-      "description": "Layout coordinates (populated by layout algorithm, renderer uses this as reference)",
+      "description": "Layout coordinates (populated by layout algorithm, used as reference by renderer)",
       "properties": {
         "width_px": { "type": "integer", "description": "Canvas width" },
         "height_px": { "type": "integer", "description": "Canvas height" },
@@ -227,7 +227,7 @@
 
     "alerts": {
       "type": "array",
-      "description": "Auto-generated notes (produced by rule engine, LLM does not participate)",
+      "description": "Auto-generated notes (produced by rule engine, LLM not involved)",
       "items": {
         "type": "object",
         "required": ["level", "msg"],
@@ -248,7 +248,7 @@
         "component": { "type": "string", "description": "Component id or name" },
         "pin": { "type": "string", "description": "Pin name on this component side, e.g., GPIO14, BCLK, VCC" },
         "role": { "type": "string", "description": "Functional role on this pin, e.g., I2S1 BCK, DIN, 3V3" },
-        "label": { "type": "string", "description": "Display label; if present, takes priority for rendering" },
+        "label": { "type": "string", "description": "Display label; if present, takes precedence for rendering" },
         "gpio": { "type": "string", "description": "If this end is an MCU GPIO, can additionally record the GPIO number" }
       }
     }

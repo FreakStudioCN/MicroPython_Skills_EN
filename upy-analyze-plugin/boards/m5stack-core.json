@@ -27,7 +27,7 @@
   "typical_use_cases": ["Rapid prototyping", "Display projects", "Portable devices", "Educational demonstrations"],
   "beginner_friendly": true,
   "price_yuan": 120,
-  "notes": "Integrated 2-inch color screen + 3 buttons + battery management + magnetic case, ready to use out of the box. Few GPIO pins exposed, limited expandability",
+  "notes": "Integrated 2-inch color screen + 3 buttons + battery management + magnetic shell, ready to use out of the box. Few GPIO pins exposed, limited expandability",
 
   "onboard_peripherals": [
     {
@@ -50,7 +50,7 @@
         "install_cmd": "mpremote mip install https://upypi.net/pkgs/ili934x-mpy/latest/package.json"
       },
       "always_used": true,
-      "notes": "320x240, 2.0 inch TFT. SPI bus is always occupied (only hardware SPI). rst=-1 means controlled by ESP32 RST pin, no GPIO occupied; backlight=-1 means always on by default, no GPIO occupied"
+      "notes": "320x240, 2.0 inch TFT. SPI bus always occupied (only hardware SPI). rst=-1 means controlled by ESP32 RST pin, no GPIO occupied; backlight=-1 means always on by default, no GPIO occupied"
     },
     {
       "name": "MPU6886 IMU",
@@ -93,7 +93,7 @@
       "interface": "SPI",
       "occupied_pins": { "cs": 4, "mosi": 23, "miso": 19, "clk": 18 },
       "always_used": false,
-      "notes": "TF card slot shares the SPI bus (MOSI/CLK shared with LCD), only additionally occupies CS=GPIO4. Release GPIO4 when TF card is not used"
+      "notes": "TF card slot shares SPI bus (MOSI/CLK shared with LCD), only additionally occupies CS=GPIO4. Release GPIO4 when TF card is not used"
     },
     {
       "name": "Power Management IC (IP5306)",
@@ -132,13 +132,13 @@
     },
     "pin_options": {},
     "notes": [
-      "GPIO Matrix allows software remapping, but hardware bus resources are extremely limited:",
+      "GPIO Matrix supports software remapping, but hardware bus resources are extremely limited:",
       "  - I2C: Onboard already occupies SDA=21/SCL=22 (shared by MPU6886 + IP5306)",
-      "    If connecting external I2C sensors, they can share the bus if addresses don't conflict; otherwise use SoftI2C on other GPIOs",
+      "    If connecting external I2C sensors, they can share the bus if addresses don't conflict; otherwise use SoftI2C to emulate on other GPIOs",
       "  - SPI: Onboard already occupies MOSI=23/CLK=18, MISO can be 19 or 38 (LCD uses 38, TF card uses 19, sharing MOSI/CLK)",
       "    If connecting external SPI devices, CS can be any free GPIO, other pins share the bus with onboard peripherals",
       "  - UART: Only UART0 (TX=1/RX=3), already occupied by USB serial chip",
-      "    If needing external UART devices, use SoftUART on other GPIOs",
+      "    If connecting external UART devices, use SoftUART to emulate on other GPIOs",
       "Available GPIOs (approximately 10 total):",
       "  - GPIO 0/2/4/12/13/14/15/16/17/19/25/26/27/32/33/34/35/36/37/38/39",
       "  - Among them, 0/2/12/15 are strapping pins, use with caution",

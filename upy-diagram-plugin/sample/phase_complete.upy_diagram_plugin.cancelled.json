@@ -28,7 +28,7 @@
         "severity": "info",
         "retryable": true,
         "recoverable": true,
-        "suggested_actions": ["Resume from checkpoint", "Re-run the diagram phase"]
+        "suggested_actions": ["Continue from checkpoint", "Re-run the diagram phase"]
       }
     ]
   }

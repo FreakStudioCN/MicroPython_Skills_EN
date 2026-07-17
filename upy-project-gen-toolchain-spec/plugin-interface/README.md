@@ -1,6 +1,6 @@
 # Plugin Interface Documentation
 
-> Intended audience:
+> Target readers:
 > - **Plugin-side engineers** (TypeScript / VS Code Extension) — implement UI + local I/O passthrough
 > - **Server-side engineers** (Python / LLM integration) — implement skill scheduling + protocol message generation
 > - **Skill maintainers** (embedded background) — modify SKILL.md to adapt to the plugin protocol
@@ -12,7 +12,7 @@
 ```
 plugin-interface/
 ├── README.md                    ← This file, directory index
-├── 01-architecture.md           ← System architecture: responsibility boundaries of plugin/server/skill
+├── 01-architecture.md           ← System architecture: responsibilities and boundaries of plugin/server/skill
 ├── 02-protocol.md               ← Communication protocol: complete JSON Schema for 7 message types
 ├── 03-parallel-dev.md           ← Parallel development strategy: how both sides develop independently + mock testing
 │
@@ -44,8 +44,8 @@ plugin-interface/
 
 ## Reading Order
 
-| Role | Read First | Read Next | Read Last |
-|------|------------|-----------|-----------|
+| Role | Read First | Read Next | Finally |
+|------|------------|-----------|---------|
 | Plugin-side engineer | `01-architecture.md` → `02-protocol.md` | `03-parallel-dev.md` (plugin-side section) | `mock-messages/README.md` |
 | Server-side engineer | `01-architecture.md` → `02-protocol.md` | `skills/_template.md` | Specific skill documentation |
 | Skill maintainer | `01-architecture.md` | `skills/_template.md` | `02-protocol.md` (understand message types) |

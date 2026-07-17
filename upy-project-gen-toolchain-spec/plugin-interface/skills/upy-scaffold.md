@@ -11,17 +11,17 @@
 | Item | Content |
 |------|---------|
 | Phase | scaffold |
-| Upstream Skill | upy-select-hw (auto-entry) or incremental trigger from any phase (user adds device) |
+| Upstream Skill | upy-select-hw (automatic entry) or incremental trigger from any phase (user adds device) |
 | Downstream Skill | upy-generate |
 | One-line Responsibility | Determine scheduling mode → Render templates → Generate complete firmware/ skeleton (no business logic) |
 
-**Core Constraint:** Do not write business tasks, fill in driver code, or convert async drivers. Only build the skeleton; business logic is left for upy-generate.
+**Core Constraint:** Do not write business tasks, fill driver code, or convert async drivers. Only build the skeleton; business logic is left for upy-generate.
 
 **Two Operating Modes:**
 
 | Mode | Trigger | Behavior |
 |------|---------|----------|
-| `full` | upy-select-hw completes | Generate a complete new firmware/ skeleton |
+| `full` | upy-select-hw completes | Generate a complete firmware/ skeleton from scratch |
 | `incremental` | User adds a device in a subsequent phase | Generate only a `drivers/<name>_driver/__init__.py` stub for the new device |
 
 ---
@@ -45,11 +45,11 @@ The plugin sends **1 message** to start this skill:
 
 | Field | Type | Required | Source | Description |
 |-------|------|----------|--------|-------------|
-| `mode` | string | Yes | Server determines | `"full"` new generation / `"incremental"` incremental stub |
-| `manifest` | object | Yes | upy-select-hw phase_complete | Complete project-manifest.json |
+| `mode` | string | Yes | Server determines | `"full"` for fresh generation / `"incremental"` for incremental stub |
+| `manifest` | object | Yes | upy-select-hw's phase_complete | Complete project-manifest.json |
 | `new_devices` | array | Required for incremental | User-added device list | `[{name, driver: {source, install_cmd}}]` |
 
-**Mode determination logic (server-side):**
+**Mode Determination Logic (Server-Side):**
 - `manifest.phase === "select-hw"` and first entry → `full`
 - User clicks "Add Device" in a subsequent phase → after select-hw incrementally assigns pins, scaffold receives `incremental`
 
@@ -61,13 +61,13 @@ The plugin sends **1 message** to start this skill:
 
 ```
 full mode:
-  Step 1 Approval for selection
+  Step 1 Approval for Configuration
     → approval_request #1: Combined card (scheduling mode + extra modules + custom files)
-  
-  Step 2 Documentation reference
+
+  Step 2 Documentation Reference
     → [Internal] WebFetch asyncio/_thread official docs (server has network, invisible to plugin)
-  
-  Step 3 Generate skeleton
+
+  Step 3 Generate Skeleton
     → status_update "Rendering board.py..."
     → status_update "Rendering conf.py / boot.py..."
     → status_update "Rendering main.py (mode: timer)..."
@@ -75,10 +75,10 @@ full mode:
     → status_update "Generating drivers/ stubs..."
     → status_update "Copying tools/ deployment tools..."
     → file_operation × N (one write message per generated file)
-  
+
   Step 4 Validation
     → script_run: flake8
-  
+
   Step 5 Output
     → phase_complete: Result panel
 
@@ -98,23 +98,23 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
 ┌──────────────────────────────────────────┐
 │  Project Skeleton Configuration          │
 │                                          │
-│  ▸ Scheduling Mode (single select)       │
-│  ◉ Timer tick (recommended)              │
+│  ▸ Scheduling Mode (Single Select)       │
+│  ◉ Timer tick (Recommended)              │
 │     ISR counting + main loop polling, suitable for pure sensor acquisition │
 │  ○ asyncio                               │
 │     uasyncio coroutines, suitable for WiFi / LCD projects │
 │  ○ _thread                               │
 │     Multi-threading, suitable for blocking operations │
 │                                          │
-│  ▸ Extra Modules (multi-select)          │
-│  ☑ Logging system (lib/logger/*)         │
-│  ☑ Deployment tools (tools/flash_device.py) │
-│  ☐ Performance timer (lib/time_helper.py) │
-│  ☐ Maintenance tasks (tasks/maintenance.py) │
-│  ☐ PC log reader (tools/read_device_log.py) │
+│  ▸ Extra Modules (Multi-Select)          │
+│  ☑ Logging System (lib/logger/*)         │
+│  ☑ Deployment Tools (tools/flash_device.py) │
+│  ☐ Performance Timer (lib/time_helper.py) │
+│  ☐ Maintenance Tasks (tasks/maintenance.py) │
+│  ☐ PC Log Reader (tools/read_device_log.py) │
 │                                          │
-│  ▸ Custom Files (optional)               │
-│  [+ Add custom directory/file]           │
+│  ▸ Custom Files (Optional)               │
+│  [+ Add Custom Directory/File]           │
 │                                          │
 │  [Confirm, Start Skeleton Generation]  [Modify Configuration] │
 └──────────────────────────────────────────┘
@@ -134,7 +134,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
     "items": [
       {
         "id": "mode_timer",
-        "name": "Timer tick (recommended)",
+        "name": "Timer tick (Recommended)",
         "subtitle": "ISR counting + main loop polling, suitable for pure sensor acquisition",
         "meta": "★ Recommended",
         "selected": true,
@@ -158,7 +158,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
       },
       {
         "id": "module_logger",
-        "name": "Logging system",
+        "name": "Logging System",
         "subtitle": "lib/logger/* — logging + rotating_logger, device-side log recording and rotation",
         "meta": "Recommended",
         "selected": true,
@@ -166,7 +166,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
       },
       {
         "id": "module_flash",
-        "name": "Deployment tools",
+        "name": "Deployment Tools",
         "subtitle": "tools/flash_device.py — mpy compilation + firmware flashing + file upload",
         "meta": "Recommended",
         "selected": true,
@@ -174,7 +174,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
       },
       {
         "id": "module_time_helper",
-        "name": "Performance timer",
+        "name": "Performance Timer",
         "subtitle": "lib/time_helper.py — timed_function / timed_coro decorators",
         "meta": "",
         "selected": false,
@@ -182,7 +182,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
       },
       {
         "id": "module_maintenance",
-        "name": "Maintenance tasks",
+        "name": "Maintenance Tasks",
         "subtitle": "tasks/maintenance.py — GC check + idle callback",
         "meta": "",
         "selected": false,
@@ -190,7 +190,7 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
       },
       {
         "id": "module_log_tools",
-        "name": "PC log tools",
+        "name": "PC Log Tools",
         "subtitle": "tools/read_device_log.py + log_report.py — PC-side log reading and JSON report",
         "meta": "",
         "selected": false,
@@ -212,17 +212,17 @@ Combines the three AskUserQuestions from the current SKILL.md (scheduling mode +
 }
 ```
 
-**item_groups field description (new):**
+**item_groups Field Description (New):**
 
 Groups items by `group` for rendering; different groups can have different selection modes:
 - `scheduler_mode`: `multi_select: false` → single select (radio button)
 - `extra_modules`: `multi_select: true` → multi-select (checkbox)
 
-**Scheduling mode recommendation rules (LLM determines server-side based on manifest, only marks ★ Recommended):**
+**Scheduling Mode Recommendation Rules (LLM determines server-side based on manifest, only marks ★ Recommended):**
 
 | Condition | Recommendation |
 |-----------|----------------|
-| devices has display with LVGL | async |
+| devices includes display with LVGL | async |
 | requirements.network = wifi | async |
 | Default | timer |
 
@@ -261,16 +261,16 @@ The server first runs `init_scaffold.py` (stdin reads manifest, stdout outputs J
 }
 ```
 
-**Complete file list for full mode (timer mode + all modules):**
+**Complete File List for full Mode (timer mode + all modules):**
 
 | # | File Path | Generation Method | Description |
 |---|-----------|-------------------|-------------|
 | 1 | `firmware/board.py` | Template rendering | Pin mapping BOARDS dictionary + query functions |
-| 2 | `firmware/conf.py` | Template rendering | Sample rate / log / watchdog constants |
+| 2 | `firmware/conf.py` | Template rendering | Sampling rate / logging / watchdog constants |
 | 3 | `firmware/boot.py` | Template rendering | WDT + emergency_exception_buf |
 | 4 | `firmware/main.py` | Template rendering | Hardware instantiation + scheduler framework by mode |
-| 5 | `firmware/lib/logger/logging.py` | Pure copy | Logging core |
-| 6 | `firmware/lib/logger/rotating_logger.py` | Pure copy | Rotating logger |
+| 5 | `firmware/lib/logger/logging.py` | Pure copy | Core logging |
+| 6 | `firmware/lib/logger/rotating_logger.py` | Pure copy | Rotating log |
 | 7 | `firmware/lib/logger/__init__.py` | Pure copy | Logger package export |
 | 8 | `firmware/lib/scheduler/timer_sched.py` | Pure copy | Timer scheduler (timer mode only) |
 | 9 | `firmware/lib/scheduler/__init__.py` | Generated | `from .timer_sched import Scheduler` |
@@ -299,7 +299,7 @@ The server first runs `init_scaffold.py` (stdin reads manifest, stdout outputs J
 | — | `.upy/scripts/flash_device.py` | Pure copy | Flashing + verification (used by deploy) |
 | — | `.upy/scripts/read_device_log.py` | Pure copy | Device log reading (used by deploy) |
 | — | `.upy/scripts/run_on_device.py` | Pure copy | REPL execution + capture (shared by gen-driver + deploy) |
-| — | `.upy/scripts/hardware_sanity.py` | Pure copy | Hardware signal verification (used by autofix) |
+| — | `.upy/scripts/hardware_sanity.py` | Pure copy | Hardware signal validation (used by autofix) |
 | — | `.upy/scripts/triage.py` | Pure copy | Automatic troubleshooting (used by autofix) |
 | — | `.upy/error_lib.json` | Pure copy | Error library template (used by autofix) |
 
@@ -380,7 +380,7 @@ The server first runs `init_scaffold.py` (stdin reads manifest, stdout outputs J
 }
 ```
 
-**manifest_content new/updated fields:**
+**manifest_content New/Updated Fields:**
 - `phase`: `"scaffold"`
 - `scaffold_mode`: `"timer"` / `"async"` / `"thread"`
 - `scaffold_modules`: `["logger", "flash_device", ...]`
@@ -391,14 +391,14 @@ The server first runs `init_scaffold.py` (stdin reads manifest, stdout outputs J
 
 7 changes total, arranged by execution step:
 
-| # | Location | Current Behavior | Changed To | Reason |
-|---|----------|-----------------|------------|--------|
+| No. | Location | Current Behavior | Change To | Reason |
+|-----|----------|------------------|-----------|--------|
 | 1 | Pre-checks | `python --version` + `python -c "import flake8"` | Remove. Dependency checks guaranteed by server environment | Plugin user cannot see server environment |
 | 2 | Step 1A | AskUserQuestion single-select scheduling mode | Merge into `scheduler_mode` group of approval_request #1 (single select, with recommendation markers) | 3 questions merged into 1 card |
-| 3 | Step 1B | AskUserQuestion multi-select extra modules | Merge into `extra_modules` group of same approval_request (multi-select) | Same as above |
-| 4 | Step 1C | AskUserQuestion custom files | Merge into same approval_request, implemented via `allow_add: true` + input field | Same as above |
+| 3 | Step 1B | AskUserQuestion multi-select extra modules | Merge into `extra_modules` group of the same approval_request (multi-select) | Same as above |
+| 4 | Step 1C | AskUserQuestion custom files | Merge into the same approval_request, implemented via `allow_add: true` + input field | Same as above |
 | 5 | Step 2 | WebFetch asyncio/_thread official docs | Unchanged. Server has network, invisible to plugin | No change needed |
-| 6 | Step 3 | `python init_scaffold.py --project-dir {dir} --mode {mode}` writes to local disk | `python init_scaffold.py --mode {mode} --manifest - < manifest.json` (stdin in, stdout out JSON). Server parses JSON then sends `file_operation` sequence to plugin | Server does not write to local disk |
+| 6 | Step 3 | `python init_scaffold.py --project-dir {dir} --mode {mode}` writes to local disk | `python init_scaffold.py --mode {mode} --manifest - < manifest.json` (stdin in, stdout out JSON). Server parses JSON and sends `file_operation` sequence to plugin | Server does not write to local disk |
 | 7 | New incremental | No such mode | `--mode incremental --new-devices '[{...}]'` only generates `drivers/<name>_driver/__init__.py` stub for new device | Support adding devices during deploy phase |
 
 ---
@@ -411,13 +411,13 @@ The server first runs `init_scaffold.py` (stdin reads manifest, stdout outputs J
 
 | Change | Content |
 |--------|---------|
-| Input method | `--project-dir` changed to `--manifest -` (read manifest JSON from stdin) |
+| Input method | `--project-dir` changed to `--manifest -` (reads manifest JSON from stdin) |
 | Output method | No longer writes to disk. Outputs JSON to stdout: `{phase, mode, directories[], files[{path, content, encoding}], summary}` |
 | Template engine | Introduce `string.Template` (Python standard library, zero extra dependencies), replacing `lines.append()` concatenation in 5 `generate_*` functions |
 | Incremental mode | New `--mode incremental --new-devices '[{name, driver}]'` |
 | flake8 removal | Remove `subprocess.run(flake8)` at end of script, replaced by Phase 4's `script_run` message trigger |
 
-**string.Template replacement example:**
+**string.Template Replacement Example:**
 
 ```python
 from string import Template
@@ -429,7 +429,7 @@ def render_template(tmpl_name, variables):
     return tmpl.safe_substitute(variables)
 ```
 
-**init_scaffold.py core flow (pseudocode):**
+**init_scaffold.py Core Flow (Pseudo-code):**
 
 ```python
 def main():
@@ -446,7 +446,7 @@ def main():
         content = render_template(tmpl, variables)
         files.append({"path": tmpl, "content": content, "encoding": "utf-8"})
 
-    # 2. Pure copy files (determine which to copy based on mode and user selections)
+    # 2. Pure copy files (determined by mode and user selections)
     for src in COPY_FILES[mode]:
         content = read_raw(os.path.join(TEMPLATES_DIR, src))
         files.append({"path": "firmware/" + src, "content": content, "encoding": "utf-8"})
@@ -486,13 +486,13 @@ def main():
 |---------------|---------|---------------|
 | `board.py.tmpl` | Pin mapping constants | `${MCU_MODEL}` `${BOARD_ID}` `${I2C_PINS_BLOCK}` `${FIXED_PINS_BLOCK}` `${I2C_FREQ}` `${UART_BAUD}` `${BOOT_SENSITIVE_LIST}` `${FLASH_PINS_LIST}` `${INPUT_ONLY_LIST}` |
 | `conf.py.tmpl` | Project configuration constants | `${PROJECT_NAME}` `${MCU_MODEL}` `${FW_VERSION}` `${SAMPLE_INTERVAL_MS}` `${LOG_DIR}` `${LOG_LEVEL}` |
-| `boot.py.tmpl` | Boot guide | `${GENERATED_AT}` (almost no variables, only emergency_exception_buf template) |
+| `boot.py.tmpl` | Boot sequence | `${GENERATED_AT}` (almost no variables, only emergency_exception_buf template) |
 | `main_timer.py.tmpl` | Timer mode entry | `${PROJECT_NAME}` `${I2C_INIT_BLOCK}` `${GPIO_INIT_BLOCK}` |
 | `main_async.py.tmpl` | asyncio mode entry | Same as above |
 | `main_thread.py.tmpl` | _thread mode entry | Same as above |
 | `README.md.tmpl` | Project README | `${PROJECT_NAME}` `${MODE}` `${MCU_MODEL}` `${MCU_BOARD}` `${FIRMWARE_URL}` `${BOM_TABLE_ROWS}` `${PINOUT_TABLE_ROWS}` `${TOTAL_PRICE}` |
 
-Multi-line block variables (`${I2C_INIT_BLOCK}`, `${GPIO_INIT_BLOCK}`, `${BOM_TABLE_ROWS}`, `${PINOUT_TABLE_ROWS}`, `${FIXED_PINS_BLOCK}`, `${I2C_PINS_BLOCK}`) are pre-computed by the Python script from manifest.pinout/manifest.bom as strings; the template contains a single placeholder.
+Multi-line block variables (`${I2C_INIT_BLOCK}`, `${GPIO_INIT_BLOCK}`, `${BOM_TABLE_ROWS}`, `${PINOUT_TABLE_ROWS}`, `${FIXED_PINS_BLOCK}`, `${I2C_PINS_BLOCK}`) are pre-computed as strings by the Python script from manifest.pinout/manifest.bom. The template contains a single placeholder.
 
 ### 5.3 Template Directory Structure
 
@@ -522,7 +522,7 @@ upy-scaffold/templates/
     └── log_report.py
 ```
 
-The 9 pure-copy `.py` files are complete, runnable code that do not contain `${variable}` placeholders. The script reads them and outputs them as-is.
+The 9 pure-copy `.py` files are complete, runnable code. They contain no `${variable}` placeholders; the script reads and outputs them as-is.
 
 ### 5.4 init_scaffold.py stdout JSON Specification
 
@@ -562,18 +562,18 @@ The 9 pure-copy `.py` files are complete, runnable code that do not contain `${v
 }
 ```
 
-After receiving, the server iterates through the `files` array and sends `file_operation` (op: "write") messages one by one to the plugin side for writing to local disk. The `directories` array is used by the plugin side to pre-create directories.
+The server iterates through the `files` array and sends one `file_operation` (op: "write") per file to the plugin side for local disk writing. The `directories` array is used by the plugin side to pre-create directories.
 
 ---
 
-## VI. UI Components Needed on Plugin Side
+## VI. UI Components Required on Plugin Side
 
 | Component | Corresponding Message | Key Functionality |
-|-----------|----------------------|-------------------|
-| Progress timeline | status_update × 5~8 messages | Reuse existing timeline component |
-| Skeleton configuration card | approval_request #1 | Scheduling mode single select + extra modules multi-select + custom file input field. **New `item_groups` group rendering** (different groups have different selection modes) |
-| File tree preview | phase_complete artifact[0] | Tree directory display of generated file structure |
-| File writing | file_operation × N | Write files to local disk one by one (needs new "Skeleton generation in progress, writing files..." progress prompt) |
+|-----------|-----------------------|-------------------|
+| Progress Timeline | status_update × 5~8 messages | Reuse existing timeline component |
+| Skeleton Configuration Card | approval_request #1 | Scheduling mode single select + extra modules multi-select + custom file input field. **New `item_groups` group rendering** (different groups have different selection modes) |
+| File Tree Preview | phase_complete artifact[0] | Tree directory display of generated file structure |
+| File Writing | file_operation × N | Write files to local disk one by one (needs new "Skeleton generation in progress, writing files..." progress indicator) |
 
 ### item_groups Group Rendering Specification
 
@@ -581,15 +581,15 @@ When approval_request contains the `item_groups` field, the plugin should render
 
 ```
 ┌─ scheduler_mode: "Scheduling Mode" (radio) ─┐
-│  ◉ Timer tick (recommended)                 │
+│  ◉ Timer tick (Recommended)                 │
 │  ○ asyncio                                  │
 │  ○ _thread                                  │
 └─────────────────────────────────────────────┘
 
 ┌─ extra_modules: "Extra Modules" (checkbox) ┐
-│  ☑ Logging system                          │
-│  ☑ Deployment tools                        │
-│  ☐ Performance timer                       │
+│  ☑ Logging System                          │
+│  ☑ Deployment Tools                        │
+│  ☐ Performance Timer                       │
 └────────────────────────────────────────────┘
 ```
 
@@ -603,11 +603,11 @@ Each group's `multi_select` in `item_groups` determines whether it renders as ra
 
 1. Manually send `approval_request` #1 (skeleton configuration card) → Verify:
    - `item_groups` group rendering is correct (scheduler_mode single select, extra_modules multi-select)
-   - Switching scheduling modes, recommendation markers follow display
+   - Switching scheduling modes, recommendation markers follow
    - Checking/unchecking extra modules
-   - Clicking "Add custom file" pops up input field
+   - Clicking "Add Custom File" opens input field
 2. Manually send `phase_complete` (with file_tree artifact) → Verify file tree renders correctly
-3. Manually send `file_operation` sequence (5 writes) → Verify files are written to local disk one by one + progress prompt
+3. Manually send `file_operation` sequence (5 writes) → Verify files are written to local disk one by one + progress indicator
 
 ### Skill-Side Testing (No Plugin)
 
@@ -625,6 +625,6 @@ Each group's `multi_select` in `item_groups` determines whether it renders as ra
    - Verify only 1 file is generated: `firmware/drivers/dht22_driver/__init__.py`
 4. **init_scaffold.py template rendering:**
    - Given a standard manifest, run `python init_scaffold.py --mode timer --manifest - < test_manifest.json`
-   - Verify board.py I2C pins in stdout JSON match manifest.pinout
-   - Verify main.py GPIO initialization matches manifest.pinout
-   - Verify README.md BOM table matches manifest.bom
+   - Verify board.py's I2C pins in stdout JSON match manifest.pinout
+   - Verify main.py's GPIO initialization matches manifest.pinout
+   - Verify README.md's BOM table matches manifest.bom

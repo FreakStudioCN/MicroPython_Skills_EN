@@ -250,7 +250,7 @@
   "generation": {
     "generated_at": "2026-07-15",
     "generator": "scripts/generate_official_board_jsons_v3_20260715.py",
-    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython官方板卡资料收集Excel模板-2026-07-12(1).csv",
+    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython Official Board Data Collection Excel Template-2026-07-12(1).csv",
     "pending_json": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\ESP8266_GENERIC.json",
     "source_cache_dir": "G:\\blockless-plugin-course(1)\\_tmp_mpy_board_source_cache_20260715\\ESP8266_GENERIC",
     "output_file": "G:\\blockless-plugin-course(1)\\_tmp_official_board_json_v3_20260715\\esp8266-generic.json",

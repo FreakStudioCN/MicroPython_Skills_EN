@@ -1,22 +1,22 @@
 ---
 name: upy-gen-driver-plugin
-description: A plugin-oriented workflow skill for generating missing MicroPython hardware drivers from datasheets, Arduino/C/C++ sources, GitHub repositories, chip models, or cold-driver items in the current project. Applicable when the global plugin tool "Generate Missing Hardware Driver" is triggered, when `devices[].driver.status=cold_driver_required` exists in the manifest, or when deploy/autofix feedback indicates a missing or broken hardware driver, and the flow requires session/checkpoint/resume, retry, timeout, cancellation, permission prompts, structured errors, and artifact manifests.
+description: Plugin-based workflow skill for generating missing MicroPython hardware drivers from datasheets, Arduino/C/C++ sources, GitHub repositories, chip models, or current project cold-driver items. Applicable when the global plugin tool "Generate Missing Hardware Driver" is triggered, `devices[].driver.status=cold_driver_required` exists in the manifest, or deploy/autofix feedback indicates a missing/broken hardware driver, and the flow requires session/checkpoint/resume, retry, timeout, cancellation, permission prompts, structured errors, and artifact manifests.
 ---
 
 # upy-gen-driver-plugin
 
-Generate missing MicroPython drivers, but do not modify the legacy `upy-gen-driver` skill. This skill is the plugin-oriented workflow version: local files, scripts, devices, and user confirmation operations are all expressed via protocol messages, while outputting recoverable artifacts for both plugin execution and local mock testing.
+Generate missing MicroPython drivers without modifying the legacy `upy-gen-driver` skill. This skill is the plugin-based workflow version: local files, scripts, devices, and user confirmation operations are expressed via protocol messages, while outputting recoverable artifacts for both plugin execution and local mock testing.
 
 ## Operating Modes
 
-- `pipeline`: Enter from an existing project session, typically positioned after scaffold and before generate. Reads the upstream `manifest_content`, writes project driver files, then returns to `upy-generate-plugin`.
-- `standalone`: Enter from the global plugin tool "Generate Missing Hardware Driver". Requires the user to provide a PDF, Arduino/C/C++ source, GitHub URL, chip model, or image input, then generates a standalone driver package and test materials.
+- `pipeline`: Enter from an existing project session, typically after scaffold and before generate. Reads upstream `manifest_content`, writes project driver files, then returns to `upy-generate-plugin`.
+- `standalone`: Enter from the plugin global tool "Generate Missing Hardware Driver". Requires the user to provide a PDF, Arduino/C/C++ source, GitHub URL, chip model, or image input, then generates a standalone driver package and test materials.
 - `resume`: Continue from `session_state.upy_gen_driver_plugin.json`. Before reusing any checkpoint, the artifact hash must be verified first.
 - `fix`: Repair a generated driver based on deploy/autofix feedback, prioritizing minimal changes.
 
 ## Required References
 
-Only read these references when needed:
+Read these references only when needed:
 
 - `references/protocol_fields.md`: message envelope, start payload, checkpoint, phase_complete, file_manifest, permissions, structured errors.
 - `references/legacy_upy_gen_driver_rules.md`: Legacy driver-generation rules that must be preserved.
@@ -26,32 +26,32 @@ Only read these references when needed:
 
 - Do not overwrite or edit `G:\MicroPython_Skills\upy-gen-driver`.
 - Use `phase="upy-gen-driver-plugin"` for the envelope, and `gen-driver` for the payload/domain phase.
-- The protocol identity of this skill is fixed as `upy-gen-driver-plugin`. Do not abbreviate, rename, alias, or infer it as `upy-driver-plugin`, `driver`, `gen-driver-plugin`, or any other name; if old artifacts using these names are found, they must be treated as stale/wrong-phase artifacts and regenerated with the correct identity.
-- The final protocol file name must be `phase_complete.upy_gen_driver_plugin.json`; the session state file name must be `session_state.upy_gen_driver_plugin.json`. Do not output `phase_complete.upy_driver_plugin.json`, `session_state.upy_driver_plugin.json`, or any other phase file name.
+- The protocol identity for this skill is fixed as `upy-gen-driver-plugin`. Do not abbreviate, rename, alias, or infer it as `upy-driver-plugin`, `driver`, `gen-driver-plugin`, or any other name; if legacy artifacts using these names are found, they must be treated as stale/wrong-phase artifacts and regenerated with the correct identity.
+- The final protocol filename must be `phase_complete.upy_gen_driver_plugin.json`; the session state filename must be `session_state.upy_gen_driver_plugin.json`. Do not output `phase_complete.upy_driver_plugin.json`, `session_state.upy_driver_plugin.json`, or any other phase filename.
 - All phase-scoped `idempotency_key`, `checkpoint_id`, `resume_phase`, and permission action keys must use the `upy-gen-driver-plugin` prefix; the `phase` and `domain_phase` in the business payload must only use `gen-driver`.
-- Plugin invocations and local skill-call tests must use the same message contract. Local tests can execute files directly, but must still write out the `session_state`, permissions, file manifest, structured errors, and `phase_complete` artifacts that the plugin host would receive.
+- Plugin invocations and local skill-call tests must use the same message contract. Local tests can execute files directly, but must still write the `session_state`, permissions, file manifest, structured errors, and `phase_complete` artifacts that the plugin host would receive.
 - Do not manually write `session_state.upy_gen_driver_plugin.json`. State must be created or updated via `scripts/update_session_state.py`, and `scripts/update_session_state.py --session-dir <session_root> --check` must be run before writing `phase_complete`.
 - The final packaging must follow a fixed order: complete all artifacts and the final `session_state` update first, then generate a draft phase_complete, then run `scripts/finalize_phase_complete.py` to refresh `payload.file_manifest.files[].sha256/bytes` and write the final `phase_complete.upy_gen_driver_plugin.json`. After the final file is written, do not modify any files listed in the manifest.
-- Official artifact paths must be relative to `artifact_root` or `project_root`; do not write Windows drive paths into `phase_complete`.
+- Formal artifact paths must be relative to `artifact_root` or `project_root`; do not write Windows drive paths into `phase_complete`.
 - Treat `runtime_context.session_root` as the source of truth for the workflow session. Do not infer the current session from the latest `sessions/*` directory.
 - Default device addresses in MicroPython I2C driver code, debug drivers, test scripts, and wiring docs must use 7-bit addresses. Do not pass 8-bit transfer addresses containing the R/W bit to `scan()`, `readfrom_mem()`, `writeto_mem()`, or similar I2C APIs.
-- Write/read addresses like `0x3C/0x3D` from a datasheet can only be recorded as datasheet evidence; they must be normalized to a 7-bit address before code generation, e.g., `0x3C >> 1 == 0x1E`.
+- Write/read addresses like `0x3C/0x3D` from a datasheet can only be recorded as datasheet evidence; they must be normalized to a 7-bit address before generating code, e.g., `0x3C >> 1 == 0x1E`.
 - Use `permission_request` for local file, script, network, and device operations; use `approval_request` for user business choices.
 - Every local action must have a stable `idempotency_key`.
-- Different permission actions cannot reuse the same `idempotency_key`. Only retries of the same operation, same paths/command/network signature can reuse the key, and subsequent entries must include `retry_of`.
+- Different permission actions cannot reuse the same `idempotency_key`. Only retries of the same operation with the same paths/command/network signature can reuse the key, and subsequent entries must include `retry_of`.
 - Every script/device/approval wait must have a `timeout_ms`.
-- When the user cancels, no device is found, a timeout occurs, an artifact is stale, a capability is missing, or hardware verification is exhausted, output `result="partial"` with a checkpoint and `structured_errors[]`; do not claim success.
+- When user cancellation, no device, timeout, stale artifact, missing capability, or hardware verification exhaustion occurs, output `result="partial"` with a checkpoint and `structured_errors[]`; do not claim success.
 - The `session_state` for a partial result must record a recoverable anchor: `artifacts[]` or `last_ok_artifact` must contain at least one trusted written artifact.
-- Use `HOST_CAPABILITY_MISSING` when a host capability is missing, and specify the capability name in `details.missing_capability`; only use `DEVICE_NOT_FOUND` when the host supports and has actually executed a device scan/run but still cannot find the device. Do not put `missing_capability=device_command` inside `DEVICE_NOT_FOUND`.
+- Use `HOST_CAPABILITY_MISSING` when a host capability is missing, and specify the capability name in `details.missing_capability`; only use `DEVICE_NOT_FOUND` when the host supports and has actually performed a device scan/run but still cannot find the device. Do not put `missing_capability=device_command` inside `DEVICE_NOT_FOUND`.
 - Hardware verification can only be skipped when the user explicitly chooses to do so, and the final result must include a warning. The default behavior is to save a checkpoint and wait for a subsequent resume.
-- When partial and verification is incomplete, write `hardware_verified=false` and `verification_mode="none"`. Do not mark a partial result with no device, cancellation, timeout, or ordinary unverified status as `verification_mode="mock"`.
-- `verification_mode="mock"` is only allowed for success results where a local mock self-test actually returns `SELF_TEST_PASS`; it still cannot set `hardware_verified=true`, cannot set `next_phase`, the manifest driver status must be `unverified`, and must not write `ready`.
-- File write actions for unverified `{chip}.py` must use the `write_driver_artifact` idempotency key; `write_production_driver` is only allowed when `file_manifest.files[].role="production_driver"`.
-- For any unverified partial summary, description, artifact label, permission reason, or file_manifest description, do not write `production driver`; consistently write `driver artifact` or `unverified driver artifact`.
+- A partial result that has not completed verification must write `hardware_verified=false` and `verification_mode="none"`. Do not mark a partial result with no device, cancellation, timeout, or ordinary unverified status as `verification_mode="mock"`.
+- `verification_mode="mock"` is only allowed for success results where a local mock self-test actually returned `SELF_TEST_PASS`; it still cannot set `hardware_verified=true`, cannot set `next_phase`, the manifest driver status must be `unverified`, and must not write `ready`.
+- The file write action for an unverified `{chip}.py` must use the `write_driver_artifact` idempotency key; `write_production_driver` is only allowed when `file_manifest.files[].role="production_driver"`.
+- Any summary, description, artifact label, permission reason, or file_manifest description for an unverified partial must not write `production driver`; consistently write `driver artifact` or `unverified driver artifact`.
 - When retrying the same action, keep the same `session_id` and action-level `idempotency_key`; set `retry_of` to the original message id, and append a state event with `status="retrying"`.
 - Cancellation defaults to a recoverable partial result, unless the user explicitly discards artifacts. Keep the last trusted artifact and set the checkpoint to `cancelled`.
 - Timeouts must not be handled silently. Host, script, approval, and device timeouts must all be converted into structured errors; if it is possible to continue from a checkpoint, set `retryable=true`.
-- `DEVICE_NOT_FOUND` must have auditable device operation evidence: `payload.permissions[]` must contain at least one `device_scan` or `device_run`. If the current round only has file/script operations, or the host lacks device operation capabilities, do not write `DEVICE_NOT_FOUND`.
+- `DEVICE_NOT_FOUND` must have auditable device operation evidence: `payload.permissions[]` must contain at least one `device_scan` or `device_run` entry. If the current round only has file/script operations, or the host lacks device operation capabilities, do not write `DEVICE_NOT_FOUND`.
 - All user-visible text fields and text artifacts must be UTF-8 clean text. Do not output replacement characters, mojibake fragments, smart punctuation, mis-decoded punctuation, or anomalous short foreign text fragments mixed in Chinese/English; protocol copy, code comments, and Markdown documents must all use ASCII punctuation.
 
 ## Start Phase Contract
@@ -62,14 +62,14 @@ Envelope fields:
 
 | Field | Meaning |
 |---|---|
-| `protocol_version` | Protocol schema version. Use `"1.0"` before any breaking changes; refuse to continue if an unknown major version is encountered, do not guess compatibility. |
+| `protocol_version` | Protocol schema version. Use `"1.0"` before breaking changes; refuse to continue if an unknown major version is encountered, do not guess compatibility. |
 | `msg_id` | Unique id for the current protocol message. Used for logging, `retry_of`, and user-visible diagnostics. |
-| `session_id` | Stable workflow id. Retry, resume, cancellation, and timeout recovery must all keep the same value. |
+| `session_id` | Stable workflow id. Must remain the same across retries, resumes, cancellations, and timeout recovery. |
 | `phase` | Plugin envelope phase. Must be `upy-gen-driver-plugin`, do not write `gen-driver`. |
-| `timestamp` | UTC ISO timestamp, used for ordering and auditing. |
+| `timestamp` | UTC ISO timestamp for ordering and auditing. |
 | `type` | Message type, e.g., `start_phase`, `permission_request`, `script_run`, `device_command`, `status_update`, or `phase_complete`. |
-| `idempotency_key` | Stable action key. Reuse the same key when retrying the same action to avoid duplicate file writes or repeated device actions. |
-| `retry_of` | When the current message is retrying or completing a previously failed action, fill in the previous `msg_id`. Use `null` for the first attempt. |
+| `idempotency_key` | Stable action key. Reuse the same key when retrying the same action to avoid duplicate file writes or device actions. |
+| `retry_of` | When the current message is retrying or completing a failed action, fill in the previous `msg_id`. Use `null` for the first attempt. |
 
 Payload fields:
 
@@ -77,20 +77,20 @@ Payload fields:
 |---|---|
 | `mode` | Execution mode: `pipeline`, `standalone`, `resume`, or `fix`. |
 | `phase` / `domain_phase` | Business phase. Must be `gen-driver`; it is used to distinguish from the plugin envelope phase. |
-| `source_phase` | The upstream phase requesting driver generation, typically `upy-scaffold-plugin`, `upy-generate-plugin`, or deploy/autofix feedback. |
+| `source_phase` | The upstream phase requesting the driver generation, typically `upy-scaffold-plugin`, `upy-generate-plugin`, or deploy/autofix feedback. |
 | `source_phase_complete_path` | Relative path to the upstream `phase_complete` artifact, used as evidence source. |
 | `manifest_content` | Current project manifest object. In `pipeline` mode, use it to find `devices[].driver.status == "cold_driver_required"` and update the generated driver path. |
 | `source` | Driver evidence source: PDF, Arduino/C/C++ file, GitHub URL, chip model, image, or current cold-driver item. If missing, ask the user via `approval_request(gen_driver_input)`. |
-| `runtime_context.artifact_root` | Root directory for session artifacts. Official paths in the output must be relative to this root. |
+| `runtime_context.artifact_root` | Root directory for session artifacts. Formal paths in the output must be relative to this root. |
 | `runtime_context.session_root` | Canonical session directory. State, logs, and the final `phase_complete` are written here. |
-| `runtime_context.project_root` | Project directory, where generated driver files and manifest updates are placed. |
-| `runtime_context.file_operation_root` | The maximum root directory allowed for file writes initiated via the plugin. |
+| `runtime_context.project_root` | Project directory where generated driver files and manifest updates are placed. |
+| `runtime_context.file_operation_root` | Maximum root directory allowed for file writes initiated via the plugin. |
 | `runtime_context.resource_root` | Skill resource directory, used to locate bundled scripts and references. |
 | `capabilities` | Operation capabilities supported by the host. Must check before using upload, file operations, scripts, device commands, cancellation, checkpoint resume, idempotency cache, or network. |
-| `timeouts` | Timeout budget for each operation, in milliseconds. If missing, use explicit defaults and write the final adopted timeout into the message. |
+| `timeouts` | Timeout budgets for each operation, in milliseconds. If missing, use explicit defaults and write the final adopted timeout into the message. |
 | `resume_from` | Checkpoint descriptor for `resume` mode. Must verify hash and session identity before continuing. |
 
-If `mode` is missing, infer `pipeline` only if `driver.status=cold_driver_required` exists in the current manifest; otherwise use `standalone`.
+If `mode` is missing, infer `pipeline` only if the current manifest contains `driver.status=cold_driver_required`; otherwise use `standalone`.
 
 ## Output Field Meanings
 
@@ -100,10 +100,10 @@ If `mode` is missing, infer `pipeline` only if `driver.status=cold_driver_requir
 |---|---|
 | `result` | `success`, `partial`, or `failed`. Use `partial` for no device, user cancellation, timeout, missing capability, stale artifact, or verification exhaustion but still recoverable. |
 | `summary` | Short human-readable result description. Must state whether hardware verification was completed. |
-| `next_phase` | Typically `upy-generate-plugin` after success; use `null` for partial/failure waiting for resume or user action. |
+| `next_phase` | Typically `upy-generate-plugin` on success; use `null` for partial/failure waiting for resume or user action. |
 | `checkpoint` | Resume anchor, containing `checkpoint_id`, `resume_phase`, `resume_step`, and `state_file`; `checkpoint_id` must use `upy-gen-driver-plugin:<session_id>:<checkpoint_name>`. |
-| `permissions[]` | File/script/device/network/manifest permission requests or audit records of local mock auto-authorization. |
-| `file_manifest.files[]` | Official manifest of generated, updated, skipped, or failed files. Each path must be relative and must include `role`. |
+| `permissions[]` | Audit trail for file/script/device/network/manifest permission requests or local mock auto-authorizations. |
+| `file_manifest.files[]` | Formal manifest of generated, updated, skipped, or failed files. Each path must be relative and must include `role`. |
 | `artifacts[]` | User-facing artifact groupings. Must contain at least one non-empty `file_list` entry, and each entry must have `files[]` or `items[]`. |
 | `structured_errors[]` | Machine-readable errors. Can be empty only for `success`. |
 | `manifest_content` | Updated project manifest in `pipeline` mode; use `null` for `standalone` without a project manifest. |
@@ -113,11 +113,11 @@ If `mode` is missing, infer `pipeline` only if `driver.status=cold_driver_requir
 | Role | Meaning |
 |---|---|
 | `source` | Source file provided by the user or fetched from the network. |
-| `extracted_text` | PDF extraction output generated by `extract_pdf.py`. |
-| `mapping` | Arduino/C/C++ structure and API mapping generated by `convert_arduino.py`. |
-| `understanding` | `driver_understanding.json`, structured hardware facts used for driver generation. |
-| `debug_driver` | `{chip}_debug.py`, a verbose single-file driver for hardware verification. |
-| `production_driver` | `{chip}.py`, a normalized driver for project integration. |
+| `extracted_text` | PDF extraction output from `extract_pdf.py`. |
+| `mapping` | Arduino/C/C++ structure and API mapping from `convert_arduino.py`. |
+| `understanding` | `driver_understanding.json`, structured hardware facts for driver generation. |
+| `debug_driver` | `{chip}_debug.py`, verbose single-file driver for hardware verification. |
+| `production_driver` | `{chip}.py`, normalized driver for project integration. |
 | `test` | `test_{chip}.py` standalone validation script. |
 | `wiring` | `wiring_{chip}.md` wiring and usage instructions. |
 | `verify_log` | Hardware or mock verification log. |
@@ -125,9 +125,9 @@ If `mode` is missing, infer `pipeline` only if `driver.status=cold_driver_requir
 | `state` | `session_state.upy_gen_driver_plugin.json`. |
 | `phase_complete` | Final protocol result artifact. |
 
-When real hardware verification is incomplete, if `{chip}.py` is retained, `file_manifest.files[].role` must use `artifact`, and the user-facing `artifacts[].file_list` copy must read `Driver artifact (unverified)` or `Unverified driver artifact`, not `Production driver (unverified)`.
+When real hardware verification has not been completed, if `{chip}.py` is retained, `file_manifest.files[].role` must use `artifact`, and the user-facing `artifacts[].file_list` copy must read `Driver artifact (unverified)` or `Unverified driver artifact`, not `Production driver (unverified)`.
 
-When real hardware verification is incomplete, if `{chip}.py` is written, the permission/action `idempotency_key` must use `upy-gen-driver-plugin:<session_id>:write_driver_artifact:<chip>:v1`. Only after real hardware verification passes or the user explicitly skips verification is `write_production_driver` allowed; local mock success can only write `unverified driver artifact`.
+When real hardware verification has not been completed, if `{chip}.py` is written, the permission/action `idempotency_key` must use `upy-gen-driver-plugin:<session_id>:write_driver_artifact:<chip>:v1`. Only after real hardware verification passes or the user explicitly skips verification is `write_production_driver` allowed; local mock success can only write `unverified driver artifact`.
 
 `structured_errors[]` fields:
 
@@ -151,30 +151,30 @@ Both execution forms use the same contract:
 - Local mock test: Executes equivalent actions locally, then writes events of the same protocol shape into `sessions/<session_id>/gen_driver/message_log.jsonl` or final artifacts.
 - Both forms must generate `sessions/<session_id>/session_state.upy_gen_driver_plugin.json`.
 - Both forms must generate `phase_complete.upy_gen_driver_plugin.json` for success, partial, failed, cancelled, and timeout outcomes.
-- Local tests cannot bypass permission semantics. Even if mock auto-authorization is used, file/script/device permissions must be recorded in `payload.permissions[]`.
-- A local no-device mock that returns `DEVICE_NOT_FOUND` must also record a `device_scan` or `device_run` permission entry; use `HOST_CAPABILITY_MISSING` when lacking device operation capability.
+- Local tests cannot bypass permission semantics. Even with mock auto-authorization, file/script/device permissions must be recorded in `payload.permissions[]`.
+- A local no-device mock that returns `DEVICE_NOT_FOUND` must also record a `device_scan` or `device_run` permission entry; use `HOST_CAPABILITY_MISSING` when lacking device operation capabilities.
 - Local tests cannot treat mock `SELF_TEST_PASS` as real hardware proof. Only mark `verification_mode="mock"` when a local mock self-test actually returns `SELF_TEST_PASS`; partial results with no device, cancellation, timeout, or without running a mock self-test must be marked `verification_mode="none"`. The `driver_status` and manifest driver status for mock success must be `unverified`, and `next_phase` must be `null`.
 
 ## Workflow
 
-1. Validate the envelope, runtime roots, and capabilities.
+1. Validate envelope, runtime roots, and capabilities.
 2. If source is missing, issue `approval_request(gen_driver_input)` to let the global tool input card collect materials.
 3. Collect one source type: PDF, Arduino/C/C++ source, GitHub URL, chip model, image, or current project cold-driver item.
 4. Preprocess the source via protocol `script_run`:
    - PDF: `scripts/extract_pdf.py --input <path> --output <json> --json-summary`
    - Arduino/C/C++: `scripts/convert_arduino.py --input <path> --output <json> --json-summary`
-5. Write `driver_understanding.json` via `file_operation(write)`. The content must include protocol, addressing, ID register, ready strategy, data integrity, register map, source evidence, and ambiguity notes. I2C `addressing` must distinguish `address_7bit`, datasheet write/read transfer address, derivation, and evidence source.
+5. Write `driver_understanding.json` via `file_operation(write)`. Content must include protocol, addressing, ID register, ready strategy, data integrity, register map, source evidence, and ambiguity notes. I2C `addressing` must distinguish `address_7bit`, datasheet write/read transfer addresses, derivation, and evidence source.
 6. Generate `{chip}_debug.py` via `file_operation(write)`. The debug driver must include self-test prints and bounded polling.
 7. Update session state checkpoint `debug_driver_written`.
 8. Request permission for device scan and debug run. If no device is available, issue `approval_request(gen_driver_no_device)`, providing `retry`, `save_partial`, and `cancel`.
 9. Run up to 10 rounds of hardware verification, with the command form `scripts/run_on_device.py --com <port> --file <debug.py> --capture --timeout-ms 30000 --json-summary`.
 10. If `SELF_TEST_PASS` occurs, checkpoint to `hardware_verify_passed`. Otherwise, analyze the log, edit the debug driver, and retry until the limit is reached.
-11. Only after verified pass or user explicit skip with warning, generate the production `{chip}.py`. Remove debug prints, retain meaningful exceptions, and maintain dependency injection.
+11. Only after verified pass or user explicitly skips with warning, generate the production `{chip}.py`. Remove debug prints, retain meaningful exceptions, and maintain dependency injection.
 12. Normalize the production driver using `references/norm_driver_p0_rules.md`.
 13. Generate `test_{chip}.py` and `wiring_{chip}.md` for standalone hardware validation.
 14. Optionally run the standalone test after `approval_request(gen_driver_standalone_test)`.
 15. In `pipeline` mode, update `project/project-manifest.json` and `manifest_content.devices[].driver` to point to the generated local driver.
-16. Issue `approval_request(gen_driver_next_step)` only when a user choice is needed. Common choices include connecting to `upy-generate-plugin`, ending the flow, or publishing later.
+16. Issue `approval_request(gen_driver_next_step)` only when a user choice is needed. Common choices include proceeding to `upy-generate-plugin`, ending the flow, or publishing later.
 17. Write the final checkpoint to `session_state.upy_gen_driver_plugin.json`, and run `scripts/update_session_state.py --session-dir <session_root> --check`.
 18. Write a draft phase_complete, then run `scripts/finalize_phase_complete.py --input <draft_phase_complete> --output <session_root>/phase_complete.upy_gen_driver_plugin.json --artifact-root <artifact_root> --session-state <session_root>/session_state.upy_gen_driver_plugin.json`. Only output as the final result after passing.
 
@@ -182,7 +182,7 @@ Both execution forms use the same contract:
 
 Before writing any driver file, write `gen_driver/docs/driver_understanding.json`. This object is the evidence bridge between source material and generated code.
 
-Must include at least:
+Must contain at least:
 
 | Field | Meaning |
 |---|---|
@@ -212,22 +212,22 @@ Must satisfy:
 - Print source evidence at the file header, e.g., datasheet page/table or Arduino line.
 - Validate constructor arguments before using the bus.
 - Use externally injected I2C/SPI/UART objects; do not instantiate board pins inside the driver class.
-- For I2C, do not restrict the bus type with `isinstance(i2c, I2C)`; use capability/duck typing checks so that both `machine.I2C` and `SoftI2C` compatible objects are acceptable.
+- For I2C, do not restrict the bus type with `isinstance(i2c, I2C)`; use capability/duck typing checks so that both `machine.I2C` and `SoftI2C` compatible objects are usable.
 - Put the chip into a known state during initialization via reset or explicit configuration confirmation.
 - For I2C, scan and verify the expected address whenever possible.
-- For I2C, `scan()` must only compare against the 7-bit expected address; if the datasheet evidence is `0x3C/0x3D`, the debug driver should still check for `0x1E`.
+- For I2C, `scan()` must only be compared against the 7-bit expected address; if the datasheet evidence is `0x3C/0x3D`, the debug driver should still check for `0x1E`.
 - For SPI, verify CS handling and read a known register or perform a safe read-back.
 - For UART, send a known command like `AT` and verify the response when applicable.
-- If an ID register exists, read it and compare against the expected value.
+- If an ID register exists, read and compare against the expected value.
 - If there is no ID register, substitute with a safe register read/write sanity check.
 - Mark write-only registers as `write-only` and skip read-back.
 - When the datasheet provides a ready signal, prefer ready/status-bit polling with timeout over fixed sleeps.
-- Only use fixed sleeps when there is no ready signal; the delay should include conversion time plus margin.
+- Only use fixed sleeps when there is no ready signal; delays should include conversion time plus margin.
 - Must verify CRC/checksum when provided by the chip.
 - Print expected vs actual values on failure.
 - Print wiring/power/protocol hints on failure.
 - Catch underlying `OSError` and raise or print descriptive context with address, register, and operation.
-- Every wait/poll loop must be bounded using `ticks_ms()`/`ticks_diff()` or a fixed iteration count.
+- Every wait/poll loop must be bounded by `ticks_ms()`/`ticks_diff()` or a fixed iteration count.
 - Pre-allocate bytearrays for repeated bus I/O where possible.
 - End with `SELF_TEST_PASS` on success; otherwise print `SELF_TEST_FAIL: <reason>`.
 
@@ -239,17 +239,17 @@ Plugin-mode behavior:
 
 - Before scanning ports or devices, request `permission_request(device_scan)`.
 - Before running `run_on_device.py` or `mpremote`, request `permission_request(device_run)`.
-- If the host lacks `serial_port_scan`, `device_command`, or `mpremote_run` capability, return a `HOST_CAPABILITY_MISSING` partial, do not fake a device scan or write `DEVICE_NOT_FOUND`. If a device scan has been authorized and executed but the target device is not found, return `DEVICE_NOT_FOUND`.
+- If the host lacks `serial_port_scan`, `device_command`, or `mpremote_run` capabilities, return a `HOST_CAPABILITY_MISSING` partial, do not fake a device scan or write `DEVICE_NOT_FOUND`. If a device scan has been authorized and executed but the target device was not found, return `DEVICE_NOT_FOUND`.
 - Use `scripts/run_on_device.py --com <port> --file <debug.py> --capture --timeout-ms <ms> --json-summary`.
-- Repair verification for up to 10 rounds.
+- Repair verification for a maximum of 10 rounds.
 - Save each round's run log as `gen_driver/logs/driver_verify_round<N>.log`.
 - When `SELF_TEST_PASS` occurs, checkpoint to `hardware_verify_passed`.
-- When there is no device, a timeout, permission denial, or user cancellation, output a partial with a resumable checkpoint.
+- When there is no device, timeout, permission denial, or user cancellation, output a partial with a resumable checkpoint.
 - When there is no device or verification has not passed, do not mark `{chip}.py` as `production_driver` in `file_manifest.files[]`, unless the user explicitly skips verification and the output includes a warning and skip metadata.
-- A partial with no device, timeout, permission denial, or user cancellation must write `hardware_verified=false`, `verification_mode="none"`, `next_phase=null`, and set `resume_step` to the next executable verification step.
+- A partial with no device, timeout, permission denial, or user cancellation must write `hardware_verified=false`, `verification_mode="none"`, `next_phase=null`, and point `resume_step` to the next executable verification step.
 - If the UI/CLI table displays an unverified `{chip}.py`, the Role must show `Driver artifact (unverified)` or `Unverified driver artifact`; do not show `Production driver (unverified)`.
 
-Only allow production driver generation when one of the following conditions is met:
+Only when one of the following conditions is met is generating a production driver allowed:
 
 | Condition | Required output |
 |---|---|
@@ -271,22 +271,22 @@ Production driver rules inherited from `upy-gen-driver`:
 - Code organization order: constants, class, `__init__`, public methods, private helpers, and `deinit()`.
 - Maintain I2C/SPI/UART dependency injection.
 - I2C address constants must be 7-bit addresses, e.g., `_I2C_ADDR = const(0x1E)`; do not use `_I2C_ADDR_WRITE = const(0x3C)` or `_I2C_ADDR_READ = const(0x3D)` as actual API call addresses.
-- I2C drivers must accept `machine.I2C`, `SoftI2C`, or compatible objects via duck typing; do not reject `SoftI2C` with a strict `isinstance(i2c, I2C)`.
+- I2C drivers must accept `machine.I2C`, `SoftI2C`, or compatible objects via duck typing; do not reject `SoftI2C` with strict `isinstance(i2c, I2C)`.
 - After generating `{chip}.py`, `{chip}_debug.py`, and `test_{chip}.py`, a static quality check must be performed: Python syntax, undefined constants/names, helper method call argument count, I2C capability check consistency with actual I/O API usage.
-- Static quality checks and PC-side compile/test must prohibit writing `__pycache__` or `.pyc` to session/project artifacts; use `python -B` or equivalent when running CPython checks.
-- Do not let constant naming styles drift between the debug driver and the production driver; if the debug driver uses `_ODR_10HZ` / `_MD_IDLE`, the production driver must either define the same constants or change them all to `ODR_10HZ` / `MODE_IDLE` and synchronize all references.
+- Static quality checks and PC-side compile/tests must prohibit writing `__pycache__` or `.pyc` to session/project artifacts; use `python -B` or equivalent when running CPython checks.
+- Do not let constant naming conventions drift between the debug driver and the production driver; if the debug driver uses `_ODR_10HZ` / `_MD_IDLE`, the production driver must either define the same constants or change them all to `ODR_10HZ` / `MODE_IDLE` and synchronize all references.
 - Helper method signatures must cover all call forms; for example, if the code calls `_read_reg(reg, buf)`, the definition must be `def _read_reg(self, reg, buf=None)` or equivalent.
-- The I2C constructor capability check must cover the methods actually used; if a helper calls `readfrom_mem_into`, do not only check for `readfrom_mem`.
+- I2C constructor capability checks must cover the methods actually used; if a helper calls `readfrom_mem_into`, do not only check for `readfrom_mem`.
 - Validate argument types and ranges in `__init__`.
 - Put the chip into a known state in `__init__`.
-- Track shadow state independently per setter; `set_gain()` must not modify `_vref`, and `set_vref()` must not modify `_gain`.
-- Update shadow state after a successful hardware write when feasible.
+- Track shadow state independently per setter; `set_gain()` must not modify `_vref`, `set_vref()` must not modify `_gain`.
+- When feasible, update shadow state only after a successful hardware write.
 - Implement `deinit()` when the datasheet supports standby/powerdown.
 - Device code must not depend on CPython-only modules.
 - Avoid dynamic allocation in hot read loops where possible.
 - Datasheet page/table comments are only for explaining constants, timing, formulas, or register behavior; do not write tutorials.
 
-Then run the P0 normalization checklist from `references/norm_driver_p0_rules.md`, and validate real file content with `scripts/validate_phase_complete.py --input <phase_complete> --artifact-root <session_root> --session-state <state_file>`. The `--session-state` argument is mandatory; do not only validate the phase_complete JSON. The validator checks state integrity, permission paths, device error evidence, user-visible text encoding quality, unverified copy, CPython cache artifacts, and real file hashes; do not output a result that can be integrated further on failure.
+Then run the P0 normalization checklist from `references/norm_driver_p0_rules.md`, and validate real file content with `scripts/validate_phase_complete.py --input <phase_complete> --artifact-root <session_root> --session-state <state_file>`. `--session-state` must be provided; do not only validate the phase_complete JSON. The validator checks state integrity, permission paths, device error evidence, user-visible text encoding quality, unverified copy, CPython cache artifacts, and real file hashes; do not output a result that can be integrated further on failure.
 
 ## Checkpoints
 
@@ -308,7 +308,7 @@ Resume rules:
 - Requires `session_id`, `phase`, `protocol_version`, and checkpoint name to match.
 - The current checkpoint in `session_state.upy_gen_driver_plugin.json` must match the checkpoint part of `phase_complete.payload.checkpoint.checkpoint_id`; partial results especially must not have the state written as `phase_completed`.
 - If a hash exists, the last trusted artifact must exist and its hash must match.
-- If the manifest hash changes after a checkpoint, return `ARTIFACT_STALE`, or fall back to the previous safe checkpoint.
+- If the manifest hash has changed since the checkpoint, return `ARTIFACT_STALE`, or fall back to the previous safe checkpoint.
 - Do not re-execute a completed write when the target file hash already matches.
 - Keep `verify_round < max_verify_rounds`; when exhausted, checkpoint to `verification_exhausted` and return partial.
 
@@ -320,10 +320,10 @@ Use the following result forms:
 |---|---|---|
 | User retry | `status="retrying"`, same checkpoint, same action idempotency key, `retry_of=<msg_id>` | Re-issue the action request, or continue from checkpoint |
 | LLM repair retry | Increment `verify_round`, keep session, write verify log | Continue until pass or `verification_exhausted` |
-| User cancellation | `status="cancelled"`, checkpoint `cancelled` | `phase_complete.result="partial"`, with `CANCELLED_BY_USER` |
-| Approval timeout | `status="partial"`, return to previous safe checkpoint | `APPROVAL_TIMEOUT` or `DEVICE_RUN_TIMEOUT` structured error |
+| User cancellation | `status="cancelled"`, checkpoint `cancelled` | `phase_complete.result="partial"` with `CANCELLED_BY_USER` |
+| Approval timeout | `status="partial"`, revert to previous safe checkpoint | `APPROVAL_TIMEOUT` or `DEVICE_RUN_TIMEOUT` structured error |
 | Script timeout | Set `status="partial"` or `retrying` based on strategy | `SOURCE_PREPROCESS_TIMEOUT` or `DEVICE_RUN_TIMEOUT` |
-| Capability missing | `status="partial"` | `HOST_CAPABILITY_MISSING`, with missing capability in details |
+| Capability missing | `status="partial"` | `HOST_CAPABILITY_MISSING` with missing capability in details |
 
 Timeout defaults:
 
@@ -354,4 +354,4 @@ On success, if the corresponding files have been generated, the following must b
 - `session_state.upy_gen_driver_plugin.json`
 - `project/project-manifest.json` in `pipeline` mode
 
-`phase_complete.upy_gen_driver_plugin.json` is the final protocol envelope and
+`phase_complete.upy_gen_driver_plugin.json` is the final protocol envelope and is not required to be placed in its own `payload.file_manifest.files[]`. If auditing is needed, the host or an

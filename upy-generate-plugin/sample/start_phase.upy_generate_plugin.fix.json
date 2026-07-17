@@ -16,7 +16,7 @@
       "resource_root": "upy-generate-plugin"
     },
     "error_context": {
-      "user_feedback": "After the device is powered on, the OLED does not display. The serial port only prints 'boot ok', and there is no temperature and humidity data.",
+      "user_feedback": "After the device is powered on, the OLED does not display, and the serial port only prints 'boot ok' without temperature and humidity data.",
       "deploy_result_path": "sessions/sample-session/phase_complete.upy_deploy_plugin.json",
       "serial_excerpt": "boot ok",
       "previous_generate_commit": "abc123"

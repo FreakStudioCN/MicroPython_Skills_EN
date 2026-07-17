@@ -73,7 +73,7 @@
       "GPIO 3 is JTAG strapping, recommended to keep",
       "GPIO 45/46 are strapping pins, affect startup voltage",
       "GPIO 26-32 are occupied by Octal PSRAM (WROOM-1 module), cannot be used externally",
-      "GPIO 19/20 are dedicated for USB OTG; using them as regular GPIO will lose USB functionality",
+      "GPIO 19/20 are dedicated to USB OTG; using them as regular GPIO will lose USB functionality",
       "ADC2 conflicts with WiFi, prefer ADC1 (GPIO 1-10)"
     ]
   }

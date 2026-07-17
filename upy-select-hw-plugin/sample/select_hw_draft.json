@@ -7,7 +7,7 @@
     "phase": "analyze",
     "project_name": "Voice Dialogue Assistant",
     "requirements": {
-      "description": "When the PIR infrared sensor detects a person, it triggers dialogue mode. Touching the device produces voice, and voice dialogue (ASR+LLM+TTS) is conducted via I2S microphone and WiFi cloud API. It can also query ambient temperature and humidity.",
+      "description": "When PIR infrared sensor detects a person, it triggers dialogue mode. Touching the device produces voice. Voice dialogue (ASR+LLM+TTS) is conducted via I2S microphone and WiFi cloud API. It can also query ambient temperature and humidity.",
       "scene": "indoor",
       "power": "usb",
       "network": "wifi",
@@ -133,7 +133,7 @@
         "bus": "i2c0",
         "i2c_addr": "0x38",
         "source": "default_bus",
-        "notes": "Use the board-defined i2c0 default SDA"
+        "notes": "Use the i2c0 default SDA defined by the board"
       },
       {
         "device": "AHT20",
@@ -143,7 +143,7 @@
         "bus": "i2c0",
         "i2c_addr": "0x38",
         "source": "default_bus",
-        "notes": "Use the board-defined i2c0 default SCL"
+        "notes": "Use the i2c0 default SCL defined by the board"
       },
       {
         "device": "HC-SR501",
@@ -295,7 +295,7 @@
         "datasheet_url": "",
         "supplier": "",
         "sku": "",
-        "notes": "Physical material; leave blank if link is unknown"
+        "notes": "Physical material, leave blank if link is unknown"
       }
     ],
     "estimated_total_yuan": 61,
@@ -442,9 +442,9 @@
     }
   },
   "warnings": [
-    "BOM prices are V0 common-sense estimates",
+    "BOM prices are V0 common sense estimates",
     "ESP32-C3 GPIO resources are limited; when I2S microphone and amplifier share I2S, audio timing must be confirmed in the generate phase",
-    "GPIO20/21 are USB serial pins, retained per user wiring; subsequent debugging must avoid simultaneously occupying USB CDC"
+    "GPIO20/21 are USB serial pins, retained per user wiring; subsequent debugging must avoid simultaneous USB CDC occupation"
   ],
   "metadata": {
     "idempotency_key": "select-hw:022ad742-3269-42e9-ac20-c14f477ecdf2:manifest-validation:v1"

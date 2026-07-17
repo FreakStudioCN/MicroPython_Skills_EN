@@ -7,7 +7,7 @@ description: Plugin-based V0 analyze phase. Reads a one-sentence hardware projec
 
 ## Responsibilities
 
-Convert a user's one-sentence hardware requirement into an analyze manifest that can be handed over to `upy-select-hw`.
+Converts a user's one-sentence hardware requirement into an analyze manifest that can be handed over to `upy-select-hw`.
 
 Only does:
 
@@ -15,9 +15,9 @@ Only does:
 - Generate and confirm a device list.
 - Search for built-in runtime capabilities and specific device drivers.
 - Mark alternative recommendations or cold-driver paths.
-- Output `phase_complete`, where `payload.manifest_content` is the sole handover artifact for downstream.
+- Output `phase_complete`, where `payload.manifest_content` is the single primary handover item for downstream.
 
-Does NOT:
+Does not:
 
 - Select MCU or board.
 - Assign pins.
@@ -25,13 +25,13 @@ Does NOT:
 - Flash devices.
 - Write plugin-side UI or device log parsing logic into the plugin.
 
-## Operating Modes
+## Operation Modes
 
 ## Protocol Field Description
 
-Follow the execution flow in this file first. When constructing or inspecting specific message fields, read `references/v0-protocol.md`; it defines the field meanings and enums for envelope, `start_phase`, `approval_request`, `status_update`, `script_run`, manifest, `phase_complete`, checkpoint, structured errors, and artifacts.
+First, follow the execution flow of this file. When constructing or troubleshooting specific message fields, read `references/v0-protocol.md`; it defines the field meanings and enums for envelope, `start_phase`, `approval_request`, `status_update`, `script_run`, manifest, `phase_complete`, checkpoint, structured errors, and artifacts.
 
-When outputting JSON, prefer the shapes in `templates/*.json` and `mock-messages/analyze/*.json`; do not invent field names.
+When outputting JSON, prioritize the shapes in `templates/*.json` and `mock-messages/analyze/*.json`; do not invent field names.
 
 ### Formal Plugin Mode
 
@@ -67,7 +67,7 @@ In formal mode:
 |-------|----------|--------|---------|
 | `protocol_version` | Yes | Plugin | Fixed `"1.0"` |
 | `msg_id` | Yes | Plugin | UUID for the current message |
-| `session_id` | Yes | Plugin | UUID for the current workflow session, remains unchanged throughout |
+| `session_id` | Yes | Plugin | UUID for the current workflow session, remains unchanged throughout the process |
 | `phase` | Yes | Plugin | Fixed `"analyze"` |
 | `timestamp` | Yes | Plugin | ISO 8601 timestamp |
 | `type` | Yes | Plugin | Fixed `"start_phase"` |
@@ -81,7 +81,7 @@ In formal mode:
 
 When there is no real plugin host, debug artifacts can be written, but these files do not replace `phase_complete.payload.manifest_content`.
 
-If the input lacks `session_id`, direct test mode must generate a UUID and force the use of a session-isolated directory:
+If the input lacks `session_id`, the direct test mode must generate a UUID and force the use of a session-isolated directory:
 
 ```text
 {test_root}/sessions/{session_id}/
@@ -99,7 +99,7 @@ python {skill_dir}/scripts/init_manifest.py --input {session_dir}/manifest_draft
 python {skill_dir}/scripts/init_manifest.py --validate-phase-complete --input {session_dir}/phase_complete.analyze.json --compare-manifest {session_dir}/manifest_validated.json
 ```
 
-If either validation fails, analyze success must not be declared.
+If either validation fails, analyze must not be declared successful.
 
 ## V0 Protocol Hard Rules
 
@@ -124,7 +124,7 @@ Requirements:
 - `protocol_version` is fixed to `"1.0"`.
 - `msg_id` uses a UUID string.
 - `session_id` uses a UUID string.
-- Top-level `phase` and `payload.phase` are both retained and must be consistent.
+- Both the top-level `phase` and `payload.phase` are retained and must be consistent.
 
 Envelope field quick reference:
 
@@ -132,7 +132,7 @@ Envelope field quick reference:
 |-------|----------|--------------|------|
 | `protocol_version` | Yes | Sender | Fixed `"1.0"` |
 | `msg_id` | Yes | Sender | A new UUID for each message |
-| `session_id` | Yes | Plugin | Unchanged within the same workflow |
+| `session_id` | Yes | Plugin | Unchanged for the same workflow |
 | `phase` | Yes | Sender | Fixed to `"analyze"` during the analyze phase |
 | `timestamp` | Yes | Sender | ISO 8601, UTC preferred |
 | `type` | Yes | Sender | Message type |
@@ -145,8 +145,8 @@ Envelope field quick reference:
 | result | Meaning | next_phase | checkpoint |
 |--------|---------|------------|------------|
 | `success` | Analyze fully successful, can proceed downstream | `select-hw` | Not required |
-| `partial` | User cancelled, interrupted, timed out, missing input, or only partial search completed | `null` | Required |
-| `failed` | Unable to produce a usable manifest, or protocol/format validation failed | `null` | Optional |
+| `partial` | User cancelled, interrupted, timed out, missing input, or only partially completed search | `null` | Required |
+| `failed` | Cannot produce a usable manifest, or protocol/format validation failed | `null` | Optional |
 
 `partial` must include:
 
@@ -160,7 +160,7 @@ Envelope field quick reference:
 }
 ```
 
-V0 only defines the checkpoint/resume structure; it does not implement a full resume runtime.
+V0 only defines the checkpoint/resume structure, does not implement a full resume runtime.
 
 ### errors and structured_errors
 
@@ -181,7 +181,7 @@ Keep `errors: string[]` for human reading, while also outputting `structured_err
 
 ### Unified Artifact Model
 
-`artifacts` must be an array. Debug file paths use the `file_list` artifact; do not write them as an object map.
+`artifacts` must be an array. Debug file paths use the `file_list` artifact; do not write them as an object mapping.
 
 `artifact.files[].status` only allows:
 
@@ -201,7 +201,7 @@ Recommended file item:
 }
 ```
 
-`artifact_id` is not mandatory. `kind` and `description` are recommended; the validation script may issue a warning if they are missing.
+`artifact_id` is not mandatory. `kind` and `description` are recommended to fill; the validation script may give a warning if missing.
 
 ## Permission Strategy
 
@@ -225,7 +225,7 @@ High-risk actions that still require separate confirmation:
 V0 writes these into the protocol and skill description first, but does not implement a full runtime:
 
 - User cancels approval: output `result="partial"`, `next_phase=null`, write checkpoint.
-- Driver search timeout: degrade to warning first; only fail if core information cannot be determined.
+- Driver search timeout: first degrade to warning; only fail if core information cannot be determined.
 - Manifest validation failure: allow correction and retry; retry uses the same `session_id`.
 - Retry behavior is recorded in logs or payload metadata.
 
@@ -270,7 +270,7 @@ Extract from natural language:
 - Interface types.
 - User-specified devices vs. system-recommended devices.
 
-Major device categories must first be broken down into implementation families. For example, soil-type devices must distinguish between `ADC / RS485 Modbus / I2C/SPI / Combined solutions`.
+Major device categories must first break down implementation families. For example, soil-type devices must distinguish between `ADC / RS485 Modbus / I2C/SPI / Combined solution`.
 
 Only one mandatory confirmation point is retained: `approval_request(device_confirm)`.
 
@@ -298,11 +298,11 @@ Only one mandatory confirmation point is retained: `approval_request(device_conf
 }
 ```
 
-After issuing `approval_request`, you must wait for the user's response; do not pretend it has been confirmed.
+After sending `approval_request`, you must wait for the user's response; do not continue pretending it has been confirmed.
 
 ### Step 3: Supplement Requirements
 
-`beginner` mode fills in requirements by default. For `custom` mode or when information is clearly insufficient, issue at most one `approval_request(requirement_supplement)`.
+`beginner` mode fills in requirements by default. For `custom` mode or when information is clearly insufficient, send at most one `approval_request(requirement_supplement)`.
 
 Default values:
 
@@ -323,11 +323,11 @@ Default values:
 | `special_requirements` | `["none"]` |
 | `mcu_specified` | `null` |
 
-Content that cannot be fully expressed by schemas such as voice, cloud, or audio output should be recorded in `description`, `special_requirements`, device notes, and warnings; do not fail directly due to insufficient output enums.
+Content that cannot be fully expressed by schemas like voice, cloud, audio output, etc., should be recorded in `description`, `special_requirements`, device notes, and warnings. Do not fail directly due to insufficient output enum values.
 
 ### Step 4: Driver Search
 
-For each confirmed device, evaluate at two levels:
+For each confirmed device, judge on two levels:
 
 1. Underlying runtime capabilities:
    - `machine.ADC`
@@ -358,7 +358,7 @@ If a system-recommended device has no driver, recommend at most 2 similar altern
 
 ### Step 5: Build manifest_draft
 
-Generate a manifest draft that must include:
+Generate a manifest draft, which must include:
 
 - `project_name`
 - `requirements`
@@ -391,11 +391,11 @@ Validation failure:
 
 - Can retry after correcting the draft.
 - If it still fails, output `phase_complete(result="failed")`.
-- Do not proceed to output `success`.
+- Do not continue to output `success`.
 
 ### Step 7: Output phase_complete
 
-On success, output the complete envelope:
+On success, output a complete envelope:
 
 ```json
 {
@@ -467,11 +467,11 @@ On success, output the complete envelope:
 | `artifacts` | Yes | Array | Array | Array |
 | `warnings` | Yes | String array | String array | String array |
 | `errors` | Yes | Empty array or error summary | Empty array or error summary | Error summary |
-| `structured_errors` | Yes | Empty array | Optional structured errors | Must describe the main failure |
+| `structured_errors` | Yes | Empty array | Optional structured errors | Must describe primary failure |
 
-Direct test mode recommends additionally writing `analyze_phase_log.md`, but it is not a mandatory deliverable in the formal protocol; it can be declared in the `file_list`.
+Direct test mode recommends additionally writing `analyze_phase_log.md`, but it is not a mandatory deliverable of the formal protocol; it can be declared in the `file_list`.
 
-After writing `phase_complete.analyze.json`, you must call:
+After writing `phase_complete.analyze.json`, must call:
 
 ```bash
 python {skill_dir}/scripts/init_manifest.py --validate-phase-complete --input phase_complete.analyze.json --compare-manifest manifest_validated.json
@@ -491,7 +491,7 @@ Formal plugin mode relies on messages. Claude Code direct test mode writes the f
 
 ## Templates and Mocks
 
-Use the resources provided with this skill:
+Use resources provided by this skill:
 
 - `templates/envelope.phase_complete.json`
 - `templates/checkpoint.json`
@@ -500,14 +500,14 @@ Use the resources provided with this skill:
 - `mock-messages/analyze/*.json`
 - `references/v0-protocol.md`
 
-After modifying templates, enums, or output formats, you must update the validation script and smoke tests.
+After modifying templates, enums, or output formats, the validation scripts and smoke tests must be updated.
 
 ## Hard Constraints
 
-- Protocol format, required fields, invalid enums, and core manifest structure errors must be treated as errors.
+- Protocol format errors, missing required fields, invalid enums, and core manifest structure errors must be treated as errors.
 - Business semantic issues should be warnings first, e.g., TouchPad board compatibility, incomplete voice output schema.
-- `phase_complete.payload.manifest_content` is the sole handover artifact for downstream.
-- `manifest_validated.json` and `phase_complete.payload.manifest_content` must have consistent core fields; timestamp fields are not subject to strict comparison.
+- `phase_complete.payload.manifest_content` is the single primary handover item for downstream.
+- `manifest_validated.json` and `phase_complete.payload.manifest_content` must have consistent core fields; timestamp fields are not strictly compared.
 - `phase_complete.artifacts` must be an array.
 - `errors` must be a string array, `structured_errors` must be an object array.
 - `partial` must have `next_phase=null` and include a checkpoint.

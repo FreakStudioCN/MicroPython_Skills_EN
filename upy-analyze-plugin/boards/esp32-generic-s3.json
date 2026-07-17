@@ -43,7 +43,7 @@
   ],
   "beginner_friendly": false,
   "price_yuan": 0,
-  "notes": "PSRAM/RAM feature is present, but size was not inferred automatically. board.json parsed for vendor/product/mcu/features. mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals. mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration. Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target. CSV notes: generic firmware target, can be used to flash firmware for unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout.",
+  "notes": "PSRAM/RAM feature is present, but size was not inferred automatically. board.json parsed for vendor/product/mcu/features. mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals. mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration. Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target. CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout.",
   "features": [
     "BLE",
     "External Flash",
@@ -101,7 +101,7 @@
       "mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals.",
       "mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration.",
       "Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target.",
-      "CSV notes: generic firmware target, can be used to flash firmware for unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout."
+      "CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout."
     ]
   },
   "media": {
@@ -144,11 +144,11 @@
     "fetch_status": {
       "board.json": "cached",
       "mpconfigboard.h": "cached",
-      "pins.csv": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer>",
-      "manifest.py": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer>",
+      "pins.csv": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
+      "manifest.py": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
       "mpconfigboard.cmake": "cached",
-      "mpconfigboard.mk": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer>",
-      "sdkconfig.board": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer>"
+      "mpconfigboard.mk": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
+      "sdkconfig.board": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>"
     },
     "presence": {
       "board.json": true,
@@ -239,7 +239,7 @@
   "generation": {
     "generated_at": "2026-07-15",
     "generator": "scripts/generate_official_board_jsons_v3_20260715.py",
-    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython Official Board Information Collection Excel Template-2026-07-12(1).csv",
+    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython Official Board Data Collection Excel Template-2026-07-12(1).csv",
     "pending_json": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\ESP32_GENERIC_S3.json",
     "source_cache_dir": "G:\\blockless-plugin-course(1)\\_tmp_mpy_board_source_cache_20260715\\ESP32_GENERIC_S3",
     "output_file": "G:\\blockless-plugin-course(1)\\_tmp_official_board_json_v3_20260715\\esp32-generic-s3.json",

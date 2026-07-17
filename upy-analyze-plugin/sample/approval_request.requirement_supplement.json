@@ -11,14 +11,14 @@
       {
         "id": "scene_indoor",
         "name": "Indoor Desktop Scene",
-        "subtitle": "Default Recommendation",
+        "subtitle": "Default Recommended",
         "meta": "scene=indoor",
         "selected": true
       },
       {
         "id": "power_usb",
         "name": "USB Power Supply",
-        "subtitle": "Default Recommendation",
+        "subtitle": "Default Recommended",
         "meta": "power=usb",
         "selected": true
       },
@@ -32,7 +32,7 @@
       {
         "id": "output_serial_oled",
         "name": "Serial + OLED Output",
-        "subtitle": "Default Recommendation",
+        "subtitle": "Default Recommended",
         "meta": "output=serial,display_oled,buzzer",
         "selected": true
       }
@@ -42,7 +42,7 @@
     "multi_select": true,
     "actions": [
       {
-        "label": "Confirm Supplement Information",
+        "label": "Confirm Supplementary Information",
         "value": "confirm",
         "primary": true
       }

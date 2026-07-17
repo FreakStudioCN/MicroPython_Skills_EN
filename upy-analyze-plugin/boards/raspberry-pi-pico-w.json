@@ -88,9 +88,9 @@
     },
     "notes": [
       "RP2040 peripherals are fixed to GPIO pins. Each function can only be selected from the set of pins listed in pin_options",
-      "GPIO 23/24/25 are occupied by the WiFi chip (CYW43439) and are completely unavailable",
-      "GPIO 29 has a special purpose (VSYS voltage monitoring or ADC) and is generally not used for peripherals",
-      "The onboard LED is controlled internally via the WiFi chip, use `machine.Pin('LED', ...)` to operate, does not occupy RP2040 pins",
+      "GPIO 23/24/25 are occupied by the WiFi chip (CYW43439) and completely unavailable",
+      "GPIO 29 has a special purpose (VSYS voltage monitoring or ADC), generally not used for peripherals",
+      "The onboard LED is controlled internally by the WiFi chip, use `machine.Pin('LED', ...)` to operate, does not occupy RP2040 pins",
       "I2C0 (GPIO4/5) is the default I2C, be careful not to conflict with UART1 (TX=4/RX=5)",
       "For WiFi-related code, use `import network; wlan = network.WLAN(network.STA_IF)` instead of the ESP32 approach"
     ]

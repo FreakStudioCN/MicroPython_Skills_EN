@@ -43,7 +43,7 @@
   ],
   "beginner_friendly": false,
   "price_yuan": 0,
-  "notes": "board.json parsed for vendor/product/mcu/features. mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals. mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration. Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target. CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout.",
+  "notes": "board.json parsed for vendor/product/mcu/features. mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals. mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration. Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target. CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board's pin_layout.",
   "features": [
     "BLE",
     "External Flash",
@@ -96,7 +96,7 @@
       "mpconfigboard.h parsed for board name, MCU name, buses, and onboard peripherals.",
       "mpconfigboard.cmake parsed for SDK defaults and frozen manifest configuration.",
       "Generic MicroPython firmware target; physical pinout may depend on the concrete board using this target.",
-      "CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board pin_layout."
+      "CSV notes: generic firmware target, can be used to flash firmware on unknown boards with the same chip/family; not equivalent to a specific physical board's pin_layout."
     ]
   },
   "media": {
@@ -139,11 +139,11 @@
     "fetch_status": {
       "board.json": "cached",
       "mpconfigboard.h": "cached",
-      "pins.csv": "error: URLError: <urlopen error [WinError 10061] Connection refused because the target machine actively refused it.>",
-      "manifest.py": "error: URLError: <urlopen error [WinError 10061] Connection refused because the target machine actively refused it.>",
+      "pins.csv": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
+      "manifest.py": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
       "mpconfigboard.cmake": "cached",
-      "mpconfigboard.mk": "error: URLError: <urlopen error [WinError 10061] Connection refused because the target machine actively refused it.>",
-      "sdkconfig.board": "error: URLError: <urlopen error [WinError 10061] Connection refused because the target machine actively refused it.>"
+      "mpconfigboard.mk": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>",
+      "sdkconfig.board": "error: URLError: <urlopen error [WinError 10061] Connection refused by the target computer.>"
     },
     "presence": {
       "board.json": true,

@@ -2,7 +2,7 @@
 
 ## Protocol Basics
 
-- Transport: HTTP POST (plugin→server), SSE (server→plugin)
+- Transport: HTTP POST (plugin → server), SSE (server → plugin)
 - Format: JSON
 - Encoding: UTF-8
 - Message Direction: `S→P` = server to plugin, `P→S` = plugin to server
@@ -79,14 +79,14 @@ All messages share a common outer envelope. The `type` field determines the mess
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `approval_id` | string | Approval ID, returned as-is in the response |
+| `approval_id` | string | Approval ID, returned unchanged in the response |
 | `header` | string | Card title |
 | `question` | string | Main question |
 | `summary` | object | Optional, top summary area. Can contain `project_name`, `board`, `description` |
 | `items` | array | Optional, list of options. Each item contains `id`/`name`/`subtitle`/`meta`/`selectable`/`selected` |
 | `allow_add` | boolean | Whether to allow users to add new items |
 | `allow_remove` | boolean | Whether to allow users to delete items |
-| `actions` | array | Action buttons. `label`=display text, `value`=return value, `primary`=highlight |
+| `actions` | array | Action buttons. `label`=display text, `value`=return value, `primary`=highlighted |
 | `multi_select` | boolean | Whether multiple selection is allowed |
 | `item_groups` | array | Optional, grouped single/multiple selection. Each group contains `group_id`/`group_header`/`multi_select`/`items`, items structure same as top-level items |
 | `file_upload` | object | Optional, enable file upload. Sub-fields: `enabled`(bool), `accept`(string[]), `max_files`(int), `max_size_mb`(int), `generate_thumbnails`(bool), `thumbnail_size`([int,int]), `preprocess`(object, extension→preprocessing script) |
@@ -139,7 +139,7 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `cmd_id` | string | Command ID, returned as-is in the response |
+| `cmd_id` | string | Command ID, returned unchanged in the response |
 | `action` | string | `devs`(list available serial ports) / `scan`(scan I2C etc. buses) / `exec`(execute code) / `cp`(upload file) / `cp_from`(download file) / `mkdir`(create directory) / `ls`(list files) / `rm`(delete file) / `soft_reset`(soft reset) / `stream`(persistent session) / `run`(send .py file to REPL for execution) |
 | `code` | string | Required when action=exec, Python code to execute |
 | `src` | string | Required when action=cp, local source path (relative to project directory) |
@@ -202,7 +202,7 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
   "type": "phase_complete",
   "payload": {
     "result": "success",
-    "summary": "Device analysis complete, found drivers for 2 out of 3 devices",
+    "summary": "Device analysis complete, found 2 drivers for 3 devices",
     "next_phase": "select-hw",
     "artifacts": [
       {
@@ -236,7 +236,7 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
 | `warnings` | string[] | Warning messages |
 | `errors` | string[] | Error messages |
 
-**Artifact types:**
+**Artifact Types:**
 
 | type | Rendering Method | Additional Fields |
 |------|------------------|-------------------|
@@ -268,7 +268,7 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
 | `stream_type` | string | `device_output` / `script_stdout` / `script_stderr` |
 | `chunk` | string | Data chunk |
 | `chunk_index` | number | Sequence number (starting from 0) |
-| `done` | boolean | Whether the stream is finished |
+| `done` | boolean | Whether it is finished |
 
 ---
 
@@ -292,9 +292,9 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
 | Field | Type | Description |
 |-------|------|-------------|
 | `phase` | string | Target skill name (analyze / select-hw / scaffold / generate / simulate / deploy / autofix / wiring / diagram / gen-driver / publish) |
-| `payload` | object | Input data defined by each skill. Common fields: `manifest` (project list passed from upstream), `session_id` (carried when resuming a session). Other fields are defined by each skill's interface documentation |
+| `payload` | object | Input data defined by each skill. Common fields: `manifest` (project manifest passed from upstream), `session_id` (carried when resuming a session). Other fields are defined by each skill's interface documentation |
 
-`start_phase` is the first message from plugin to server, triggering the server to load the corresponding SKILL.md and begin execution. `manifest` is passed via `phase_complete.manifest_content` from the upstream skill; `session_id` is used to resume a previously interrupted session (e.g., gen-driver's "continue later" scenario).
+`start_phase` is the first message from plugin to server, triggering the server to load the corresponding SKILL.md and begin execution. `manifest` is passed from the upstream skill's `phase_complete.manifest_content`; `session_id` is used to resume a previously interrupted session (e.g., gen-driver's "continue later" scenario).
 
 ### 1. approval_response
 
@@ -417,15 +417,15 @@ Rendered by the plugin as a timeline list: completed (✓) / in progress (spinni
 | `chunk_index` | number | Sequence number of the last received chunk |
 | `reason` | string | Termination reason. `marker_detected` (expected marker detected) / `timeout` (timeout) / `user_request` (manual stop) |
 
-When the plugin detects an expected marker (e.g., "starting scheduler") during a stream session, it can terminate early via `stream_ack(action=stop, reason=marker_detected)` and wrap the captured output as a `device_result` to return to the server.
+When the plugin detects an expected marker (e.g., "starting scheduler") during a stream session, it terminates early via `stream_ack(action=stop, reason=marker_detected)` and wraps the captured output as a `device_result` to return to the server.
 
 ---
 
 ## III. Error Handling
 
-The server can send `phase_complete` with `result: "failed"` at any stage, carrying an `errors` array explaining the reason. Upon receipt, the plugin stops the current phase's timeline animation and displays an error panel.
+The server can send `phase_complete` with `result: "failed"` at any stage, carrying an `errors` array explaining the reason. Upon receipt, the plugin stops the current stage's timeline animation and displays an error panel.
 
-When a plugin fails to execute a device_command / script_run / file_operation, it carries `success: false` + `error` fields in the corresponding result message. The server LLM decides the next step (retry/skip/degrade).
+When a plugin fails to execute a device_command / script_run / file_operation, it carries `success: false` + the `error` field in the corresponding result message. The server LLM decides the next step (retry/skip/degrade).
 
 ### Session Resumption
 
@@ -433,4 +433,4 @@ The plugin can carry a `session_id` in `start_phase` to resume a previously inte
 
 ### Automatic Phase Transition
 
-When `phase_complete.next_phase` is not null, the plugin automatically sends `start_phase` to the corresponding phase, with `payload.manifest` coming from `phase_complete.manifest_content`. The pipeline stops when next_phase is null.
+When `phase_complete.next_phase` is not null, the plugin automatically sends `start_phase` to the corresponding phase, with `payload.manifest` coming from `phase_complete.manifest_content`. The pipeline stops when `next_phase` is null.

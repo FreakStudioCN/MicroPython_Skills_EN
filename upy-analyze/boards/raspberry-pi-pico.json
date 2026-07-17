@@ -27,7 +27,7 @@
   "typical_use_cases": ["Pure GPIO control", "Motor driving", "Education and learning", "Low-budget projects"],
   "beginner_friendly": true,
   "price_yuan": 20,
-  "notes": "USB drag-and-drop flashing, extremely easy to get started. No WiFi/BLE, choose Pico W if networking is needed",
+  "notes": "USB drag-and-drop flashing, extremely easy to get started. No WiFi/BLE, choose Pico W if you need networking",
 
   "onboard_peripherals": [
     {
@@ -36,7 +36,7 @@
       "interface": "GPIO",
       "occupied_pins": { "led": 25 },
       "always_used": false,
-      "notes": "Onboard indicator LED. Most projects don't need to control it; GPIO25 can be freed"
+      "notes": "Onboard indicator LED. Most projects don't need to control it, GPIO25 can be freed"
     }
   ],
 
@@ -73,16 +73,16 @@
       "uart1_rx":  [5, 9, 21, 25]
     },
     "notes": [
-      "RP2040 peripherals are fixed to specific GPIOs. Each function can only be selected from the set of pins listed in pin_options",
-      "I2C0/I2C1: choose 1 pair from 6 options (sda and scl must be from the same group)",
-      "SPI0/SPI1: choose 1 from 4-6 options, each pin comes from a fixed GPIO group",
-      "UART0/UART1: choose 1 from 4-5 options",
-      "PWM: every GPIO can be used for PWM (8 slices total, 2 channels per slice)",
-      "ADC: only GPIO 26/27/28 can be used; GPIO 29 is ADC reference or input (varies by board)",
+      "RP2040 peripherals are fixed to GPIO pins. Each function can only be selected from the set of pins listed in pin_options",
+      "I2C0/I2C1: 6 choose 1, each pair (sda and scl must be from the same group)",
+      "SPI0/SPI1: 4-6 choose 1, each pin comes from a fixed GPIO group",
+      "UART0/UART1: 4-5 choose 1",
+      "PWM: Every GPIO can do PWM (8 slices total, 2 channels per slice)",
+      "ADC: Only GPIO 26/27/28 can be used, GPIO 29 is ADC reference or input (varies by board)",
       "GPIO 23 is SMPS control, generally not used",
       "GPIO 24 is VBUS detection, generally not used",
       "GPIO 25 is the onboard LED, usable but recommended not to repurpose",
-      "Default I2C0 (GPIO4/5) is the most common; be careful not to conflict with UART1 (default TX=4/RX=5)"
+      "Default I2C0 (GPIO4/5) is the most common, be careful not to conflict with UART1 (default TX=4/RX=5)"
     ]
   }
 }

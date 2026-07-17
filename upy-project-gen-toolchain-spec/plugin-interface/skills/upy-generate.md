@@ -15,9 +15,9 @@
 | Downstream Skill | upy-simulate (manual trigger) / upy-deploy (automatic entry) |
 | One-line Responsibility | Download drivers → Understand API → Generate factory + Mock → Generate tasks → Supplement config → DI assembly → Test generation → Multi-layer validation |
 
-**Core constraints:** No code except main.py imports `machine`. DI duck typing. Dual write via `print()` + logger. Each task has its own try/except block.
+**Core Constraints:** No code except main.py imports `machine`. DI duck typing. `print()` + logger dual-write. Each task has its own try/except.
 
-**Two operating modes:**
+**Two Operation Modes:**
 
 | Mode | Trigger | Behavior |
 |------|---------|----------|
@@ -83,8 +83,8 @@
 | `manifest` | object | Yes | Complete manifest |
 | `error_context.traceback` | string | Yes | Original Python traceback |
 | `error_context.file_path` | string | Yes | Path to the error file |
-| `error_context.line_number` | number | Yes | Line number of the error |
-| `error_context.driver_name` | string | No | Name of the involved driver |
+| `error_context.line_number` | number | Yes | Error line number |
+| `error_context.driver_name` | string | No | Involved driver name |
 | `error_context.error_type` | string | Yes | autofix classification: `P0_typo_import` / `P0_driver_api` / `P1_pin_addr` / `P1_wdt_mem` / `P2_sensor` / `P3_loop_no_output` / `unknown` |
 | `error_context.attempt_number` | number | Yes | Current attempt number (1~3) |
 | `error_context.previous_attempts` | array | No | Strategies and results of previous attempts |
@@ -99,7 +99,7 @@
 Phase 1: Download drivers
   → status_update "Searching and downloading drivers..."
   → [Server internal] Run download_drivers.py (stdin manifest → stdout JSON)
-  → [Server internal] LLM receives JSON, obtains all driver source code
+  → [Server internal] LLM receives JSON, obtains all driver source code content
   → file_operation(write) × N writes driver files to plugin-side firmware/lib/
   → status_update "✓ SSD1306 → upypi (ssd1306-driver v1.3.0)"
   → status_update "⚠ SHT30 → Driver not found"
@@ -107,7 +107,7 @@ Phase 1: Download drivers
 
 Phase 2: Understand driver → Generate factory + Mock
   → status_update "Reading SSD1306 driver source code..."
-  → [Server internal] LLM reads driver source from download_drivers.py output JSON
+  → [Server internal] LLM reads driver source code from download_drivers.py output JSON
   → [Server internal] Generate drivers/ssd1306_driver/__init__.py (factory function + scan function)
   → [Server internal] Generate drivers/ssd1306_driver/mock.py (Mock class)
   → file_operation(write) × 2 writes to plugin side
@@ -156,7 +156,7 @@ Phase 9: Output
 ### fix mode message sequence
 
 ```
-Step 1: Read current files
+Step 1: Read current file
   → file_operation(read) × 1~3 (read error file + related dependency files)
 
 Step 2: Analyze fix
@@ -174,13 +174,13 @@ Step 5: Return
   → phase_complete (code_diff + fix summary)
 ```
 
-**fix mode does not send approval_request.** The user is in the autofix flow; fixes are applied silently.
+**fix mode does not send approval_request.** The user is in the autofix flow; fixes are executed silently.
 
-**fix mode must read first.** The file may have been modified by a previous fix attempt; modifications cannot rely on memory from the initial full generation.
+**fix mode must read first.** The file may have been modified by a previous fix attempt; it cannot rely on memory from the initial full generation.
 
 ### Message Details
 
-#### status_update List
+#### status_update list
 
 | step_id | message | level | Trigger |
 |---------|---------|-------|---------|
@@ -201,7 +201,7 @@ Step 5: Return
 | test_ok | ✓ test/pc/ + test/device/ generated | success | Phase 6 complete |
 | lint_start | Running flake8 validation... | info | Phase 7 start |
 | lint_flake8_ok | ✓ flake8 passed | success | Single validation pass |
-| lint_flake8_fail | ✗ flake8 found N errors, fixing... | warn | Validation failed, auto-fixing |
+| lint_flake8_fail | ✗ flake8 found N errors, fixing... | warn | Validation failed, auto-fix |
 | lint_pylint_ok | ✓ pylint passed | success | Same as above |
 | lint_mpy_imports_ok | ✓ MPY import compatibility check passed | success | Same as above |
 | lint_dead_config_ok | ✓ Dead config detection passed | success | Same as above |
@@ -211,12 +211,12 @@ Step 5: Return
 | fix_read | Reading firmware/tasks/sensor.py... | info | fix mode Step 1 |
 | fix_analyze | Analyzing error cause... | info | fix mode Step 2 |
 | fix_write | Fixing tasks/sensor.py line 42... | info | fix mode Step 3 |
-| fix_lint_ok | ✓ Lint validation passed after fix | success | fix mode Step 4 |
+| fix_lint_ok | ✓ Post-fix lint validation passed | success | fix mode Step 4 |
 | fix_done | ✓ Fix complete | success | fix mode Step 5 |
 
-#### script_run Validation Chain
+#### script_run validation chain
 
-5 validation scripts run sequentially. If any step fails → LLM reads error list → fixes → re-runs that script. Each script has a 15-second timeout.
+5 validation scripts execute sequentially. Any step fails → LLM reads errors list → fixes → re-runs that script. Each script has a 15-second timeout.
 
 ```json
 {
@@ -252,15 +252,15 @@ All validation scripts share a unified output format:
 
 | Script | Check Content | Exit Code |
 |--------|---------------|-----------|
-| `flake8` | Code style + syntax errors | Non-zero = issues found |
-| `pylint` | Code quality (uses .pylintrc config) | Non-zero = issues found |
-| `check_mpy_imports.py` | Scans all imports against 63 MPY whitelist items | Non-zero = violations found |
-| `check_dead_config.py` | Checks if constants defined in conf.py are referenced | Non-zero = dead config found |
-| `check_skeleton_compliance.py` | 5 skeleton compliance checks | Non-zero = violations found |
+| `flake8` | Code style + syntax errors | Non-zero = issues |
+| `pylint` | Code quality (uses .pylintrc config) | Non-zero = issues |
+| `check_mpy_imports.py` | Scans all imports, checks against 63 MPY whitelist | Non-zero = violations |
+| `check_dead_config.py` | Checks if constants defined in conf.py are referenced | Non-zero = dead config |
+| `check_skeleton_compliance.py` | 5 skeleton compliance checks | Non-zero = violations |
 
-#### file_operation — Driver Download Write
+#### file_operation — driver download write
 
-`download_drivers.py` runs on the server side (using server network), outputs JSON to stdout. The server parses it:
+`download_drivers.py` runs on the server side (using server network), outputs JSON to stdout. Server parses it:
 
 ```json
 {
@@ -275,7 +275,7 @@ All validation scripts share a unified output format:
 }
 ```
 
-At the same time, the LLM directly obtains the driver source code from the JSON to enter Phase 2, without needing an additional `file_operation(read)`.
+At the same time, the LLM directly obtains the driver source code content from the JSON to enter Phase 2, without needing an additional `file_operation(read)`.
 
 #### phase_complete — full mode
 
@@ -344,7 +344,7 @@ At the same time, the LLM directly obtains the driver source code from the JSON 
     "artifacts": [
       {
         "type": "code_diff",
-        "title": "Modifications",
+        "title": "Modification Content",
         "file_path": "firmware/tasks/sensor.py",
         "changes": [
           {
@@ -367,14 +367,14 @@ At the same time, the LLM directly obtains the driver source code from the JSON 
 | Field | Type | Description |
 |-------|------|-------------|
 | `type` | string | `"code_diff"` |
-| `title` | string | Diff title |
+| `title` | string | diff title |
 | `file_path` | string | Path to the modified file |
-| `changes[].line_start` | number | Start line of modification |
-| `changes[].line_end` | number | End line of modification |
+| `changes[].line_start` | number | Modification start line number |
+| `changes[].line_end` | number | Modification end line number |
 | `changes[].old_text` | string | Code before modification |
 | `changes[].new_text` | string | Code after modification |
 
-**fix mode does not return manifest_content.** The fix does not change the manifest structure; autofix can update `updated_at` itself.
+**fix mode does not return manifest_content.** The fix does not change the manifest structure; autofix updates `updated_at` itself.
 
 ---
 
@@ -386,15 +386,15 @@ A total of 11 changes:
 |---|----------|-----------------|-----------|--------|
 | 1 | Pre-checks | `python --version` + requests/flake8/pylint import check | Remove | Server environment guarantees |
 | 2 | Phase 1 | `python download_drivers.py --project-dir {dir}` writes to local disk | `python download_drivers.py --manifest - < manifest.json` stdin in, stdout JSON out. Server parses and sends file_operation(write) to plugin | Server does not write to local disk |
-| 3 | Phase 1A newline fix | Large inline Python (30-line Bash heredoc) | Logic built into download_drivers.py; auto-fixes after download, not a separate step | Simplify flow |
-| 4 | Phase 2A | LLM reads `firmware/lib/<driver>.py` file | LLM reads driver source directly from download_drivers.py stdout JSON | Eliminates file_operation(read) round trip |
-| 5 | Phase 2B | Modify self-built I2C driver `lib/<driver>.py` | After modification, send file_operation(write) to overwrite the corresponding file on the plugin side | Server modifications must be synced to plugin side |
-| 6 | Phase 3~6 | Generate files → implicit disk write | Send file_operation(write) for each generated file to plugin side | Files are on the plugin side |
+| 3 | Phase 1A newline fix | Large inline Python (30-line Bash heredoc) | Logic built into download_drivers.py, auto-fixes after download, not a separate step | Simplify flow |
+| 4 | Phase 2A | LLM reads `firmware/lib/<driver>.py` file | LLM reads driver source code directly from download_drivers.py stdout JSON | Saves file_operation(read) round trips |
+| 5 | Phase 2B | Modifies self-built I2C driver `lib/<driver>.py` | After modification, sends file_operation(write) to overwrite the corresponding file on the plugin side | Server-modified content must be synced to plugin side |
+| 6 | Phase 3~6 | Generate files → implicit disk write | Each generated file sends file_operation(write) to plugin side | Files are on the plugin side |
 | 7 | Phase 7A flake8 | `subprocess.run(flake8)` | `script_run(flake8)` | Files are on the plugin side; lint must also run on the plugin side |
 | 8 | Phase 7B pylint | `subprocess.run(pylint)` | `script_run(pylint)` | Same as above |
 | 9 | Phase 7C MPY import check | `find` + `grep` + LLM manual analysis | `script_run(check_mpy_imports.py)` deterministic validation | LLM enumeration is unreliable; script is 100% reliable |
 | 10 | Phase 7D Dead config detection | `python -c "..."` inline extraction + grep | `script_run(check_dead_config.py)` deterministic validation | Same as above |
-| 11 | New fix mode | None | Accept `mode="fix"` + `error_context`, first `file_operation(read)` to read error file → LLM minimal modification → `file_operation(write)` to write back → lint → return code_diff | autofix re-entry |
+| 11 | New fix mode | None | Accept `mode="fix"` + `error_context`, first `file_operation(read)` the error file → LLM minimal modification → `file_operation(write)` write back → lint → return code_diff | autofix re-entry |
 
 ---
 
@@ -407,9 +407,9 @@ A total of 11 changes:
 | Change | Content |
 |--------|---------|
 | Input method | `--project-dir` changed to `--manifest -` (reads manifest JSON from stdin) |
-| Output method | No longer writes to disk. Outputs JSON to stdout (see format below), stderr retains logs |
+| Output method | No longer writes to disk. stdout outputs JSON (see format below), stderr retains logs |
 | Newline fix | Built-in: after downloading each file, automatically compile checks + fixes `\r\r\n` |
-| Manifest writing | Remove manifest update logic at lines 243-248 (handled uniformly by Phase 9) |
+| Manifest write | Remove manifest update logic at lines 243-248 (handled uniformly by Phase 9) |
 
 **stdout JSON format (fixed):**
 
@@ -439,12 +439,12 @@ A total of 11 changes:
 
 **Path:** `G:\MicroPython_Skills\upy-generate\scripts\check_mpy_imports.py`
 
-Replaces the current Phase 7C `find` + `grep` manual process.
+Replaces the current Phase 7C `find` + `grep` manual flow.
 
 **Check logic:**
 1. Scan all `.py` files under `firmware/` (excluding `firmware/lib/`)
 2. Extract top-level module name X from `import X` and `from X import Y`
-3. Compare against the 63 MicroPython whitelist items
+3. Check against the 63 MicroPython whitelist
 4. Not in whitelist but has a `.py` file with the same name under `firmware/` → report error: should use relative import
 5. Not in whitelist and no file under `firmware/` → report warning: may not be supported
 
@@ -494,7 +494,7 @@ python check_skeleton_compliance.py --project-dir {project_dir} --manifest - < m
 
 ### 5.5 Two-stage file_operation(read) (fix mode specific)
 
-In fix mode, the LLM must first read the current content of the error file. If the error involves multiple files (e.g., sensor.py calls a function whose signature has changed), multiple files need to be read.
+In fix mode, the LLM needs to first read the current content of the error file. If the error involves multiple files (e.g., sensor.py calls a function whose signature has changed), multiple files need to be read.
 
 The LLM decides which files to read, but it **must** read at least the file pointed to by `error_context.file_path`.
 
@@ -504,44 +504,44 @@ The LLM decides which files to read, but it **must** read at least the file poin
 
 | Component | Corresponding Message | Key Functionality |
 |-----------|-----------------------|-------------------|
-| Progress timeline | status_update × 20+ | Dense timeline for the entire flow (download→factory→generation→test→validation), reuse existing component |
+| Progress timeline | status_update × 20+ | The most dense timeline in the entire flow (download → factory → generation → test → validation), reuse existing component |
 | File write progress | file_operation × 20+ | Second large batch of file writes after skeleton generation. Reuse the same component from the scaffold phase |
 | Validation status panel | script_run × 5 | Display the progress/pass/fail status of 5 validation scripts sequentially |
 | Code diff view | phase_complete (code_diff) | **New component**: Show before/after comparison in fix mode, green for additions/red for deletions |
-| Results panel | phase_complete (full) | Device status table + file tree + warning messages |
+| Results panel | phase_complete (full) | Device status table + file tree + warning information |
 
 ### code_diff Rendering Specification
 
 When the plugin receives a `type: "code_diff"` artifact, it renders it as a diff view:
 
 ```
-┌─ Modifications — firmware/tasks/sensor.py ─┐
-│                                             │
-│  -    data['temp'] = sensor.measure()[0]    │
-│  -    data['hum'] = sensor.measure()[1]    │
-│  +    result = sensor.measure()             │
-│  +    if result is not None:                │
-│  +        data['temp'] = result[0]          │
-│  +        data['hum'] = result[1]           │
-│                                             │
-└─────────────────────────────────────────────┘
+┌─ Modification Content — firmware/tasks/sensor.py ─┐
+│                                                    │
+│  -    data['temp'] = sensor.measure()[0]           │
+│  -    data['hum'] = sensor.measure()[1]            │
+│  +    result = sensor.measure()                    │
+│  +    if result is not None:                       │
+│  +        data['temp'] = result[0]                 │
+│  +        data['hum'] = result[1]                  │
+│                                                    │
+└────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## VII. Independent Test Scenarios
 
-### Plugin-side Testing (No Server)
+### Plugin-side Tests (No Server)
 
-1. Manually send a status_update sequence (20 items) → Verify long timeline scrolling and collapsing
+1. Manually send a status_update sequence (20 messages) → Verify long timeline scrolling and collapsing
 2. Manually construct phase_complete (with file_tree + table) → Verify file tree + table
 3. Manually construct phase_complete (fix mode, with code_diff) → **Focus on testing diff view**:
    - Single line modification
    - Multi-line modification
-   - New code block addition
+   - New code block
 4. Manually send a script_run × 5 sequence → Verify validation panel updates one by one
 
-### Skill-side Testing (No Plugin)
+### Skill-side Tests (No Plugin)
 
 1. **Full mode complete flow:**
    - mock_plugin sends start_phase (mode=full, manifest=temp/humidity project, phase: scaffold)

@@ -36,7 +36,7 @@
       "interface": "GPIO",
       "occupied_pins": { "led": 8 },
       "always_used": false,
-      "notes": "Onboard indicator LED. Most projects do not need to control it; GPIO8 can be freed"
+      "notes": "Onboard indicator LED. Most projects don't need to control it; GPIO8 can be freed"
     }
   ],
 
@@ -57,12 +57,12 @@
     },
     "pin_options": {},
     "notes": [
-      "All I2C/SPI/UART can be remapped via GPIO Matrix (simpler than ESP32, no input-only pins)",
+      "All I2C/SPI/UART can be remapped via GPIO Matrix (simpler than ESP32, no input_only pins)",
       "GPIO 2/8/9 are strapping pins; their level at startup affects the operating mode",
       "GPIO 8 is also the onboard LED; caution needed when used as strapping",
       "GPIO 12-17 are occupied by internal Flash and cannot be used externally",
       "GPIO 18/19 are USB serial pins; cannot be repurposed when using USB serial",
-      "Only 1 hardware I2C controller. When connecting multiple I2C devices, they can share the same bus if addresses do not conflict; if addresses conflict, use machine.SoftI2C to emulate on other GPIOs (any free GPIO can be used)",
+      "Only 1 hardware I2C controller. When connecting multiple I2C devices, they can share the same bus if addresses don't conflict; if addresses conflict, use machine.SoftI2C to emulate on other GPIOs (any free GPIO works)",
       "RISC-V core; some MicroPython libraries may be less mature than for Xtensa (ESP32)"
     ]
   }

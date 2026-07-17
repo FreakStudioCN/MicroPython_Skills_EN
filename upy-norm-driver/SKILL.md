@@ -5,20 +5,20 @@ description: Use this skill when the user wants to normalize or standardize an e
 
 # MicroPython Driver File Normalization Skill
 
-## Role Definition
+## Role Positioning
 
 You are the GraftSense MicroPython driver normalization assistant. Given a functional but non-standard driver `.py` file, rewrite it according to the GraftSense coding specification and output the complete normalized file content.
 
 ## Type Determination (Must be completed before executing any step)
 
-After reading the file, immediately determine the driver type. All subsequent steps must follow the corresponding branch based on the type:
+After reading the file, immediately determine the driver type. All subsequent steps follow the corresponding branch based on the type:
 
 | Condition | Type |
 |---|---|
-| File is located in `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` and has no I2C/SPI/UART hardware bus operations | **Middleware Library** |
+| File is in the `middleware/` subdirectory, or imports `network`/`urequests`/`AsyncWebsocketClient`/`asyncio` and has no I2C/SPI/UART hardware bus operations | **Middleware Library** |
 | Other cases | **Hardware Driver** |
 
-**Middleware libraries skip the following rules** (marked as "Not applicable - Middleware library" in the P0 description table):
+**Middleware libraries skip the following rules** (marked as "Not applicable - Middleware Library" in the P0 description table):
 - #16 Explicit dependency injection, #16a Pin parameters changed to bus instance, #16b INT pin changed to callback injection, #16c Timer changed to instance injection
 - #29 ISR must not throw exceptions, #34~38 All ISR specification class rules, #39 bytearray reuse buffer
 
@@ -27,7 +27,7 @@ After reading the file, immediately determine the driver type. All subsequent st
 
 ## Core Constraints (Must not be violated)
 
-**During the rewriting process, absolutely do not modify:**
+**Absolutely must not modify during rewriting:**
 - External API names (public method names, property names)
 - Method signature semantics (parameter meaning, return value meaning)
 - Core business logic (algorithms, calculation formulas)
@@ -35,7 +35,7 @@ After reading the file, immediately determine the driver type. All subsequent st
 
 ## Execution Steps
 
-1. Read the driver `.py` file specified by the user; **must re-read the complete content of the file, do not use session cache or skip the reading step**
+1. Read the user-specified driver `.py` file; **must re-read the complete content of the file, do not use session cache or skip the reading step**
 2. Analyze the file structure: identify communication interface type, classes, methods, properties, constants, imports, whether there are ISR callbacks
 3. Rewrite item by item according to P0→P2 priority
 4. Output the complete rewritten file content
@@ -44,15 +44,15 @@ After reading the file, immediately determine the driver type. All subsequent st
 
 ## Rewrite Priority
 
-### P0 — Must modify (execute all, cannot skip)
+### P0 — Must change (execute all, cannot skip)
 
 #### File Structure Class
 
 | # | Rewrite Item | Description |
 |---|---|---|
 | 0 | File naming convention check | File name must be all lowercase + underscores, based on sensor/chip model, must not conflict with MicroPython built-in module names; if not compliant, prompt the user to rename in the description table (do not automatically rename the file) |
-| 1 | 7-line file header comment | Complete or correct, `# @License : MIT` must be on its own line, cannot be merged with other content; `@Author` reads and retains from the original file's `__author__` field; if the original file does not have this field, prompt the user to fill it in, do not use placeholders |
-| 2 | 4 module global variables | `__version__`, `__author__`, `__license__`, `__platform__` immediately follow the file header; `__author__` reads and retains from the original file; if absent, prompt the user to fill it in; if the driver depends on specific chip features, an optional `__chip__` can be added |
+| 1 | File header 7-line comment | Complete or correct, `# @License : MIT` must be on its own line, must not be merged with other content; `@Author` reads and retains from the original file's `__author__` field, if the original file has no such field, prompt the user to fill it in, do not use placeholders |
+| 2 | 4 module global variables | `__version__`, `__author__`, `__license__`, `__platform__` immediately follow the file header; `__author__` reads and retains from the original file, if absent, prompt the user to fill it in; if the driver depends on specific chip features, an optional `__chip__` can be added |
 | 3 | 6 partition annotation comments | Order: Import related modules → Global variables → Functional functions → Custom classes → Initialization configuration → Main program; the initialization configuration area and main program area at the end of the driver file must be left empty but must exist |
 | 4 | Partition content specification | Import area: prohibit long delay operations and hardware instantiation; Global variable area: only place constants/DEBUG switches/reuse buffers, prohibit hardware object instantiation |
 
@@ -61,7 +61,7 @@ After reading the file, immediately determine the driver type. All subsequent st
 | # | Rewrite Item | Description |
 |---|---|---|
 | 5 | raise/print in English | Change all strings in `raise`/`print` to English; comments and docstrings are not restricted |
-| 6 | Inline comments in Chinese | Change all comments to Chinese; key operational steps inside methods (register read/write, data parsing, bit operations, state judgment, delays, etc.) must have Chinese comment explanations; **Comments must be written on the line above the corresponding code (independent comment line), prohibited from being written at the end of the code line (trailing `#` comment)** |
+| 6 | Inline comments in Chinese | Change all comments to Chinese; key operation steps inside methods (register read/write, data parsing, bit operations, status judgment, delays, etc.) must have Chinese comment explanations; **Comments must be written on the line above the corresponding code (independent comment line), must not be written at the end of the code line (trailing `#` comment)** |
 
 #### Class Design Class
 
@@ -73,30 +73,30 @@ After reading the file, immediately determine the driver type. All subsequent st
 | 10 | Class-level constant specification | Use `micropython.const()` to wrap, name with `UPPER_CASE` |
 | 11 | Attribute naming convention | Private attributes add `_` prefix with `_snake_case`, public attributes use `camelCase` or `snake_case`, module-level register constants use `UPPER_CASE` |
 | 12 | Fixed parameters as constants | Declare fixed hardware parameters and default configurations as class attribute uppercase constants, eliminate hardcoding |
-| 13 | Extract common functions | Extract hardware-independent functions such as CRC, unit conversion outside the class to reduce coupling |
-| 14 | Setter/Getter encapsulation | Configuration properties are encapsulated and validated via `set_xxx()`/`get_xxx()`, prohibit direct external modification |
-| 15 | Complete `deinit()` | If there is no `deinit()`/`close()` method, complete it to release hardware resources (stop timers, release buses, etc.) |
+| 13 | Extract common functions | Move hardware-independent functions like CRC, unit conversion outside the class to reduce coupling |
+| 14 | Setter/Getter encapsulation | Encapsulate configuration properties via `set_xxx()`/`get_xxx()` with validation, prohibit direct external modification |
+| 15 | Complete `deinit()` | If there is no `deinit()`/`close()` method, add one to release hardware resources (stop timers, release buses, etc.) |
 | 16 | Explicit dependency injection | Do not create hardware bus objects (I2C/SPI/UART) inside the class; hardware instances must be passed as parameters to `__init__` |
 | 16a | Pin parameters changed to bus instance | If the original driver's `__init__` passes I2C/UART pin numbers (e.g., `scl_pin`/`sda_pin`/`tx_pin`/`rx_pin`), and it is possible to change to passing a bus instance, it must be rewritten to accept `I2C`/`UART` instance parameters |
-| 16b | INT pin changed to callback injection | If the original driver's `__init__` passes an interrupt pin (e.g., `int_pin`), it must be rewritten to accept both: an interrupt callback function (`callback: callable`) and an interrupt trigger condition (`trigger: int`, default `Pin.IRQ_FALLING`), and complete `pin.irq()` registration inside `__init__` |
-| 16c | Timer changed to instance injection | If the original driver creates `machine.Timer` internally, it must be rewritten to accept an externally passed timer instance (`timer`), do not create a Timer object inside the class; do not default to creating `Timer(-1)`, only RP2/Pico/RP2040/RP2350 and Zephyr can use virtual Timer(-1), other ports use non-negative hardware Timer IDs |
+| 16b | INT pin changed to callback injection | If the original driver's `__init__` passes an interrupt pin (e.g., `int_pin`), it must be rewritten to also accept: an interrupt callback function (`callback: callable`) and an interrupt trigger condition (`trigger: int`, default `Pin.IRQ_FALLING`), and complete `pin.irq()` registration inside `__init__` |
+| 16c | Timer changed to instance injection | If the original driver creates `machine.Timer` internally, it must be rewritten to accept an externally passed timer instance (`timer`), do not create a Timer object inside the class; must not default to creating `Timer(-1)`, only RP2/Pico/RP2040/RP2350 and Zephyr can use virtual Timer(-1), other ports use non-negative hardware Timer IDs |
 
 #### Docstring Class
 
 | # | Rewrite Item | Description |
 |---|---|---|
-| 17 | Class-level docstring | Bilingual Chinese and English, containing three sections: `Attributes`/`Methods`/`Notes`, `==================` separates Chinese and English |
+| 17 | Class-level docstring | Bilingual Chinese and English, containing three sections: `Attributes`/`Methods`/`Notes`, separated by `==================` |
 | 18 | Method docstring | Every public method and `__init__` must have a bilingual Chinese and English docstring, containing Args/Returns/Raises/Notes |
-| 19 | Side effect annotation | The docstring Notes must annotate the side effects of the method (e.g., modifying hardware state, holding locks, etc.) |
+| 19 | Side effect annotation | The docstring Notes must annotate the method's side effects (e.g., modifying hardware state, holding locks, etc.) |
 | 20 | ISR-safe annotation | The docstring Notes must annotate whether the method is ISR-safe |
-| 21 | Callback function specification | Methods with callback parameters: Args must specify the callback signature and calling context |
+| 21 | Callback function specification | Methods with callback parameters: In Args, specify the callback signature and calling context |
 
 #### Type Annotation Class
 
 | # | Rewrite Item | Description |
 |---|---|---|
-| 22 | `__init__` type annotation | Add type annotations to all parameters, return value `-> None`; parameter validation must occur before initialization logic |
-| 23 | Public method return value annotation | Add return value type annotation to each public method (only use MicroPython native types, disable typing generics) |
+| 22 | `__init__` type annotation | Add type annotations to all parameters, return value `-> None`; parameter validation must be before initialization logic |
+| 23 | Public method return value annotation | Add return value type annotation to every public method (use only MicroPython native types, disable typing generics) |
 | 24 | Callback parameter annotation | Callback/function type annotations write `callable`, specify the signature in the docstring Args |
 
 #### Parameter Validation Class
@@ -104,7 +104,7 @@ After reading the file, immediately determine the driver type. All subsequent st
 | # | Rewrite Item | Description |
 |---|---|---|
 | 25 | Three modes of parameter validation | Choose according to the scenario: ① `isinstance` + raise (type check) ② `hasattr` + raise (duck typing) ③ Value range comparison + raise |
-| 26 | `__init__` two-step validation | For each parameter at least: None check + type check, add value range check if necessary |
+| 26 | `__init__` two-step validation | Each parameter at least: None check + type check, add value range check if necessary |
 
 #### Exception Handling Class
 
@@ -112,8 +112,8 @@ After reading the file, immediately determine the driver type. All subsequent st
 |---|---|---|
 | 27 | Exception type standardization | Parameter error → `ValueError`, I/O error → `RuntimeError` or custom `DeviceError` |
 | 28 | OSError wrap and re-raise | Catch `OSError` from underlying I/O, wrap and re-raise, retain `from e`: `raise RuntimeError("...") from e` |
-| 29 | ISR must not throw exceptions | ISR callbacks must not throw exceptions; use error flag bits instead, checked by the main loop |
-| 30 | Retry mechanism | For transient I2C/SPI errors, implement limited retries (2-3 times), provide optional parameters `retries=1, delay_ms=5` |
+| 29 | ISR must not throw exceptions | Must not throw exceptions in ISR callbacks; use error flags instead, checked by the main loop |
+| 30 | Retry mechanism | Transient I2C/SPI errors can implement limited retries (2-3 times), provide optional parameters `retries=1, delay_ms=5` |
 
 #### Function Design Class
 
@@ -121,13 +121,13 @@ After reading the file, immediately determine the driver type. All subsequent st
 |---|---|---|
 | 31 | Function naming convention | Verb prefix: `read_`/`write_`/`set_`/`get_`/`init_`/`reset_`, private methods add `_` prefix |
 | 32 | Return value design | Multi-value returns use `tuple`, structured data use `dict`, raw data use `bytearray`, avoid `None` mixed semantics |
-| 33 | Debug log switch | Library functions are silent by default, control output via `debug` parameter, uniformly go through `_log()` method, do not unconditionally `print` |
+| 33 | Debug log switch | Library functions are silent by default, control output via `debug` parameter, uniformly go through `_log()` method, must not unconditionally `print` |
 
 #### ISR Specification Class (Must execute when there are interrupt callbacks in the code)
 
 | # | Rewrite Item | Description |
 |---|---|---|
-| 34 | ISR minimization | ISR only does minimal work: set flag bits or call `micropython.schedule` to transfer to main loop processing |
+| 34 | ISR minimization | ISR only does minimal work: set a flag or call `micropython.schedule` to transfer to the main loop |
 | 35 | ISR prohibits memory allocation | Absolutely no memory allocation in ISR (do not create new objects, do not concatenate strings) |
 | 36 | ISR prohibits blocking I/O | Do not perform any blocking I/O operations in ISR |
 | 37 | Concurrency protection | When the main loop accesses ISR shared variables, use `machine.disable_irq()`/`enable_irq()` for protection |
@@ -139,8 +139,8 @@ After reading the file, immediately determine the driver type. All subsequent st
 
 | # | Rewrite Item | Applicable Condition |
 |---|---|---|
-| 39 | bytearray reuse buffer | Has frequent I/O read/write loops, declare `_BUF` globally for reuse |
-| 40 | `__enter__`/`__exit__` | Driver needs automatic resource release with `with` statement |
+| 39 | bytearray reuse buffer | Has frequent I/O read/write loops, declare global `_BUF` for reuse |
+| 40 | `__enter__`/`__exit__` | Driver needs `with` statement for automatic resource release |
 | 41 | `sys.platform` adaptation | Driver needs to be deployed on multiple platforms (ESP32/RP2040) |
 | 42 | Data debounce and cache | High-frequency sampling sensor, cache the latest valid data to avoid frequent hardware reads |
 | 43 | Singleton pattern | Hardware resources have uniqueness constraints, use `_instance`/`get_instance()` |
@@ -166,7 +166,7 @@ __version__ = "1.0.0"
 __author__ = "Author Name"
 __license__ = "MIT"
 __platform__ = "MicroPython v1.23"
-# Optional: add __chip__ = "RP2040" when depending on specific chip
+# Optional: add __chip__ = "RP2040" when dependent on a specific chip
 ```
 
 ### Partition Annotation Format (Last two areas of the driver file left empty)
@@ -408,12 +408,12 @@ micropython.alloc_emergency_exception_buf(100)  # Top of file
 
 class SensorWithISR:
     def __init__(self, pin: Pin) -> None:
-        self._flag = False       # ISR communicates via flag bit
+        self._flag = False       # ISR communicates via flag
         self._data = 0
         pin.irq(trigger=Pin.IRQ_RISING, handler=self._isr_handler)
 
     def _isr_handler(self, pin) -> None:
-        # ISR only sets flag bit, does no memory allocation or I/O
+        # ISR only sets flag, does no memory allocation or I/O
         micropython.schedule(self._process_data, 0)
 
     def _process_data(self, _) -> None:
@@ -421,7 +421,7 @@ class SensorWithISR:
         self._flag = True
 
     def read_if_ready(self) -> tuple:
-        # Protect when main loop accesses shared variables
+        # Protect shared variable access in main loop
         state = machine.disable_irq()
         flag = self._flag
         self._flag = False
@@ -448,8 +448,8 @@ class SensorDriver:
 
 ### Type Annotation Restrictions
 - **Available**: `int`, `float`, `bool`, `str`, `bytes`, `bytearray`, `memoryview`, `list`, `tuple`, `dict`, `None`, `I2C`, `SPI`, `UART`, `Pin`, `callable`, `object`
-- **Prohibited**: `typing.Any`, `typing.List[int]`, `typing.Optional`, `typing.Callable` and all other typing generic notations
-- Container element types are explained in the docstring, do not use generic annotations
+- **Prohibited**: `typing.Any`, `typing.List[int]`, `typing.Optional`, `typing.Callable` and all other typing generic forms
+- Container element types are described in docstrings, not using generic annotations
 
 ---
 

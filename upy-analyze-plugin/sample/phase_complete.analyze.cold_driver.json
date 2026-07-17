@@ -3,7 +3,7 @@
   "payload": {
     "phase": "analyze",
     "result": "success",
-    "summary": "Device analysis completed: No ready-made driver found for the user-specified device, marked as cold-driver path",
+    "summary": "Device analysis completed: The user-specified device has no existing driver, and the cold driver path has been marked.",
     "next_phase": "select-hw",
     "next_skill": "/upy-select-hw-plugin",
     "manifest_content": {
@@ -50,12 +50,12 @@
         "title": "Device Driver Status",
         "headers": ["Device", "Interface", "Driver Source", "Status"],
         "rows": [
-          ["Soil Moisture Sensor", "ADC", "cold-driver", "Requires subsequent cold-driver generation and verification"]
+          ["Soil Moisture Sensor", "ADC", "cold-driver", "Requires subsequent cold driver generation and verification"]
         ]
       }
     ],
     "warnings": [
-      "No ready-made driver for the user-specified device, proceed to cold-driver generation and verification process"
+      "The user-specified device has no existing driver, and the subsequent cold driver generation and verification process should be entered."
     ],
     "errors": []
   }

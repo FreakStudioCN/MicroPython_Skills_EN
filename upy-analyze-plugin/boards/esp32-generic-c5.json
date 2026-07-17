@@ -232,7 +232,7 @@
   "generation": {
     "generated_at": "2026-07-15",
     "generator": "scripts/generate_official_board_jsons_v3_20260715.py",
-    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython官方板卡资料收集Excel模板-2026-07-12(1).csv",
+    "input_csv": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\MicroPython official board information collection Excel template-2026-07-12(1).csv",
     "pending_json": "G:\\MicroPython_Skills\\upy-analyze-plugin\\boards\\_official_pending\\ESP32_GENERIC_C5.json",
     "source_cache_dir": "G:\\blockless-plugin-course(1)\\_tmp_mpy_board_source_cache_20260715\\ESP32_GENERIC_C5",
     "output_file": "G:\\blockless-plugin-course(1)\\_tmp_official_board_json_v3_20260715\\esp32-generic-c5.json",

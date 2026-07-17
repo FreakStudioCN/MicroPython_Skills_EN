@@ -6,7 +6,7 @@
     "question": "Please confirm whether the following devices are correct",
     "summary": {
       "project_name": "Plant Assistant",
-      "description": "Read soil temperature and humidity, support touch interaction and voice dialogue",
+      "description": "Reads soil temperature and humidity, supports touch interaction and voice dialogue",
       "board": {
         "status": "selected",
         "display_name": "ESP32-S3-DevKitC-1",

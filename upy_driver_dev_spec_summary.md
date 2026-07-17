@@ -32,10 +32,10 @@
 
 - **Goal**: Driver code that is readable, reusable, resource-friendly (memory/flash), with complete documentation and test routines, suitable for MicroPython v1.x (Raspberry Pi Pico / ESP series, etc.).
 - **Style**: Follows PEP8 (4-space indentation, lowercase with underscores for functions/variables), but with a greater focus on readability and memory allocation control in constrained environments.
-- **File Header Comment**: Code must include a file header comment (environment, author, license, brief description, reference links, time), see [Section 2](#2-file-header-format).
+- **File Header Comment**: Code must include a file header comment (environment, author, license, brief description, reference links, time). See [Section 2](#2-file-header-format).
 - **Single Responsibility**: Each driver module corresponds to one chip/one type of peripheral. Avoid cramming multiple peripheral functions into the same file.
-- **Parameter Validation**: Validate input parameters and raise meaningful exceptions (e.g., `ValueError`, `TypeError`), see [Section 6](#6-class-design-specification).
-- **English Output + Type Annotations**: Except for comments, all `raise`/`print` statements must be in English; use built-in type annotations supported by MicroPython (`: int`, `-> None`, etc.).
+- **Parameter Validation**: Validate input parameters and raise meaningful exceptions (e.g., `ValueError`, `TypeError`). See [Section 6](#6-class-design-specification).
+- **English Output + Type Annotations**: Except for comments, all `raise`/`print` statements must be in English. Use built-in type annotations supported by MicroPython (`: int`, `-> None`, etc.).
 
 ---
 
@@ -55,7 +55,7 @@ Every **non-`main.py`** driver file must start with the following fixed format:
 
 **Notes:**
 
-- `# @License : MIT` must exist as an **independent comment line** and cannot be merged with other content (the exact match target for code_checker rule 2; missing it results in `[FAIL]`)
+- `# @License : MIT` must exist as an **independent comment line** and cannot be merged with other content (this is the exact match target for code_checker rule 2; missing it results in `[FAIL]`)
 - `@Author` can be a Chinese or English name
 - `@Description` content may contain Chinese
 
@@ -63,7 +63,7 @@ Every **non-`main.py`** driver file must start with the following fixed format:
 
 ## 3. Module-Level Global Variables
 
-Immediately after the file header, four required module-level global variables must be present (**code_checker rule 1, automated check**):
+Immediately after the file header, four required module-level global variables must exist (**code_checker rule 1, automated check**):
 
 ```python
 __version__ = "1.0.0"
@@ -95,7 +95,7 @@ elif "esp32" in __chip__.lower():
 
 ## 4. File Section Structure
 
-All files must use fixed section annotation comments. code_checker uses **fuzzy matching** for sections (ignoring the number of `=` and spaces), matching only the core title text.
+All files must use fixed section marker comments. code_checker uses **fuzzy matching** for sections (ignoring the number of `=` and spaces), matching only the core title text.
 
 ### 4.1 Driver File (non-main.py) Structure
 
@@ -134,14 +134,14 @@ __platform__ = "MicroPython v1.23"
 # ========================================  Main Program  ===========================================
 ```
 
-> The "Initialization Configuration" and "Main Program" sections at the end of the driver file can be left empty, but the **section annotations must exist**.
+> The "Initialization Configuration" and "Main Program" sections at the end of the driver file can be left empty, but the **section markers must exist**.
 
 ### 4.2 Content Specification for Each Section
 
 **Import Related Modules Section**
 
 - Place: Standard library → MicroPython hardware modules → Third-party/local modules, grouped alphabetically or by usage frequency
-- Do not place: Long blocking operations (e.g., `time.sleep`), hardware instantiation
+- Do not place: Long delay operations (e.g., `time.sleep`), hardware instantiation
 
 **Global Variables Section**
 
@@ -151,13 +151,13 @@ __platform__ = "MicroPython v1.23"
 Reusable buffers can reduce runtime memory allocation:
 
 ```python
-# Correct: global reusable buffer
+# Correct: Global reusable buffer
 _BUF2 = bytearray(2)
 
 def read_data():
     i2c.readfrom_mem_into(addr, reg, _BUF2)  # Zero memory allocation
 
-# Incorrect: creates new buffer on each call
+# Incorrect: New buffer created on each call
 def read_data():
     buf = bytearray(2)  # Allocates new memory each time
     i2c.readfrom_mem_into(addr, reg, buf)
@@ -166,22 +166,22 @@ def read_data():
 **Utility Functions Section**
 
 - Place: Module-level pure utility functions (no hardware I/O, good for unit testing), e.g., `clamp()`, address formatting
-- Do not place: Functions that frequently create large objects, memory-intensive I/O operations
+- Do not place: Functions that frequently create large objects, I/O operations that consume significant memory
 
 **Custom Classes Section**
 
 - Internal class order: Class-level constants → `__init__` → Public methods → Private methods (`_` prefix) → `deinit()`
-- Avoid long blocking delays in `__init__`; if detection/reset is needed, parameterize retries and delays
+- Avoid long delays in `__init__`; if detection/reset is needed, parameterize retries and delays
 
 **Initialization Configuration Section (main.py)**
 
 - Place: Hardware object instantiation, device scanning and address selection, initial parameter configuration, brief power-on self-test
-- In library modules, this section is left empty; do not create hardware instances at import time (avoid import side effects)
+- Leave this section empty in library modules; do not create hardware instances at import time (avoid import side effects)
 
 **Main Program Section (main.py)**
 
 - Place: Main flow logic, use `try/except/finally` to ensure safe peripheral exit
-- Do not place: Infinite loops without an exit condition (example loops must provide an interruption method)
+- Do not place: Infinite loops without exit conditions (example loops must provide an interruption method)
 
 ```python
 # ========================================  Main Program  ===========================================
@@ -269,11 +269,11 @@ This is the core of the entire specification. All rules are automatically execut
 - **Comments and docstrings are not restricted**, only runtime strings are limited
 
 ```python
-# Violation - check fails
+# Violation - Check fails
 raise ValueError("参数不合法")
 print("传感器初始化完成")
 
-# Compliant - passes
+# Compliant - Passes
 raise ValueError("parameter is invalid")
 print("Sensor initialized successfully")
 ```
@@ -287,13 +287,13 @@ print("Sensor initialized successfully")
 ### Rule 5: while loop location check (main.py)
 
 - `while` loops are **only allowed** after the "Main Program" section
-- Appearing anywhere else is a violation
+- Appearing in any other location is a violation
 - Check uses regex `^\s*while\s+` for multi-line matching, stripping comments before checking
 - **Non-main.py skips**
 
 ### Rule 6: Required content in Initialization Configuration Section (main.py)
 
-- Must include `time.sleep(3)` (supports space variations: `time.sleep ( 3 )`)
+- Must include `time.sleep(3)` (supports whitespace variations: `time.sleep ( 3 )`)
 - Must include a print statement in the format `print("FreakStudio: ...")`
 - **Non-main.py skips**
 
@@ -305,15 +305,15 @@ print("Sensor initialized successfully")
 
 ### Rule 8: Parameter validation for class methods (non-main.py)
 
-The checker traverses all methods of all classes (excluding `self`/`cls`). For methods with parameters, the method body must satisfy both:
+The checker traverses all methods of all classes (excluding `self`/`cls`). For methods with parameters, the method body must satisfy both conditions:
 
-**Condition one, at least one of the following:**
+**Condition 1: At least one of the following:**
 - `isinstance(param, Type)` call
 - `hasattr(obj, "attr")` call
 - Comparison expression (`==`, `!=`, `>`, `<`, `<=`, `>=`) or boolean combination (`and`/`or`)
 
-**Condition two:**
-- The `if` block containing the above condition has a `raise` statement
+**Condition 2:**
+- The `if` block containing the above condition must have a `raise` statement
 
 - **main.py skips**
 
@@ -324,18 +324,18 @@ The checker traverses all methods of all classes (excluding `self`/`cls`). For m
 ### 6.1 Design Principles
 
 - **Single Responsibility**: Each class encapsulates only one peripheral or a set of closely related functions
-- **Minimal Side Effects**: Constructor does only necessary validation and lightweight initialization; reset/calibration operations are provided as separate methods
+- **Minimal Side Effects**: Constructor does only necessary validation and lightweight initialization; provide separate methods for reset/calibration
 - **Explicit Dependency Injection**: Do not create hardware bus objects (I2C/SPI/Pin) inside the class; pass them as parameters
 - **Testability**: Extract pure logic (calibration/conversion) into pure functions; encapsulate I/O into small, easily mockable methods (`_read_reg`, `_write_reg`)
-- **Exception Strategy**: Parameter errors raise `ValueError`; I/O/hardware errors raise `RuntimeError` or custom `DeviceError`
+- **Exception Strategy**: Raise `ValueError` for parameter errors; raise `RuntimeError` or custom `DeviceError` for I/O/hardware errors
 
 ```python
-# Incorrect: creates hardware object internally (cannot reuse bus, cannot test)
+# Incorrect: Hardware object created internally (bus cannot be reused, cannot be tested)
 class MPU6050:
     def __init__(self):
         self.i2c = I2C(1)  # Hardcoded
 
-# Correct: dependency injection
+# Correct: Dependency injection
 class MPU6050:
     def __init__(self, i2c_bus):
         self.i2c = i2c_bus
@@ -387,7 +387,7 @@ class BH1750:
 
     Methods:
         configure(measurement_mode, resolution, measurement_time): Configure measurement parameters.
-        reset(): Reset sensor, clear registers.
+        reset(): Reset the sensor, clear registers.
         power_on(): Power on the sensor.
         power_off(): Power off the sensor.
         measurement -> float: Get current light intensity (lux).
@@ -395,7 +395,7 @@ class BH1750:
 
     Notes:
         - I2C operations are not ISR-safe, please avoid calling in interrupts.
-        - Sensor measurement time and resolution directly affect lux calculation results.
+        - Sensor measurement time and resolution directly affect the lux calculation result.
 
     ==========================================
 
@@ -741,7 +741,7 @@ def measurements(self):
 
 **Side Effect Description**
 
-If a method changes external state besides its main function, it must be clearly noted in Notes:
+If a method changes external state in addition to its main function, it must be clearly noted in Notes:
 
 ```python
 def read_acceleration(self) -> tuple:
@@ -764,7 +764,7 @@ def read_acceleration(self) -> tuple:
 
 **ISR-Safe Annotation**
 
-Clearly annotate in Notes whether the method can be safely called in an interrupt:
+Clearly indicate in Notes whether the method can be safely called in an interrupt:
 
 ```python
 def _handle_interrupt(self, pin) -> None:
@@ -836,7 +836,7 @@ self.i2c.writeto_mem(self.slvAddr, register_addr, d)
 # Read register (single byte)
 result = self.i2c.readfrom_mem(self.slvAddr, register_addr, 1)
 
-# Direct read/write byte stream (no register address)
+# Direct byte stream read/write (no register address)
 self.i2c.writeto(self._address, bytearray(b"\x01"))
 buffer = bytearray(2)
 self.i2c.readfrom_into(self._address, buffer)
@@ -850,7 +850,7 @@ self.i2c.readfrom_into(self._address, buffer)
 ```python
 from machine import UART
 
-# UART object passed as parameter (initialized externally for reuse)
+# UART object passed as parameter (initialized externally, passed in for reusability)
 self._uart = uart
 
 # Send hexadecimal frame
@@ -865,7 +865,7 @@ if self._uart.any():
     payload_hex = payload.hex()
 ```
 
-### 7.3 Timer Callback Pattern (Watchdog / Periodic Tasks)
+### 7.3 Timer Callback Pattern (Watchdog / Periodic Task)
 
 ```python
 from machine import Pin, Timer
@@ -893,11 +893,11 @@ def _feed(self, t: Timer) -> None:
 ### 8.1 General Principles
 
 - **Clear and Predictable**: Exceptions thrown externally should have stable semantics (parameter error, communication failure, device error, etc.)
-- **Minimize Exposed Low-Level Exceptions**: Catch low-level `OSError`/`ValueError` and re-raise with clear custom or standard exceptions
+- **Minimize Exposed Low-Level Exceptions**: Catch underlying `OSError`/`ValueError` and re-raise with clear custom or standard exceptions
 - **Parameter Validation First**: Validate parameters at function entry and immediately raise `ValueError` to avoid entering an indeterminate state
 - **Do Not Raise Exceptions in ISR**: Record error flags in ISR, handle exceptions in the main loop
 - **Idempotent Cleanup**: Ensure resource safety in exception paths, call `deinit()` or restore default state in `finally`
-- **Documentation**: Each method's docstring must list `Raises:` entries
+- **Document**: Each method's docstring must list `Raises:` entries
 
 **Example of Wrapping Low-Level Exceptions:**
 
@@ -935,14 +935,14 @@ class Encoder:
 ### 8.2 Exception Classification
 
 - **`ValueError`**: Parameter validation errors (index out of bounds, frequency not in allowed range, type error)
-- **`RuntimeError` or custom `DeviceError`**: Hardware communication failure (I2C/SPI read/write failure, timeout, CRC check failure)
+- **`RuntimeError` or custom `DeviceError`**: Hardware communication failures (I2C/SPI read/write failure, timeout, CRC check failure)
 - **Custom exceptions** (e.g., `PCA9685Error`, `SensorError`): Unrecoverable or serious faults, allowing upper layers to distinguish by type
 - **Return value or debug output**: Warnings/non-fatal situations
-- **Error flag bits**: Errors in ISR, do not raise exceptions in ISR
+- **Error flags**: Errors in ISR, do not raise exceptions in ISR
 
 ### 8.3 Catching and Wrapping
 
-Catch `OSError` in all low-level I/O methods and raise `DeviceError` or `RuntimeError`, preserving original information:
+Catch `OSError` in all underlying I/O methods and raise `DeviceError` or `RuntimeError`, preserving original information:
 
 ```python
 def _write_reg(self, reg: int, value: int) -> None:
@@ -969,7 +969,7 @@ def read_with_retry(self, reg: int, retries: int = 2) -> int:
 
 ### 8.5 Resource Cleanup
 
-Use `try/except/finally` to ensure peripherals are set to a safe state:
+Use `try/except/finally` to ensure the peripheral is placed in a safe state:
 
 ```python
 def move_to_position(self, pos: int):
@@ -995,7 +995,7 @@ def _log_error(self, msg: str):
         print(f"[ERROR] {msg}")
 ```
 
-Exception messages should be concise and contain key information (function/register/channel/address):
+Exception messages should be concise and include key information (function/register/channel/address):
 
 ```
 "I2C write failed reg=0x06 ch=3: [Errno 5]"
@@ -1005,11 +1005,11 @@ Exception messages should be concise and contain key information (function/regis
 
 ## 9. Core Design and Implementation Details
 
-Sensor driver development revolves around the core principles of "hardware logic cohesion, clean external interface, comprehensive exception handling, and closed-loop resource management," covering all dimensions such as function separation, parameter management, and hardware adaptation.
+Sensor driver development revolves around the core principles of "cohesive hardware logic, clean external interface, comprehensive exception handling, and closed-loop resource management," covering all dimensions including function separation, parameter management, and hardware adaptation.
 
 ### 9.1 General Function Separation
 
-Separate hardware-independent, reusable general functions (data format conversion, CRC check, unit conversion, etc.) and declare them outside the class to reduce class coupling:
+Extract hardware-independent, reusable general functions (data format conversion, CRC check, unit conversion, etc.) and declare them outside the class to reduce class coupling:
 
 ```python
 # General utility functions outside the class
@@ -1072,7 +1072,7 @@ class SHT30:
 
 ### 9.4 Private/Public Method Division
 
-- Public methods: Externally exposed API (`init`, `read_temp_hum`, `soft_reset`)
+- Public methods: API exposed externally (`init`, `read_temp_hum`, `soft_reset`)
 - Private methods (`_` prefix): Low-level hardware interaction (`_read_raw_data`, `_parse_raw_data`, `_validate_data`)
 
 ```python
@@ -1096,7 +1096,7 @@ class SHT30:
 
 ### 9.5 Interrupt Adaptation: micropython.schedule
 
-Interrupt callback functions should only perform lightweight operations; use `micropython.schedule` to schedule core processing logic to the main loop:
+Interrupt callback functions should only perform lightweight operations. Use `micropython.schedule` to schedule core processing logic to the main loop:
 
 ```python
 import micropython
@@ -1179,7 +1179,7 @@ with SHT30(i2c, addr=0x44) as sht30:
 
 ### 9.8 Parameter Configuration: Setter/Getter Encapsulation
 
-Prohibit direct external modification of configuration attributes; encapsulate and validate via `set_xxx()`/`get_xxx()` methods:
+Prohibit direct external modification of configuration attributes; encapsulate and validate through `set_xxx()`/`get_xxx()` methods:
 
 ```python
 class SHT30:
@@ -1251,7 +1251,7 @@ class SHT30:
 
 ### 9.11 Type Annotations and Docstrings
 
-Function signatures use MicroPython native type annotations; docstrings describe parameters, return values, and exceptions:
+Function signatures use MicroPython native type annotations; docstrings explain parameters, return values, and exceptions:
 
 ```python
 def read_temp_hum(self, debounce: bool = True) -> tuple:
@@ -1292,11 +1292,11 @@ class SHT30:
 
 Test files follow the principle of "full coverage, flexible debugging, safe and controllable":
 
-- **Full Coverage**: Completely cover all APIs of the driver library, broken down by core functionality dimensions of the chip type:
+- **Full Coverage**: Completely cover all APIs of the driver library, breaking down interfaces by core functional dimensions of the chip type:
 
-| Chip Type | Core API Functionality Dimensions |
+| Chip Type | Core API Functional Dimensions |
 |---|---|
-| Sensor Class | Basic status query, core data acquisition, parameter configuration, mode switching, calibration/compensation |
+| Sensor Class | Basic status query, core data acquisition, parameter configuration, mode switching, calibration compensation |
 | Motor Driver Class | Hardware initialization, motion control, status reading, reset/sleep |
 | Communication Module Class | Network/protocol configuration, data transmission/reception, status query, power control |
 | Storage Chip Class | Data read/write, address configuration, erase/reset |
@@ -1307,8 +1307,8 @@ Cover three types of test scenarios: normal parameters, boundary parameters, and
 | Test Scenario Type | Core Validation Goal |
 |---|---|
 | Normal Parameter Scenario | Validate basic usability of API under default/common parameters |
-| Boundary Parameter Scenario | Validate API adaptability to hardware limit parameters |
-| Abnormal Parameter/Environment Scenario | Validate API fault tolerance and error feedback capability |
+| Boundary Parameter Scenario | Validate API's adaptability to hardware limit parameters |
+| Abnormal Parameter/Environment Scenario | Validate API's fault tolerance and error feedback capability |
 
 Code handling methods for different API characteristics:
 
@@ -1326,7 +1326,7 @@ Code handling methods for different API characteristics:
 
 ### 10.2 Initialization Configuration Section
 
-Before creating hardware objects, must include a 3-second power-on delay and a fixed-format debug print:
+Must include a 3-second power-on delay and a fixed-format debug print before creating hardware objects:
 
 ```python
 # ======================================== Initialization Configuration ==========================================
@@ -1359,7 +1359,7 @@ device = R60ABD1(processor, parse_interval=200)
 
 ### 10.4 Fixed Comment Block Order
 
-File content strictly follows the following block order, each block uses a uniform separator `# ======================================== Block Name =========================================`:
+File content strictly follows the following block order, each block using a uniform separator `# ======================================== Block Name =========================================`:
 
 ```python
 # ======================================== Import Related Modules =========================================
@@ -1374,7 +1374,7 @@ print_interval = 2000
 
 # ======================================== Utility Functions ============================================
 def print_report_sensor_data():
-    """Print high-frequency reported sensor data (changes fast, commented out by default)"""
+    """Print high-frequency reported sensor data (changes quickly, call commented out by default)"""
     ...
 
 # ======================================== Custom Classes ============================================
@@ -1442,18 +1442,18 @@ README.md must include the following sections (in order):
 | Section | Description |
 |---|---|
 | Project Title | `# [Sensor/Peripheral Name] MicroPython Driver` |
-| Description | Brief introduction to driver function, main features, applicable scenarios |
-| Main Features | List of feature highlights |
+| Description | Brief introduction to the driver's purpose, main features, and applicable scenarios |
+| Key Features | List of feature highlights |
 | Hardware Requirements | Test hardware table + wiring example |
-| Software Environment | Firmware version, driver version, dependency libraries |
+| Software Environment | Firmware version, driver version, dependencies |
 | File Structure | File tree structure |
-| File Description | Explain the purpose of each file |
+| File Description | Explanation of each file's purpose |
 | Design Approach | Driver implementation method or structural approach (optional) |
-| Quick Start | Step-by-step usage flow + code example |
-| Notes | Chip working conditions, usage limitations, compatibility, etc. |
+| Quick Start | Step-by-step usage instructions + code example |
+| Notes | Chip operating conditions, usage limitations, compatibility, etc. |
 | Version History | Table format: version number, date, author, change description |
 | Contact Developer | Email or other contact information |
-| License Agreement | CC BY-NC 4.0, distinguish between official modules (MIT) and self-written drivers |
+| License | CC BY-NC 4.0, distinguish between official modules (MIT) and self-written drivers |
 
 ---
 
@@ -1463,7 +1463,7 @@ README.md must include the following sections (in order):
 # RCWL9623 Transceiver Integrated Ultrasonic Module Driver - MicroPython Version
 
 ## Introduction
-Ultrasonic distance measurement module based on RCWL9623 chip, supporting multiple communication modes (GPIO, 1-Wire, UART, I2C).
+Ultrasonic distance measurement module based on the RCWL9623 chip, supporting multiple communication modes (GPIO, 1-Wire, UART, I2C).
 Widely used in robot obstacle avoidance, smart home distance measurement, safety monitoring, and other scenarios.
 
 > **Note**: Not suitable for high-precision applications such as safety rescue or other special occasions.
@@ -1471,16 +1471,16 @@ Widely used in robot obstacle avoidance, smart home distance measurement, safety
 
 ---
 
-### 11.3 Main Features
+### 11.3 Key Features
 
-List driver feature highlights:
+List driver feature highlights using bullet points:
 
 ```markdown
-## Main Features
-- **Multiple Working Mode Support**: GPIO trigger/Echo return, single bus (1-Wire), UART, I2C
-- **Distance Range**: Approximately 20cm to 7m, returns invalid if out of range
-- **Unified Unit**: Unit unified as centimeters (cm)
-- **Simple and Easy to Use**: Provides unified interface `read_distance()`
+## Key Features
+- **Multiple Operating Mode Support**: GPIO trigger/Echo return, single bus (1-Wire), UART, I2C
+- **Measurement Range**: Approximately 20cm to 7m, returns invalid value if out of range
+- **Unified Unit**: Unit is uniformly centimeters (cm)
+- **Simple and Easy to Use**: Provides a unified interface `read_distance()`
 - **Cross-platform Support**: Compatible with multiple MicroPython-compatible development boards
 ```
 
@@ -1498,12 +1498,12 @@ Include recommended test hardware and pin description table:
 
 ### Module Pin Description
 | Pin  | Function Description |
-|------|----------------------|
-| VCC  | Power positive (3.3V-5V) |
-| GND  | Power negative |
-| TRIG | Trigger pin (GPIO mode) |
-| ECHO | Echo pin (GPIO mode) |
-| SCL/SDA | I2C communication pins |
+|-------|--------------------|
+| VCC   | Power supply positive (3.3V-5V)|
+| GND   | Power supply negative           |
+| TRIG  | Trigger pin (GPIO mode)|
+| ECHO  | Echo pin (GPIO mode)|
+| SCL/SDA | I2C communication pins     |
 ```
 
 ---
@@ -1517,7 +1517,7 @@ Include recommended test hardware and pin description table:
 └── README.md     # Documentation
 
 ## File Description
-- `rcwl9623.py`: Core driver, implements four working modes
+- `rcwl9623.py`: Core driver, implements four operating modes
 - `main.py`: Example main program, reads distance in a loop
 - `README.md`: Documentation
 ```
@@ -1526,7 +1526,7 @@ Include recommended test hardware and pin description table:
 
 ### 11.6 Quick Start
 
-Step-by-step usage flow with code example:
+Step-by-step usage instructions with code example:
 
 ```markdown
 ## Quick Start
@@ -1545,13 +1545,13 @@ print(sensor.read_distance())
 
 ---
 
-### 11.7 License Agreement
+### 11.7 License
 
-Clearly distinguish the license for official modules and self-written drivers:
+Clearly distinguish between official modules and self-written driver licenses:
 
 ```markdown
-## License Agreement
-In this project, except for MicroPython official modules such as `machine` (MIT License),
+## License
+In this project, except for MicroPython official modules such as `machine` (MIT license),
 all driver and extension code written by the author is released under the
 **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
 
@@ -1614,21 +1614,21 @@ repos:
 **Ignored Flake8 Error Codes:**
 
 | Error Code | Meaning |
-|------------|---------|
-| E203   | Whitespace before ':' (Black formatting can produce this) |
-| E501   | Line too long (handled by Black) |
+|--------|------|
+| E203   | Whitespace before colon (Black formatting can produce this) |
+| E501   | Line too long (already handled by Black) |
 | W503   | Line break before binary operator |
 
 **Workflow After Black Reformats:**
 
 ```bash
-# Black returns a non-zero exit code after modifying files, causing commit failure
+# Black modifies the file and returns a non-zero exit code, causing the commit to fail
 # Solution: Re-stage the modified files and commit again
 git add <files formatted by Black>
 git commit -m "Same commit message as before"
 ```
 
-**Emergency Hook Bypass (only for emergencies, must restore after use):**
+**Emergency Hook Bypass (for emergencies only, must restore afterwards):**
 
 ```bash
 # Bypass
@@ -1641,7 +1641,7 @@ git config --local --unset core.hooksPath
 
 ## 14. package.json Specification
 
-Each driver directory root must have a `package.json`:
+Each driver directory must have a `package.json` at its root:
 
 ```json
 {
@@ -1665,7 +1665,7 @@ Each driver directory root must have a `package.json`:
 **Field Description:**
 
 | Field | Type | Required | Description |
-|-------|------|----------|-------------|
+|------|------|------|------|
 | `name` | String | ✅ | Package name, lowercase letters + underscores, consistent with directory name |
 | `urls` | 2D Array | ✅ | File mapping: `[["target filename", "source path"], ...]` |
 | `version` | String | ✅ | Semantic versioning `major.minor.patch` |
@@ -1786,12 +1786,12 @@ sensors/adxl345_driver/
 **Category Directories (9 categories):**
 
 | Directory | Content |
-|-----------|---------|
+|------|------|
 | `sensors/` | Sensors (temperature/humidity, IMU, gas, light, distance, ECG, etc.) |
 | `communication/` | Communication modules (NFC, 4G, Bluetooth, RF, Ethernet) |
 | `motor_drivers/` | Motor drivers (DC, stepper, servo) |
-| `lighting/` | Display and lighting (LED, OLED, LCD, 7-segment) |
-| `input/` | Input devices (buttons, touchscreen, encoder, joystick) |
+| `lighting/` | Display and lighting (LED, OLED, LCD, 7-segment display) |
+| `input/` | Input devices (buttons, touch screen, encoder, joystick) |
 | `signal_acquisition/` | Signal acquisition (ADC modules) |
 | `signal_generation/` | Signal generation (waveform generator, DAC) |
 | `storage/` | Storage (EEPROM, SD card) |
@@ -1805,13 +1805,13 @@ sensors/adxl345_driver/
 **Purpose of Each File/Folder:**
 
 | File / Folder | Purpose Description |
-|---------------|---------------------|
+|--------------|---------|
 | `sensor_driver/` | Project root directory, naming follows `[sensor_name]_driver` convention, serves as container for the entire driver package |
 | `code/` | Source code root directory, acts as the code execution root when flashed to the device |
 | `code/sensor.py` | Driver implementation file, named after the sensor, encapsulates core logic like initialization, data reading, configuration |
 | `code/main.py` | Test/example entry file (can also be named `demo.py`), provides usage examples and functional verification code |
-| `package.json` | Package configuration file, defines name, version, file mapping, dependencies, compatible chips/firmware, etc., used for `mip` installation |
-| `README.md` | Project documentation, includes driver functions, installation methods, API reference, notes, etc. |
+| `package.json` | Package configuration file, defines name, version, file mapping, dependencies, compatible chips/firmware and other metadata, used for `mip` installation |
+| `README.md` | Project documentation, includes driver functionality, installation method, API reference, notes, etc. |
 | `LICENSE` | Open-source license file, clarifies usage, modification, and distribution rules (MIT) |
 
 ### 15.2 Driver File Naming Convention
@@ -1820,22 +1820,22 @@ sensors/adxl345_driver/
 
 1. **Lowercase letters + underscores**: File names are all lowercase, words separated by underscores
 2. **Based on sensor/chip model**: Prioritize using sensor model or chip model for naming
-3. **Concise and clear**: File name accurately reflects driver function, avoid vague naming
-4. **Avoid conflicts**: Do not duplicate MicroPython built-in module names
+3. **Concise and clear**: File name accurately reflects driver functionality, avoid vague naming
+4. **Avoid conflicts**: Do not use names that conflict with MicroPython built-in modules
 
 **Naming Examples:**
 
 | Sensor/Module | Standard Name | Description |
-|---------------|---------------|-------------|
-| PCA9685 (PWM controller) | `pca9685.py` | Directly use chip model |
-| BMP280 (pressure sensor) | `bmp280.py` | Directly use sensor model |
-| DHT11 (temperature/humidity sensor) | `dht11.py` | Specific to model, avoid confusion with `dht22` |
-| L298N (motor driver) | `l298n.py` | Prioritize using chip model |
-| HC-SR04 (ultrasonic) | `hc_sr04.py` | Convert hyphens to underscores |
+|------------|---------|------|
+| PCA9685 (PWM Controller) | `pca9685.py` | Directly use chip model |
+| BMP280 (Pressure Sensor) | `bmp280.py` | Directly use sensor model |
+| DHT11 (Temperature/Humidity Sensor) | `dht11.py` | Specific to model, avoid confusion with `dht22` |
+| L298N (Motor Driver) | `l298n.py` | Prioritize using chip model |
+| HC-SR04 (Ultrasonic) | `hc_sr04.py` | Convert hyphens to underscores |
 | MPU6050 (IMU) | `mpu6050.py` | Directly use chip model |
-| WS2812B (RGB LED strip) | `ws2812b.py` | Avoid using built-in module name `neopixel` |
-| DS18B20 (temperature sensor) | `ds18b20.py` | Avoid using built-in module name `ds18x20` |
-| Thermistor (no model) | `analog_temp.py` | Name by function, ensure no conflict with built-in modules |
+| WS2812B (RGB LED Strip) | `ws2812b.py` | Avoid using built-in module name `neopixel` |
+| DS18B20 (Temperature Sensor) | `ds18b20.py` | Avoid using built-in module name `ds18x20` |
+| Thermistor (No model) | `analog_temp.py` | Name by function, ensure no conflict with built-in modules |
 
 **MicroPython Built-in Module Names to Avoid:**
 
@@ -1851,7 +1851,7 @@ neopixel, dht, ds18x20, onewire
 
 ## 16. Comment Style
 
-**Inline comments** in driver files are **all in Chinese**, with high comment density to improve readability:
+**Inline comments** in driver files should all be in Chinese, with a high comment density to improve readability:
 
 ```python
 # Assign SCL pin number
@@ -1864,7 +1864,7 @@ cs.value(1)
 time.sleep(1)
 # Initialize I2C bus communication object
 self.i2c = I2C(bus, scl=self.scl, sda=self.sda, freq=10000)
-# Scan slave addresses on the I2C bus
+# Scan for slave addresses on the I2C bus
 slv = self.i2c.scan()
 ```
 
@@ -1875,7 +1875,7 @@ Docstrings use **Chinese and English bilingual**, inline comments use **Chinese*
 ## 17. Instance Attribute Naming Convention
 
 | Scenario | Naming Style | Example |
-|----------|--------------|---------|
+|------|---------|------|
 | Public attributes | `camelCase` or `snake_case` | `self.slvAddr`, `self.scl`, `self.sda` |
 | Private attributes | `_snake_case` (single underscore prefix) | `self._address`, `self._i2c`, `self._measurement_mode` |
 | Class-level constants | `UPPER_CASE` | `MEASUREMENT_MODE_CONTINUOUSLY`, `RESOLUTION_HIGH` |
@@ -1887,28 +1887,24 @@ Docstrings use **Chinese and English bilingual**, inline comments use **Chinese*
 
 ### 18.1 Design Principles
 
-- **Single Responsibility**: Each function does only one thing (read register / calculate value / format output), easy to test and reuse
-- **Small and Clear**: Break complex flows into multiple small functions (IO / parsing / validation separated), each function should not exceed one screen (20 lines)
-- **Side-effect Free Priority**: Separate code with side effects (I2C/SPI write/read/GPIO control) from pure computation
-- **Testability**: Put pure algorithms into independent functions, easy to test on host side with unittest/pytest (mock hardware layer)
+- **Single Responsibility**: Each function does only one thing (read register / calculate value / format output), making it easy to test and reuse
+- **Small and Clear**: Break complex flows into multiple small functions (IO / parsing / validation separated), each function should ideally not exceed one screen (20 lines)
+- **Side-Effect-Free First**: Separate code with side effects (I2C/SPI write/read/GPIO control) from pure computation
+- **Testability**: Put pure algorithms into independent functions, easy to test on the host side with unittest/pytest (mock hardware layer)
 - **Resource Awareness**: Avoid large allocations in hot loops or ISRs; reuse bytearray/buffers as much as possible
 
 **Single Responsibility Example:**
 
 ```python
-# Incorrect: mixed responsibilities
+# Incorrect: Mixed responsibilities
 def read_temperature():
     i2c.writeto(0x40, b'\xF3')
     time.sleep_ms(50)
     raw = i2c.readfrom(0x40, 2)
     return round((raw[0] << 8 | raw[1]) / 256, 1)
 
-# Correct: separated responsibilities
+# Correct: Separation of responsibilities
 def _trigger_measurement():
     i2c.writeto(0x40, b'\xF3')
 
 def _read_raw_data():
-    return i2c.readfrom(0x40, 2)
-
-def _convert_to_temp(raw) -> float:
-    return (raw[0] << 8

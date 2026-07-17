@@ -1,15 +1,15 @@
 ---
 name: upy-select-hw
-description: Step 2 – MCU selection + firmware verification + pin assignment + BOM generation. Takes the project-manifest.json from upy-analyze and outputs a complete hardware plan. Triggered automatically after upy-analyze completes.
+description: Step 2 — MCU selection + firmware verification + pin assignment + BOM generation. Takes the project-manifest.json from upy-analyze as input and outputs a complete hardware plan. Triggered automatically after upy-analyze completes.
 ---
 
 # Hardware Selection and Pin Assignment Skill
 
 ## Role
 
-Given a `project-manifest.json` (devices + requirements + mcu_specified), complete MCU selection, firmware verification, pin assignment, and BOM generation. **Do not write code, do not handle drivers.**
+Given `project-manifest.json` (devices + requirements + mcu_specified), complete MCU selection, firmware verification, pin assignment, and BOM generation. **Do not write code, do not handle drivers.**
 
-## Pre-flight Check
+## Pre-check
 
 ```bash
 python --version
@@ -38,7 +38,7 @@ python --version
 
 #### Case B: User has not specified an MCU → LLM recommends
 
-**Recommendation strategy: Prioritise Pico series and ESP32 series (best MPY support).**
+**Recommendation strategy: Prioritize Pico series and ESP32 series (best MPY support).**
 
 ```
 Scoring logic:
@@ -47,7 +47,7 @@ Scoring logic:
    Needs AI/Voice/Camera → +1 ESP32-S3
    Low power + battery powered → +1 ESP32-C3
    Pure GPIO control       → +1 Pico series
-   Ultra low cost           → +1 ESP8266 / Pico
+   Extremely low cost           → +1 ESP8266 / Pico
    Beginner friendly           → +1 Pico (USB drag-and-drop flashing) / ESP32
 
    Final recommendation: Top 1, with a brief reason.
@@ -60,9 +60,9 @@ Scoring logic:
 ```
 Recommended MCU: Raspberry Pi Pico W
   Reason: Needs WiFi (requirements.network=wifi), RP2040 is cost-effective,
-          excellent MPY support, USB drag-and-drop flashing is beginner-friendly.
+        MPY support is excellent, USB drag-and-drop flashing is beginner-friendly.
 
-Alternative: ESP32 (WiFi + BLE, largest ecosystem, more interfaces)
+Alternative: ESP32 (WiFi + BLE, most complete ecosystem, more interfaces)
 
 Confirm usage? Or specify another model.
 ```
@@ -98,7 +98,7 @@ Please upload a pinout diagram of your development board (photo/screenshot/PDF a
 Search for "{MCU model} pinout" or "{MCU model} pinout diagram" to find one.
 ```
 
-If the user says "can't find it" → use `WebSearch` to search for `{MCU model} pinout diagram`, take the first image and show it to the user for confirmation.
+If the user says "can't find it" → Use `WebSearch` to search for `{MCU model} pinout diagram`, take the first image and show it to the user for confirmation.
 
 #### Step 2B: LLM Multimodal Recognition
 
@@ -114,12 +114,12 @@ Extract from the pinout diagram:
 
 #### Step 2C: Assign Pins
 
-**LLM reasons and assigns according to the following rules:**
+**LLM performs allocation based on the following rules:**
 
 ```
 Rule 1 — I2C devices:
-  ├─ All I2C devices share the same I2C bus (default I2C0)
-  ├─ Address conflict → use a second I2C bus (if available) or Software I2C (any GPIO)
+  ├─ All I2C devices on the same I2C bus (default I2C0)
+  ├─ Address conflict → Use a second I2C bus (if available) or Software I2C (any GPIO)
   └─ Each I2C bus uses 2 GPIOs (SCL + SDA)
 
 Rule 2 — SPI devices:
@@ -132,13 +132,13 @@ Rule 3 — UART devices:
   └─ Each UART device uses 2 GPIOs (TX + RX)
 
 Rule 4 — Simple GPIO devices (LED/Buzzer/Button/Relay):
-  ├─ Prefer pins far from I2C/SPI buses
+  ├─ Prefer pins away from I2C/SPI buses
   ├─ Avoid boot-sensitive pins
   ├─ Avoid read-only pins
   └─ Each device uses 1 GPIO
 
 Rule 5 — ADC devices:
-  ├─ Can only use ADC pins (e.g., ESP32: ADC1 on GPIO32-39)
+  ├─ Can only use ADC pins (e.g., ESP32: ADC1 from GPIO32-39)
   └─ Note: ESP32 ADC2 conflicts with WiFi
 
 Rule 6 — Conflict detection:
@@ -155,7 +155,7 @@ Pin Assignment Plan:
   I2C Bus (I2C0):
     SCL = GPIO22, SDA = GPIO21
     Devices: SHT30 (0x44), SSD1306 (0x3C), BMP280 (0x76)
-    No address conflicts ✓
+    No address conflict ✓
 
   GPIO Independent:
     Buzzer = GPIO4
@@ -167,7 +167,7 @@ Pin Assignment Plan:
   Conflict check: Passed ✓
 ```
 
-**Pin Electrical Type Enumeration Mapping:**
+**Pin Electrical Type (type) Enumeration Mapping:**
 
 | Pin Usage | type value |
 |---------|---------|
@@ -216,13 +216,13 @@ Add entries to pinout:
 ```
 Bill of Materials:
 
-  #  Name              Model             Qty  Unit Price  Notes
-  1  MCU               {MCU model}       1    ¥{xx}       Includes USB cable
-  2  {Device 1}        {Model}           1    ¥{xx}       {Interface}
-  3  {Device 2}        {Model}           1    ¥{xx}       {Interface}
-  -  Breadboard        830 holes         1    ¥8          Optional
-  -  Jumper Wires      Male-Female 20pcs 1    ¥5
-  -  USB Data Cable    Micro-USB         1    ¥5          (if not included with MCU)
+  #  Name              Model              Qty  Unit Price  Notes
+  1  MCU               {MCU model}        1    ¥{xx}       Includes USB cable
+  2  {Device 1}        {Model}            1    ¥{xx}       {Interface}
+  3  {Device 2}        {Model}            1    ¥{xx}       {Interface}
+  -  Breadboard        830 holes          1    ¥8          Optional
+  -  Jumper Wires      Male-Female 20pcs  1    ¥5
+  -  USB Data Cable    Micro-USB          1    ¥5          (if not included with MCU)
 
   Estimated Total: ¥{total}
 
@@ -251,7 +251,7 @@ python G:/MicroPython_Skills/upy-select-hw/scripts/update_manifest.py \
   - `physical_pin`: Physical pin number (e.g., Pico's GP4 = Pin 6)
   - `type`: Pin electrical type enumeration (see mapping table below)
   - `side`: Which side of the MCU the pin is on (left/right/top/bottom)
-  - `pos`: Sequential position on that side (0-based)
+  - `pos`: Sequential position on the side (0-based)
 - `bom`: [{name, model, quantity, unit_price_yuan, notes}]
 
 ---
@@ -264,7 +264,7 @@ python G:/MicroPython_Skills/upy-select-hw/scripts/update_manifest.py \
 ## Hard Constraints
 
 - **Only recommend Pico series and ESP32 series for the MCU** (unless the user specifies another model)
-- **Firmware verification is mandatory** – confirm MPY firmware exists before proceeding
-- **Must see the pinout diagram before assigning pins** – do not rely on a built-in database
-- **I2C address conflicts must be detected** – do not place two devices with the same address on the same bus
+- **Firmware verification is mandatory** — confirm MPY firmware exists before proceeding
+- **Must see the pinout diagram before assigning pins** — do not rely on a built-in database
+- **I2C address conflicts must be detected** — cannot place two devices with the same address on the same bus
 - **Boot-sensitive pins must be avoided**

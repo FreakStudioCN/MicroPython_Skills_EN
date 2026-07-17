@@ -15,7 +15,7 @@
 | Downstream Skill | upy-select-hw |
 | One-line Responsibility | Natural language → Intent decomposition → Device confirmation → Driver search → Output manifest |
 
-**Core constraint:** No selection, no code generation, no pin assignment. MCU firmware verification is handled by upy-select-hw.
+**Core Constraint:** No selection, no code generation, no pin assignment. MCU firmware verification is handled by upy-select-hw.
 
 ---
 
@@ -29,7 +29,7 @@ The plugin sends **1 message** to the server to start this skill:
   "phase": "analyze",
   "session_id": "uuid-xxx",
   "payload": {
-    "user_description": "Build a temperature and humidity monitor, buzzer alarm when threshold is exceeded",
+    "user_description": "Build a temperature and humidity monitor, buzzer alarm when threshold exceeded",
     "pre_selected_board": {
       "id": "esp32-devkit-v1",
       "display_name": "ESP32 DevKit V1",
@@ -101,18 +101,18 @@ The only card the user must interact with. Combines device list + mode hint + bo
 ┌──────────────────────────────────────────┐
 │  Confirm Project Plan                     │
 │                                          │
-│  Project  Temperature & Humidity Monitor  │
-│  Function Periodic temp/humidity → Display → Alarm on threshold │
-│  Main MCU ESP32 DevKit V1 (Selected)  ← If present               │
-│          Not selected, will recommend  ← If absent                │
+│  Project  Temperature & Humidity Alarm    │
+│  Feature  Periodic temp/humidity → Display → Threshold alarm │
+│  Main MCU ESP32 DevKit V1 (Selected)  ← If present           │
+│          Not selected, will recommend  ← If absent            │
 │                                          │
-│  Device List:                            │
-│  ☑ SHT30    I2C Temp/Humidity Sensor    User-specified           │
-│  ☑ SSD1306  I2C OLED Display            System-recommended       │
-│  ☑ Buzzer   GPIO Actuator               System-recommended       │
+│  Device List:                             │
+│  ☑ SHT30    I2C Temp/Humidity Sensor    User-specified       │
+│  ☑ SSD1306  I2C OLED Display            System-recommended   │
+│  ☑ Buzzer   GPIO Actuator               System-recommended   │
 │  [+ Add Device]                          │
 │                                          │
-│  [Confirm, Start Driver Search]  [Modify Device List]             │
+│  [Confirm, Start Driver Search]  [Modify Device List]        │
 └──────────────────────────────────────────┘
 ```
 
@@ -126,8 +126,8 @@ The only card the user must interact with. Combines device list + mode hint + bo
     "header": "Confirm Project Plan",
     "question": "Please confirm the following devices are correct",
     "summary": {
-      "project_name": "Temperature & Humidity Monitor",
-      "description": "Periodic temp/humidity collection → Display → Buzzer alarm on threshold",
+      "project_name": "Temperature & Humidity Alarm",
+      "description": "Periodic temp/humidity collection → Display → Buzzer alarm on threshold exceed",
       "board": {
         "status": "selected",
         "display_name": "ESP32 DevKit V1",
@@ -172,14 +172,14 @@ The only card the user must interact with. Combines device list + mode hint + bo
 
 | board.status | Meaning | Card Behavior |
 |-------------|---------|---------------|
-| `"selected"` | User pre-selected a board | Show main controller name + MCU model, greyed out, unchangeable |
-| `"none"` | User did not select a board | Card does not show main controller, recommendation in select-hw phase |
+| `"selected"` | User pre-selected board | Show main controller name + MCU model, greyed out, unchangeable |
+| `"none"` | User did not select board | Card does not show main controller, recommendation in select-hw phase |
 
 #### approval_request #2 — Alternative Device Recommendation (Conditional)
 
-**Trigger condition:** Device `source = "system_recommended"` (system-recommended) and driver search returns no results.
+**Trigger Condition:** Device `source = "system_recommended"` and driver search yields no results.
 
-**Non-trigger condition:** `source = "user_specified"` (user-specified) and no driver → Cold hardware path, no alternative card, only hint in phase_complete warnings.
+**Non-trigger Condition:** `source = "user_specified"` and no driver → Cold hardware path, no alternative card, only hint in phase_complete warnings.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -187,10 +187,9 @@ The only card the user must interact with. Combines device list + mode hint + bo
 │                                          │
 │  SHT30: No MicroPython driver found       │
 │                                          │
-│  Same category (I2C Temp/Humidity Sensor) │
-│  with existing drivers:                   │
+│  Same category (I2C Temp/Humidity Sensor) has ready drivers: │
 │  ┌────────────────────────────────────┐  │
-│  │ ★ HDC1080   upypi  Recommended      │  │
+│  │ ★ HDC1080   upypi   Recommended     │  │
 │  │   Accuracy ±0.2°C  Price ~¥8        │  │
 │  ├────────────────────────────────────┤  │
 │  │   AHT20    upypi                    │  │
@@ -256,7 +255,7 @@ The only card the user must interact with. Combines device list + mode hint + bo
   "payload": {
     "phase": "analyze",
     "result": "success",
-    "summary": "Device analysis complete: 2 drivers found for 3 devices, 1 requires no driver",
+    "summary": "Device analysis complete: 2 drivers found for 3 devices, 1 no driver needed",
     "next_phase": "select-hw",
     "artifacts": [
       {
@@ -271,7 +270,7 @@ The only card the user must interact with. Combines device list + mode hint + bo
       }
     ],
     "warnings": [
-      "SHT30 is a user-specified device with no existing driver; will use cold hardware path. To switch to a temp/humidity sensor with an existing driver, manually replace it in the next step and re-analyze"
+      "SHT30 is user-specified and has no ready driver; will use cold hardware path. To switch to a temp/humidity sensor with an existing driver, manually replace it in the next step and re-analyze"
     ],
     "errors": [],
     "manifest_content": "{Complete project-manifest.json JSON text}"
@@ -283,21 +282,21 @@ The only card the user must interact with. Combines device list + mode hint + bo
 
 ## IV. SKILL.md Modification Points
 
-12 changes total, arranged by execution step:
+Total 12 changes, arranged by execution step:
 
 | No. | Location | Current Behavior | Change To | Reason |
 |-----|----------|-----------------|-----------|--------|
 | 1 | Pre-check | `python --version` + `python -c "import requests"` | Delete. Dependency check guaranteed by server environment | Plugin user cannot see server environment |
-| 2 | Step 1 | No change | Logic unchanged. New: read `pre_selected_board` and `preferences` | Receive plugin context |
-| 3 | Step 2A | AskUserQuestion select beginner/custom | **Delete entire section**. Change to read `preferences.mode`, default "beginner" | Mode is user preference, should not ask every time |
-| 4 | Step 2B Q1 | AskUserQuestion select MCU | **Conditionalize**: `pre_selected_board` has value → skip; null → do not ask at this stage, write `mcu_specified=null` | MCU confirmation deferred to select-hw |
+| 2 | Step 1 | No change | Logic unchanged. New: Read `pre_selected_board` and `preferences` | Receive plugin context |
+| 3 | Step 2A | AskUserQuestion select beginner/custom | **Delete entire section**. Change to read `preferences.mode`, default "beginner" | Mode is user preference, should not ask each time |
+| 4 | Step 2B Q1 | AskUserQuestion select MCU | **Conditionalize**: `pre_selected_board` has value → skip; null → don't ask at this stage, write `mcu_specified=null` | MCU confirmation deferred to select-hw |
 | 5 | Step 2B Q2 | AskUserQuestion confirm devices | Change to `approval_request` #1 | Merge into one card |
-| 6 | Step 2C | AskUserQuestion scenario/power/performance/output (max 4 questions) | **Beginner mode: skip, use defaults. Custom mode: optional second card**. Append an approval_request when `preferences.mode="custom"` | Simplify interaction |
-| 7 | Default values summary table | Table lists 13 default values | Table changes to split by `preferences.mode`: `beginner` → fill all defaults; `custom` → fill after user confirmation | Logic adjustment |
+| 6 | Step 2C | AskUserQuestion scenario/power/performance/output (max 4 questions) | **Beginner mode: skip, use defaults. Custom mode: optional second card**. When `preferences.mode="custom"`, append one approval_request | Simplify interaction |
+| 7 | Default values summary table | Table lists 13 default values | Table changed to split by `preferences.mode`: `beginner`→fill all defaults; `custom`→fill after user confirmation | Logic adjustment |
 | 8 | Step 3 Driver search | Silent search, no output | Send `status_update` after each device search | Provide progress signal to plugin |
-| 9 | Step 3B Alternative recommendation | Plain text output to command line | Text table → structured `approval_request` #2 (includes device.source check for trigger condition) | Plugin cannot render command-line text |
-| 10 | Step 3 Device source marker | No such field | devices[i] adds `source` field, enum `"user_specified"` / `"system_recommended"` | Distinguish user-specified vs system-recommended |
-| 11 | Step 4 Output manifest | `python init_manifest.py --project-dir {dir} --input {json}` writes local file | LLM generates manifest JSON → `script_run(init_manifest.py --stdin)` plugin-side validation → LLM reads validation result → places in `phase_complete.manifest_content`. init_manifest.py runs on plugin side, not server side | Server does not execute scripts |
+| 9 | Step 3B Alternative recommendation | Plain text output to command line | Text table → structured `approval_request` #2 (includes device.source check for trigger condition) | Plugin cannot render command line text |
+| 10 | Step 3 Device source marking | No such field | devices[i] add `source` field, enum `"user_specified"` / `"system_recommended"` | Distinguish user-specified vs system-recommended |
+| 11 | Step 4 Output manifest | `python init_manifest.py --project-dir {dir} --input {json}` write local file | LLM generates manifest JSON → `script_run(init_manifest.py --stdin)` plugin-side validation → LLM reads back validation result → put into `phase_complete.manifest_content`. init_manifest.py runs on plugin side, not server side | Server does not execute scripts |
 | 12 | Strong constraints | Item 2 "Must not assume device model when unclear" | Keep unchanged | Core constraint unchanged |
 
 ---
@@ -310,17 +309,17 @@ The only card the user must interact with. Combines device list + mode hint + bo
 
 **2 changes needed:**
 - Add `--stdin`: Read manifest JSON from stdin, validate, output `{"status":"ok","manifest":{...}}` or `{"status":"fail","errors":[...]}` to stdout
-- Remove file writing: No longer write to local disk, validation result processed by LLM and placed in `phase_complete.manifest_content`
+- Remove file writing: No longer write to local disk, validation result processed by LLM and placed into `phase_complete.manifest_content`
 
-**Mandatory: Yes.** Last line of defense — ensures invalid enum values do not reach downstream. init_manifest.py runs on plugin side, server LLM cannot directly execute scripts.
+**Mandatory: Yes.** Last line of defense — ensure invalid enum values don't reach downstream. init_manifest.py runs on plugin side, server LLM cannot directly execute scripts.
 
 ---
 
-## VI. UI Components Required on Plugin Side
+## VI. UI Components to Implement on Plugin Side
 
 | Component | Corresponding Message | Key Functionality |
 |-----------|----------------------|-------------------|
-| Progress Timeline | status_update × 3~8 messages | Completed (✓) / In Progress (spinning) / Warning (⚠) / Failed (✗) |
+| Progress Timeline | status_update × 3~8 messages | Completed(✓) / In progress(spinning) / Warning(⚠) / Failed(✗) |
 | Approval Card | approval_request #1 | Device multi-select add/remove + board status display + "Confirm"/"Modify" buttons |
 | Alternative Recommendation Card | approval_request #2 (conditional) | Alternative device single-select + "Keep original device" option |
 | Results Panel | phase_complete | Device status table + warning info + next step preview |
@@ -334,7 +333,7 @@ The only card the user must interact with. Combines device list + mode hint + bo
 1. Manually send `status_update` sequence → Verify timeline renders each message
 2. Manually send `approval_request` #1 (JSON above) → Verify:
    - Devices can be selected/deselected
-   - "Add Device" button pops up input box
+   - "Add Device" button opens input dialog
    - Clicking "Confirm" sends `approval_response`
 3. Manually send `approval_request` #2 (alternative device) → Verify single-select + three buttons
 4. Manually send `phase_complete` → Verify table + warning display

@@ -100,7 +100,7 @@
       }
     ],
     "warnings": [
-      "SHT30 is a device you specified and has no existing driver; it will follow the cold hardware path. If you want to switch to a temperature and humidity sensor with an existing driver, you can manually replace it in the next step and analyze again"
+      "SHT30 is a device you specified and has no existing driver; it will follow the cold hardware path. If you want to switch to a temperature and humidity sensor with an existing driver, you can manually replace it in the next step and analyze again."
     ],
     "errors": []
   }

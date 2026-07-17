@@ -17,7 +17,7 @@
       {
         "id": "mode_timer",
         "name": "Timer tick",
-        "subtitle": "ISR counting + main loop polling, suitable for pure sensor collection",
+        "subtitle": "ISR counting + main loop polling, suitable for pure sensor acquisition",
         "meta": "",
         "selected": false,
         "group": "scheduler_mode"

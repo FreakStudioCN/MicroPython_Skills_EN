@@ -2,7 +2,7 @@
 
 ## One-Sentence Summary
 
-**The server-side LLM executes the complete SKILL.md to make decisions. The plugin is a mindless execution layer — rendering UI + transparently passing through local I/O.**
+**The server-side LLM executes the complete SKILL.md to make decisions. The plugin is a mindless execution layer—rendering UI + transparently passing through local I/O.**
 
 ---
 
@@ -14,31 +14,31 @@
 │  (TypeScript, Local Process)                      │
 │                                                   │
 │  Responsibilities:                                │
-│  ✅ Render UI (Board Gallery / Approval Cards /   │
+│  ✅ Render UI (Board Gallery / Approval Card /    │
 │     Progress Timeline / Result Panel)             │
 │  ✅ Pass through mpremote commands (scan/flash/   │
 │     REPL)                                         │
 │  ✅ Pass through file read/write (write firmware/ │
 │     to workspace)                                 │
 │  ✅ Pass through script execution (flake8 /       │
-│     pylint / rendering scripts)                   │
+│     pylint / render scripts)                      │
 │  ✅ Pass through device output stream (real-time  │
 │     REPL → Server)                                │
 │  ✅ Manage user preferences (mode/language/       │
 │     existing hardware)                            │
 │                                                   │
-│  NOT Responsible For:                             │
-│  ❌ Making any business decisions                 │
-│  ❌ Parsing the meaning of device output          │
-│  ❌ Generating code                               │
-│  ❌ Knowing about skill / SKILL.md                │
+│  Not Responsible For:                             │
+│  ❌ No business decisions                         │
+│  ❌ No parsing of device output meaning           │
+│  ❌ No code generation                            │
+│  ❌ No knowledge of skill / SKILL.md existence    │
 └─────────────┬───────────────────────────────────┘
               │ HTTP + SSE
               │ Protocol: JSON (7 message types)
               ▼
 ┌─────────────────────────────────────────────────┐
-│                    Server-Side                    │
-│  (Python / LLM, Remote)                          │
+│                   Server-Side                     │
+│  (Python / LLM, Remote)                           │
 │                                                   │
 │  Responsibilities:                                │
 │  ✅ Load complete SKILL.md as LLM system           │
@@ -53,29 +53,30 @@
 │     upstream skill                                │
 │  ✅ Maintain board database + skill version        │
 │                                                   │
-│  NOT Responsible For:                             │
-│  ❌ Directly operating mpremote (no serial access)│
-│  ❌ Writing user local files                      │
-│  ❌ Rendering UI                                  │
+│  Not Responsible For:                             │
+│  ❌ No direct mpremote operations (no serial      │
+│     access)                                       │
+│  ❌ No writing to user's local files              │
+│  ❌ No UI rendering                               │
 └─────────────────────────────────────────────────┘
 ```
 
 ## Key Design Decisions
 
 | Decision | Reason |
-|----------|--------|
-| Plugin does not make decisions | Plugin engineers don't need to understand embedded/MicroPython/drivers. Only implement sending/receiving 7 message types |
-| SKILL.md kept entirely on the server side | Avoids the `mpy-hardware-extension` phase_profile sanitization issue |
-| All local I/O transparently passed through | The plugin doesn't know what mpremote is doing — the server says exec, it execs |
-| Board database can be local or remote | During local testing, the plugin reads JSON files directly; in production, it goes through the API |
-| SKILL.md does not hardcode communication methods | SKILL.md describes business logic, not bound to I/O mechanisms. The LLM adapts based on the environment: locally uses Read/Bash/AskUserQuestion, server uses file_operation/device_command/approval_request. The same SKILL.md can run in both environments |
+|------|------|
+| Plugin makes no decisions | Plugin engineers don't need to understand embedded/MicroPython/drivers. Only implement sending/receiving 7 message types |
+| SKILL.md kept entirely on server | Avoids `mpy-hardware-extension` phase_profile sanitisation issues |
+| All local I/O transparently passed through | Plugin doesn't know what mpremote is doing—server says exec, it execs |
+| Board database can be local or remote | During local testing, plugin reads JSON file directly; in production, goes through API |
+| SKILL.md does not hardcode communication method | SKILL.md describes business logic, not bound to I/O mechanism. LLM adapts based on environment: locally uses Read/Bash/AskUserQuestion, server uses file_operation/device_command/approval_request. Same SKILL.md runs in both environments |
 
 ## Message Flow
 
 ```
 Plugin → Server (7 types):
-  start_phase          — Start a skill
-  approval_response    — Result of user clicking an approval card
+  start_phase          — Start skill
+  approval_response    — Result of user clicking approval card
   device_result        — Result of mpremote command execution
   script_result        — Result of local script execution
   file_result          — Result of file operation
@@ -117,7 +118,7 @@ Server (upy-select-hw):
 
 ## Session Management
 
-- Each project has one session_id (UUID, generated by the plugin)
-- The plugin sends the session_id in the first message
-- The server maintains session context (current phase + manifest snapshot + LLM conversation history)
+- Each project has one session_id (UUID, generated by plugin)
+- Plugin sends session_id in the first message
+- Server maintains session context (current phase + manifest snapshot + LLM conversation history)
 - Plugin restart → new session_id → server starts over

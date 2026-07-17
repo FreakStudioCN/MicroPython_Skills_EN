@@ -11,7 +11,7 @@
     "session_id": "demo-session",
     "idempotency_key": "upy-diagram-plugin:demo-session:full:v1",
     "next_phase": null,
-    "summary": "Markdown and HTML have been generated, SVG/PNG network rendering is not complete.",
+    "summary": "Markdown and HTML have been generated, SVG/PNG network rendering not completed.",
     "manifest_content": {
       "schema_version": "1.0",
       "phase": "diagram",
@@ -55,7 +55,7 @@
       }
     },
     "warnings": [
-      {"code": "DIAGRAM_PARTIAL_ARTIFACTS", "message": "SVG/PNG have not been generated yet, can continue from checkpoint."}
+      {"code": "DIAGRAM_PARTIAL_ARTIFACTS", "message": "SVG/PNG not yet generated, can continue from checkpoint."}
     ],
     "errors": [
       {

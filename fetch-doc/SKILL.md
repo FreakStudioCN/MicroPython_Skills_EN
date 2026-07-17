@@ -43,7 +43,7 @@ Prefer using Bash tools to invoke the script:
 python "C:/Users/Administrator/.claude/skills/fetch-doc/scripts/fetch_github.py" "{url}" 2>/dev/null
 ```
 
-GitHub URLs are automatically converted; SSL certificate issues are skipped automatically.
+GitHub URLs are automatically converted; SSL certificate issues are automatically skipped.
 
 ### Step 3: Extract Key Information
 

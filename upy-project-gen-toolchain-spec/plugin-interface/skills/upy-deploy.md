@@ -13,17 +13,17 @@
 | Phase | deploy |
 | Upstream Skill | upy-generate or upy-simulate (user-triggered); upy-autofix (auto-triggered in incremental mode) |
 | Downstream Skill | upy-autofix (on FAIL); upy-wiring / upy-diagram (parallel visualization on PASS) |
-| One-line Responsibility | Compile & upload → Soft reset → Run & collect → Log fetch → LLM PASS/FAIL determination |
+| One-line Responsibility | Compile upload → Soft reset → Run collect → Log fetch → LLM PASS/FAIL determination |
 
 **Two Operation Modes:**
 
 | Mode | Trigger | Purpose |
 |------|---------|---------|
 | `full` | User clicks [One-click Flash] button | Fresh compile + full upload + run |
-| `incremental` | Auto-called after upy-autofix fix | Compile & upload only changed_files, then run to verify |
+| `incremental` | Auto-called after upy-autofix fix | Compile and upload only changed_files, then run for verification |
 
 **Core Constraints:**
-- All mpremote operations are executed by the plugin via `device_command` / `script_run`; the server never touches the serial port
+- All mpremote operations are executed by the plugin via `device_command` / `script_run`; the server does not touch the serial port
 - Phase 6 determination is done by the server-side LLM (replacing the original grep rules)
 - `flash_device.py` + `read_device_log.py` must support the `--json` flag to output structured data
 - main.py is uploaded last and kept as .py (not compiled)
@@ -93,7 +93,7 @@ Phase 1: Compile + Upload + Verify
   → script_run(flash_device.py --port COM3 --compile --upload --verify --no-reset --json)
   → stream × N (script_stdout, one JSON line per file)
   → script_result
-  → status_update "✓ Compile & upload complete: 15 .mpy + 5 .py, verification passed"
+  → status_update "✓ Compile and upload complete: 15 .mpy + 5 .py, verification passed"
 
 Phase 2: Soft Reset + Wait for Reconnection
   → status_update "Soft resetting device..."
@@ -106,7 +106,7 @@ Phase 3: Persistent Session Collection
   → device_command(action="stream", timeout_ms=60000)
   → stream × N (device_output, real-time REPL output lines)
   → device_result (Collection complete, includes full output text)
-  → status_update "✓ Collection complete: 342 lines total"
+  → status_update "✓ Collection complete: 342 lines of output"
 
 Phase 4: Fetch Device Logs
   → status_update "Reading device logs..."
@@ -150,7 +150,7 @@ Phase 5: LLM Determination
 {"step": "done", "status": "success", "compiled": 15, "uploaded": 20, "errors": []}
 ```
 
-The server-side LLM parses each JSON line and converts compile/upload progress into `status_update` messages.
+The server-side LLM parses each JSON line and converts compile/upload progress into `status_update`.
 
 #### device_command — soft_reset (Phase 2)
 
@@ -266,24 +266,24 @@ When there are no log files on the device: `{"status": "empty", "log_dir": "/log
   "payload": {
     "phase": "deploy",
     "result": "success",
-    "summary": "Deployment successful: Device ran for 60s without errors, scheduler scheduled 3 tasks normally",
+    "summary": "Deployment successful: Device ran for 60s without anomalies, scheduler scheduled 3 tasks normally",
     "next_phase": null,
     "artifacts": [
       {
         "type": "markdown",
         "title": "Run Summary",
-        "content": "### Device Run Report\n\n- **Device**: ESP32-WROOM-32 @ COM3\n- **Sampling**: 60 ticks × 1000ms = 60s\n- **I2C Scan**: [0x3C (SSD1306), 0x44 (SHT30)]\n- **Tasks**: sensor_task (every tick), display_task (every 5 ticks), alarm_task (every tick)\n- **Logs**: run_0.log (2048 bytes)\n- **Errors**: None"
+        "content": "### Device Run Report\n\n- **Device**: ESP32-WROOM-32 @ COM3\n- **Sampling**: 60 ticks × 1000ms = 60s\n- **I2C Scan**: [0x3C (SSD1306), 0x44 (SHT30)]\n- **Tasks**: sensor_task (every tick), display_task (every 5 ticks), alarm_task (every tick)\n- **Logs**: run_0.log (2048 bytes)\n- **Anomalies**: None"
       },
       {
         "type": "table",
-        "title": "Deployment Phases",
+        "title": "Deployment Phase",
         "headers": ["Phase", "Status", "Description"],
         "rows": [
           ["Compile", "✓", "15 .py → .mpy"],
           ["Upload", "✓", "20 files, 0 failures"],
-          ["Verify", "✓", "20/20 files match"],
+          ["Verify", "✓", "20/20 files consistent"],
           ["Reset", "✓", "COM3 reconnection 2.3s"],
-          ["Run", "✓", "60s no errors"]
+          ["Run", "✓", "60s no anomalies"]
         ]
       }
     ],
@@ -308,7 +308,7 @@ When there are no log files on the device: `{"status": "empty", "log_dir": "/log
       {
         "type": "markdown",
         "title": "Error Summary",
-        "content": "### Error Information\n\n- **Type**: OSError\n- **Location**: firmware/tasks/sensor_task.py:23 — sht30.measure()\n- **Occurred at**: tick 12 (~15s after device start)\n- **Logs**: run_0.log contains full Traceback"
+        "content": "### Error Information\n\n- **Type**: OSError\n- **Location**: firmware/tasks/sensor_task.py:23 — sht30.measure()\n- **Occurrence Time**: tick 12 (~15s after device start)\n- **Logs**: run_0.log contains full Traceback"
       }
     ],
     "warnings": [],
@@ -343,25 +343,25 @@ When there are no log files on the device: `{"status": "empty", "log_dir": "/log
 
 #### status_update List
 
-| step_id | level | message | Trigger |
-|---------|-------|---------|---------|
+| step_id | level | message | Trigger Time |
+|---------|-------|---------|-------------|
 | compile_start | info | Compiling .py → .mpy... | Phase 1 start |
-| compile_progress | info | Compiling: sensor_task.py → sensor_task.mpy (15/15) | Per file compile complete |
-| compile_done | success | ✓ Compilation complete: 15 .mpy, 0 failures | Compile phase end |
+| compile_progress | info | Compiling: sensor_task.py → sensor_task.mpy (15/15) | Per file compilation complete |
+| compile_done | success | ✓ Compilation complete: 15 .mpy, 0 failures | Compilation phase end |
 | upload_start | info | Uploading firmware/ → device... | Upload phase start |
 | upload_progress | info | Uploading: lib/scheduler.mpy (1/20) | Per file upload complete |
 | upload_done | success | ✓ Upload complete: 20 files | Upload phase end |
 | verify_start | info | Verifying file integrity... | Verify phase start |
-| verify_done | success | ✓ Verification passed: 20/20 files match | Verification passed |
+| verify_done | success | ✓ Verification passed: 20/20 files consistent | Verification passed |
 | verify_fail | warn | ⚠ 2 files missing, retransmitting... | Verification failed |
 | reset_start | info | Soft resetting device... | Phase 2 start |
 | reset_done | success | ✓ Device ready (reconnection took X.Xs) | Device ready |
 | reset_timeout | error | ✗ Device reconnection timeout (60s) | Reconnection timeout |
 | stream_start | info | Collecting device output (60s)... | Phase 3 start |
-| stream_done | success | ✓ Collection complete: XXX lines | Collection end |
+| stream_done | success | ✓ Collection complete: XXX lines of output | Collection end |
 | stream_early | success | ✓ Scheduler started, ending collection early | Detected starting scheduler |
 | log_start | info | Reading device logs... | Phase 4 start |
-| log_done | success | ✓ Read N log files | Log read complete |
+| log_done | success | ✓ Read N log files | Log reading complete |
 | log_empty | info | No log files on device | No logs |
 | judge_start | info | Analyzing run results... | Phase 5 start |
 | judge_pass | success | ✓ Deployment successful: Device running normally | PASS |
@@ -369,7 +369,7 @@ When there are no log files on the device: `{"status": "empty", "log_dir": "/log
 
 ### No approval_request Required
 
-The entire deploy process has no human-interaction cards. The user only needs to click the [One-click Flash] button to start; everything else executes automatically.
+No human-interaction cards are needed throughout the deploy process. The user only needs to click the [One-click Flash] button to start; everything else runs automatically.
 
 ---
 
@@ -377,16 +377,16 @@ The entire deploy process has no human-interaction cards. The user only needs to
 
 A total of 8 changes:
 
-| # | Location | Current Behavior | Change To | Reason |
-|---|----------|-----------------|-----------|--------|
-| 1 | Pre-checks | `python --version` + `mpremote --version` | Remove. Dependencies guaranteed by plugin environment | Server does not perceive the runtime environment |
-| 2 | Phase 1 Upload | Directly call `mpremote fs cp/mkdir` or `python flash_device.py` | `script_run(flash_device.py --json --verify)` | Script executed locally by plugin; JSON output parsed by server |
-| 3 | Phase 2 Verify | Independent step: `mpremote fs tree/ls` + Bash comparison | Merge into Phase 1: `flash_device.py --verify` auto-verifies after upload, auto-retransmits missing files | Reduce one script_run round trip |
+| No. | Location | Current Behavior | Change To | Reason |
+|-----|----------|-----------------|-----------|--------|
+| 1 | Pre-checks | `python --version` + `mpremote --version` | Remove. Dependencies are guaranteed by the plugin environment | Server does not perceive the runtime environment |
+| 2 | Phase 1 Upload | Directly call `mpremote fs cp/mkdir` or `python flash_device.py` | `script_run(flash_device.py --json --verify)` | Script executed locally by the plugin; JSON output parsed by the server |
+| 3 | Phase 2 Verify | Separate step: `mpremote fs tree/ls` + Bash comparison | Merge into Phase 1: `flash_device.py --verify` auto-verifies after upload, auto-retransmits missing files | Reduces one script_run round trip |
 | 4 | Phase 3 Soft Reset | `mpremote soft-reset` + Python polling `exec("print(1)")` | `device_command(action="soft_reset")`, plugin handles the entire reconnection wait loop internally, returns success/timeout | Plugin encapsulates reconnection logic; server only cares about the result |
-| 5 | Phase 4 Persistent Session | subprocess.Popen + threading code (pipe/PTY) | `device_command(action="stream", timeout_ms=60000)` → `stream` messages pushed line by line | Reuse stream messages; plugin establishes REPL session |
-| 6 | Phase 5 Fetch Logs | `mpremote fs cat/cp` + `log_report.py` | `script_run(read_device_log.py --json)` returns all log content at once (JSON); server can then call `script_run(log_report.py)` for structured parsing | Reduce multiple mpremote calls; fetch everything in one go |
+| 5 | Phase 4 Persistent Session | subprocess.Popen + threading code (pipe/PTY) | `device_command(action="stream", timeout_ms=60000)` → `stream` messages pushed line by line | Reuses stream messages; plugin establishes REPL session |
+| 6 | Phase 5 Fetch Logs | `mpremote fs cat/cp` + `log_report.py` | `script_run(read_device_log.py --json)` returns all log content at once (JSON); server can then call `script_run(log_report.py)` for structured parsing | Reduces multiple mpremote calls, fetches everything in one go |
 | 7 | Phase 6 Initial Judgment | Local grep rules (Traceback/rst cause/MemoryError) | Server-side LLM comprehensively analyzes REPL output + log_report JSON → determines PASS/FAIL | LLM has full project context, more accurate judgment; can distinguish expected warnings from real errors |
-| 8 | New incremental mode | Only full mode | Add `mode=incremental`: read `changed_files` → compile & upload only those files → flash_device.py uses `--files` parameter | Fast verification loop for autofix→deploy, no need for full retransmission |
+| 8 | New incremental mode | Only full mode | Add `mode=incremental`: read `changed_files` → compile and upload only those files → flash_device.py uses `--files` parameter | Fast verification loop for autofix→deploy, no need for full retransmission |
 
 ---
 
@@ -401,7 +401,7 @@ A total of 8 changes:
 | Add `--json` flag | Output one JSON line per step to stdout (step/status/file/size, etc.), replacing the current `print("[compile] ...")` human-readable format. Keep original output without `--json` |
 | Add `--verify` flag | After upload, auto-run `fs ls` to traverse remote directories, compare with local file list, output `{"step":"verify", "missing":[...], "status":"ok"/"fail"}`. Auto-retransmit missing files |
 | Add `--files` parameter | Value `"tasks/sensor.py,drivers/sht30/sht30.py"` (comma-separated relative paths). When specified, only compile/upload these files (incremental mode). **Entry files are always kept as .py and not compiled** |
-| Remove `select_com_port()` | Interactive COM port selection → replaced by `--port` parameter (provided by plugin in start_phase). Exit with error if no `--port` |
+| Remove `select_com_port()` | Interactive COM port selection → replaced by `--port` parameter (provided by the plugin in start_phase). Exit with error if no `--port` |
 | Remove `--flash` firmware flashing | Firmware flashing is a one-time operation, not part of the deploy flow. Parameter kept but not used by deploy |
 | `_upload_dir` sort guarantee | main.py is always uploaded last (existing logic, ensure no regression) |
 
@@ -428,7 +428,7 @@ A total of 8 changes:
 
 **Path:** `G:\MicroPython_Skills\upy-scaffold\templates\pc\log_report.py`
 
-**Essentially no changes needed.** It already outputs structured JSON, compatible with error_context. Just confirm that the error level enum in `parse_log()` matches error_context.
+**Basically no changes needed.** It already outputs structured JSON, compatible with error_context. Just confirm that the error level enumeration in `parse_log()` is consistent with error_context.
 
 ### run_on_device.py (Shared with gen-driver)
 
@@ -444,11 +444,11 @@ A total of 8 changes:
 | `--timeout-ms` | Device execution timeout (ms), default 30000 |
 | `--json-summary` | stdout outputs `{"status":"ok","output_file":"...","exit_code":0,"duration_ms":N}` |
 
-Difference from `flash_device.py`: `flash_device.py` handles compile + upload + verify (full deployment), while `run_on_device.py` handles REPL execution + output capture (quick verification).
+Difference from `flash_device.py`: `flash_device.py` handles compile+upload+verify (full deployment), while `run_on_device.py` handles REPL send+execute+capture output (quick verification).
 
 ---
 
-## VI. UI Components to be Implemented by Plugin
+## VI. UI Components to be Implemented on the Plugin Side
 
 | Component | Corresponding Message | Key Functionality |
 |-----------|-----------------------|-------------------|
@@ -460,7 +460,7 @@ Difference from `flash_device.py`: `flash_device.py` handles compile + upload + 
 
 ### Device Terminal Panel Description
 
-Shares the same UI component as simulate's terminal panel, differing only in data source:
+Shares the same UI component as simulate's terminal panel, with the difference being the data source:
 - simulate: `stream` message `stream_type: "script_stdout"` (sim_main.py --plain output)
 - deploy: `stream` message `stream_type: "device_output"` (REPL real-time output)
 
@@ -476,7 +476,7 @@ The plugin appends to the terminal panel in real-time upon receiving stream mess
 2. Manually send `stream` sequence (simulate REPL output lines) → Verify terminal panel real-time scrolling
 3. Manually send `phase_complete` (PASS) → Verify run summary + phase table rendering
 4. Manually send `phase_complete` (FAIL + error_context) → Verify error summary panel + autofix entry
-5. Construct `start_phase` message → Verify correct JSON is sent after [One-click Flash] button click
+5. Construct `start_phase` message → Verify correct JSON is emitted after clicking [One-click Flash] button
 
 ### Skill-side Testing (No Plugin)
 
@@ -487,5 +487,5 @@ The plugin appends to the terminal panel in real-time upon receiving stream mess
    - `script_run(read_device_log.py)` → Return simulated log JSON
 2. Verify PASS path: Normal REPL output + no error logs → result="success"
 3. Verify FAIL path: REPL contains Traceback → result="failed" + complete error_context
-4. Verify incremental mode: changed_files passed in → flash_device.py only processes specified files
-5. Check all sent message JSON conforms to 02-protocol.md Schema
+4. Verify incremental mode: changed_files passed → flash_device.py only processes specified files
+5. Check all emitted message JSON conforms to 02-protocol.md Schema

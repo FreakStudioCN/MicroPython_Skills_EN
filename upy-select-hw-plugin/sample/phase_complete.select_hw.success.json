@@ -154,7 +154,7 @@
           "bus": "i2c0",
           "i2c_addr": "0x38",
           "source": "default_bus",
-          "notes": "Using i2c0 default SDA defined by the board"
+          "notes": "Using board-defined i2c0 default SDA"
         },
         {
           "device": "AHT20",
@@ -164,7 +164,7 @@
           "bus": "i2c0",
           "i2c_addr": "0x38",
           "source": "default_bus",
-          "notes": "Using i2c0 default SCL defined by the board"
+          "notes": "Using board-defined i2c0 default SCL"
         },
         {
           "device": "HC-SR501",
@@ -180,7 +180,7 @@
           "gpio": 7,
           "type": "gpio_in",
           "source": "auto_assigned",
-          "notes": "Avoiding strapping, flash/PSRAM, and USB serial pins"
+          "notes": "Avoid strapping, flash/PSRAM, and USB serial pins"
         },
         {
           "device": "INMP441",
@@ -189,7 +189,7 @@
           "type": "i2s_bck",
           "bus": "i2s0",
           "source": "auto_assigned",
-          "notes": "I2S BCK automatically assigned to a free GPIO"
+          "notes": "I2S BCK automatically assigned to free GPIO"
         },
         {
           "device": "INMP441",
@@ -198,7 +198,7 @@
           "type": "i2s_ws",
           "bus": "i2s0",
           "source": "auto_assigned",
-          "notes": "I2S WS automatically assigned to a free GPIO"
+          "notes": "I2S WS automatically assigned to free GPIO"
         },
         {
           "device": "INMP441",

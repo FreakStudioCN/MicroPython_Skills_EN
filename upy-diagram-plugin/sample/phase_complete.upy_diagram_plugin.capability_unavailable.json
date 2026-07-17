@@ -15,7 +15,7 @@
       "checkpoint_id": "input_loaded",
       "resume_phase": "upy-diagram-plugin",
       "resume_step": "capability_negotiation",
-      "resume_label": "Continue the diagram phase after completing the capability"
+      "resume_label": "Continue the diagram phase after supplementing the capability"
     },
     "artifacts": [],
     "file_manifest": {"path": "sessions/demo-session/diagram_file_manifest.json", "files": []},

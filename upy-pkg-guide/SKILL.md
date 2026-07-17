@@ -7,7 +7,7 @@ description: Use this skill when the user mentions a device/chip name and wants 
 
 ## Role
 
-Given a device name, search for drivers from **upypi → awesome-micropython** in priority order, then analyze and output usage instructions.
+Given a device name, search for drivers from **upypi → awesome-micropython** in priority order, then output usage guidance after comprehensive analysis.
 
 ---
 
@@ -115,13 +115,13 @@ Priority downloads: `README.md`, `main.py`, and all `.py` driver files (excludin
 
 ---
 
-### Step 3: Comprehensive Analysis, Output Usage Instructions
+### Step 3: Comprehensive Analysis, Output Usage Guidance
 
 Combine all fetched files and output the following structure:
 
 ---
 
-## {device_name} Driver Usage Instructions
+## {device_name} Driver Usage Guide
 
 **Source**
 - Platform: `upypi` / `awesome-micropython ({category} > {subcategory})`
@@ -166,7 +166,7 @@ mpremote cp -r lib/ :lib/
 - `main.py` is the **first priority** reference; directly show its initialization code as the minimal example
 - `README.md` supplements notes and hardware wiring
 - Driver `.py` is used to extract the complete API table
-- Packages from the awesome-micropython path usually lack standardized installation methods; specify which files/directories to copy manually
+- Packages from the awesome-micropython path typically lack a standardized installation method; specify which files/directories to copy manually
 - If a file does not exist (404 or API returns nothing), skip that section without error
 
 ## Script Description

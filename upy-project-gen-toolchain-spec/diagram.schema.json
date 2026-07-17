@@ -14,7 +14,7 @@
         "project": { "type": "string", "description": "Project name" },
         "mode": { "type": "string", "enum": ["timer", "asyncio", "thread"], "description": "Scheduling mode" },
         "generated_at": { "type": "string", "description": "ISO 8601 timestamp" },
-        "source_phase": { "type": "string", "enum": ["scaffold", "generate"], "description": "From which phase the code was generated" },
+        "source_phase": { "type": "string", "enum": ["scaffold", "generate"], "description": "From which phase's code it was generated" },
         "mcu": { "type": "string", "description": "MCU model" }
       }
     },
@@ -38,7 +38,7 @@
               },
               "label": {
                 "type": "string",
-                "description": "Layer label in Chinese, e.g., Board Layer"
+                "description": "Chinese label of the layer, e.g., Board Layer"
               },
               "color": {
                 "type": "string",
@@ -66,7 +66,7 @@
                     "provides": {
                       "type": "array",
                       "items": { "type": "string" },
-                      "description": "List of exported symbols (function/class names)"
+                      "description": "List of externally exported symbols (function/class names)"
                     },
                     "depends_on": {
                       "type": "array",
@@ -194,7 +194,7 @@
           },
           "data": {
             "type": "string",
-            "description": "Description of the data being passed"
+            "description": "Description of the transmitted data"
           },
           "channel": {
             "type": "string",

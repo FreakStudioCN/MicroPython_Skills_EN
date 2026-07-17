@@ -1,6 +1,6 @@
 ---
 name: upy-scaffold-plugin
-description: Plugin-based workflow MicroPython project skeleton generation. Used when Codex receives a phase_complete(upy-flash-mpy-firmware-plugin) with next_phase=upy-scaffold-plugin, or when the user adds a new device in a later phase; consumes the select-hw manifest_content, generates a firmware/ skeleton written via file_operation after approval of scheduling mode and modules, or incrementally generates only the new device driver stub.
+description: Plugin-based workflow MicroPython project skeleton generation. Used when Codex receives a phase_complete(upy-flash-mpy-firmware-plugin) with next_phase=upy-scaffold-plugin, or when the user adds a new device in a later phase; consumes the select-hw manifest_content, approves the scheduling mode and modules, then generates the firmware/ skeleton written by file_operation, or incrementally generates only the new device driver stub.
 ---
 
 # upy-scaffold-plugin Plugin Workflow
@@ -59,13 +59,13 @@ Incremental mode:
 
 ## Full Flow
 
-1. Validate the upstream phase: `phase_complete(upy-flash-mpy-firmware-plugin)` must have `result=success` and `next_phase=upy-scaffold-plugin`. During migration, direct testing may pass the `select-hw` manifest directly, but the formal chain must not skip the firmware phase.
+1. Validate the upstream phase: `phase_complete(upy-flash-mpy-firmware-plugin)` must have `result=success` and `next_phase=upy-scaffold-plugin`. During migration, direct testing can pass the `select-hw` manifest directly, but the formal chain must not skip the firmware phase.
 2. Read `mcu`, `devices`, `pinout`, `bom`, `requirements` from `manifest_content`.
-3. Send `approval_request(scaffold_config)`, merging scheduling mode, extra modules, and custom files into a single card.
+3. Send `approval_request(scaffold_config)`, merging the scheduling mode, extra modules, and custom files into a single card.
 4. After user confirmation, run `scripts/init_scaffold.py` to generate stdout JSON.
 5. Use `directories[]` from the stdout JSON for plugin-side pre-creation of directories, and convert `files[]` one by one into `file_operation(op=write)`.
-6. Send `script_run(flake8)`, to be executed by the host in the project directory; the script itself does not run flake8.
-7. After the host writes `file_operations[]` to the project directory, run `python -m flake8 firmware tools`; must use the MicroPython-aware configuration from the project root `.flake8`, and must return 0 to proceed.
+6. Send `script_run(flake8)`, for the host to run lint in the project directory; the script itself does not run flake8.
+7. After the host writes `file_operations[]` to the project directory, run `python -m flake8 firmware tools`; must use the MicroPython-aware configuration from the project root `.flake8`, and return 0 to continue.
 8. Output `phase_complete(result=success, next_phase=upy-generate-plugin)`, and include the updated manifest output by the script in `payload.manifest_content`.
 
 ## approval_request: scaffold_config
@@ -78,7 +78,7 @@ Send only one approval request, with `approval_id` fixed to `scaffold_config`. M
   "payload": {
     "approval_id": "scaffold_config",
     "header": "Project Skeleton Configuration",
-    "question": "Select scheduling mode and modules to inject",
+    "question": "Select the scheduling mode and modules to inject",
     "items": [
       {"id": "mode_timer", "name": "Timer tick", "group": "scheduler_mode"},
       {"id": "mode_async", "name": "asyncio", "group": "scheduler_mode"},
@@ -95,7 +95,7 @@ Send only one approval request, with `approval_id` fixed to `scaffold_config`. M
 }
 ```
 
-Scheduling mode recommendation rules only affect `selected/meta` and cannot restrict user choice:
+The scheduling mode recommendation rules only affect `selected/meta` and cannot restrict user choice:
 
 | Condition | Recommendation |
 |---|---|
@@ -189,7 +189,7 @@ The host can use `file_operations[]` directly, or assemble them from `files[]`:
 }
 ```
 
-Paths must remain POSIX-style relative to the project root; do not write absolute paths.
+Paths must be POSIX-style relative to the project root; do not write absolute paths.
 
 `phase_complete_payload` is a payload draft, not a complete message envelope; the real `msg_id`, `session_id`, `timestamp`, and `idempotency_key` are filled in by the runtime host.
 
@@ -209,18 +209,18 @@ Only output the new device's `firmware/drivers/<name>_driver/__init__.py` stub a
 ## Output Constraints
 
 - `board.py` only contains pin constants and query functions; do not instantiate hardware.
-- `main.py` only generates hardware instantiation and scheduling framework; leave TODO placeholders for business task registration.
-- `timer` mode uses `Scheduler` from `firmware/lib/scheduler/timer_sched.py`; do not rewrite this internal library for port compatibility. The library's default `timer_id=-1` must be preserved because RP2/Pico and Zephyr only support virtual Timers. Port differences must be resolved in the `main.py` entry assembly layer: only RP2/Pico/RP2040/RP2350 and Zephyr may explicitly generate `Scheduler(timer_id=-1, tick_ms=...)`; other MCU/ports default to generating `Scheduler(timer_id=0, tick_ms=...)` or another verified non-negative hardware Timer ID. Do not generate implicit `Scheduler(...)`, `Scheduler(tick_ms=...)`, or `Scheduler(timer_id=-1)`. `async` mode uses `uasyncio` directly; `thread` mode uses `_thread` directly.
+- `main.py` only generates hardware instantiation and the scheduling framework; leave TODO markers for business task registration.
+- `timer` mode uses `Scheduler` from `firmware/lib/scheduler/timer_sched.py`; do not rewrite this internal library for port compatibility. The library's default `timer_id=-1` must be preserved because RP2/Pico and Zephyr only support virtual timers. Port differences must be resolved in the `main.py` entry assembly layer: only RP2/Pico/RP2040/RP2350 and Zephyr may explicitly generate `Scheduler(timer_id=-1, tick_ms=...)`; other MCU/ports default to generating `Scheduler(timer_id=0, tick_ms=...)` or another verified non-negative hardware Timer ID. Do not generate implicit `Scheduler(...)`, `Scheduler(tick_ms=...)`, or `Scheduler(timer_id=-1)`. `async` mode uses `uasyncio` directly; `thread` mode uses `_thread` directly.
 - GPIO direction must come from `pinout[].type` and pin semantics: `gpio_out`, `DATA`, `DO`, `OUT`, `GAIN`, `SD` default to `Pin.OUT`; `gpio_in` defaults to `Pin.IN`. Do not generate output pins like WS2812 DATA as `Pin.IN`.
-- `main.py` must have a startup fatal guard. After installing the rotating logger, critical startup status must be dual-written via `print + logger`; uncaught startup/assembly exceptions must be printed to the serial port via `sys.print_exception()` and written to `/log/run_*.log` via `logger.exception()`. Do not rely on MicroPython automatically writing top-level tracebacks to file logs.
+- `main.py` must have a startup fatal guard. After installing the rotating logger, critical startup states must be dual-written via `print + logger`; uncaught startup/assembly exceptions must be printed to the serial port via `sys.print_exception()` and written to `/log/run_*.log` via `logger.exception()`. Do not rely on MicroPython automatically writing top-level tracebacks to file logs.
 - Do not generate business `tasks/sensor_task.py`, `display_task.py`, or `network_task.py`.
-- `conf.py` must not contain Wi-Fi passwords, API Keys, or other sensitive data.
-- `tools/flash_device.py` must implement production deployment filtering: `main.py`, `boot.py`, `conf.py` are always uploaded as `.py`, not compiled to `.mpy`; `firmware/drivers/**/mock.py` belongs to test doubles only and must not be compiled or uploaded, and stale `build/mpy/drivers/**/mock.mpy` must also be skipped. The JSON summary must record `compiled_files`, `uploaded_files`, and `skipped_files` for the deploy-plugin to determine forbidden artifacts.
+- `conf.py` must not write Wi-Fi passwords, API Keys, or other sensitive data.
+- `tools/flash_device.py` must implement production deployment filtering: `main.py`, `boot.py`, `conf.py` are always uploaded as `.py`, not compiled to `.mpy`; `firmware/drivers/**/mock.py` are test doubles only and must not be compiled or uploaded, and stale `build/mpy/drivers/**/mock.mpy` must also be skipped. The JSON summary must record `compiled_files`, `uploaded_files`, and `skipped_files` for the deploy-plugin to determine forbidden artifacts.
 - `.upy/` only copies schemas and tool scripts that actually exist in the current repository; do not fabricate non-existent downstream tools.
 - `project-manifest.json` must be written to the project root as a `file_operation`; `payload.manifest_content` simultaneously retains the object form.
-- `docs/.gitkeep` must be preserved as the entry point for project documentation.
-- The root `.gitignore` must ignore `__pycache__/`, `*.pyc`, and `build/mpy/` to prevent deploy compilation artifacts from polluting the git state of the next generate/autofix round.
-- `.flake8` must be a MicroPython-aware configuration: do not globally ignore `F821/F401`, use `builtins=const` and precise `per-file-ignores`.
+- `docs/.gitkeep` must be preserved as the project documentation entry point.
+- The root `.gitignore` must ignore `__pycache__/`, `*.pyc`, and `build/mpy/` to prevent deploy compilation artifacts from polluting the git state of the next generate/autofix cycle.
+- `.flake8` must be a MicroPython-aware configuration: do not globally ignore `F821/F401`; use `builtins=const` and precise `per-file-ignores`.
 - `phase_complete.payload.artifacts` must be an array, containing at least `file_tree` and `file_list`.
 - `phase_complete.payload.next_phase` is `upy-generate-plugin` on success; `null` on partial/failure.
 
@@ -279,10 +279,9 @@ Coverage:
 
 - Full + timer output JSON, paths, and encoding.
 - Async mode does not inject scheduler.
-- Incremental only generates new driver stub and `project-manifest.json`, then proceeds to `upy-generate-plugin`.
+- Incremental only generates new driver stub and `project-manifest.json`, and proceeds to `upy-generate-plugin`.
 - `approval_request.scaffold_config` `item_groups` grouping protocol.
 - Local actual runner applies `file_operations[]` to a temporary project directory and runs the flake8 gate.
-
 ## Final Boundary Addendum
 
 - Treat the explicit `runtime_context.session_root` or user-supplied session path as `workflow_session_root`; diagnostic sessions containing logs are evidence only and must not receive scaffold files.

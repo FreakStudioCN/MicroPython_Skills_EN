@@ -1,6 +1,6 @@
 # `upy-analyze-plugin/scripts`
 
-This directory is reserved for scripts used by the plugin-based workflow version of analyze.
+This directory is reserved for scripts used by the plugin-based workflow version of `analyze`.
 
 First batch of key scripts:
 
@@ -9,4 +9,4 @@ First batch of key scripts:
    - Aims to support stdin input
    - Outputs structured JSON results
 
-For now, the directory skeleton is preserved without overwriting the original `G:\MicroPython_Skills\upy-analyze\scripts`.
+For now, the directory skeleton is retained without overwriting the original `G:\MicroPython_Skills\upy-analyze\scripts`.

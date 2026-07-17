@@ -5,9 +5,9 @@ description: Use this skill when the user wants to normalize/standardize an exis
 
 # MicroPython Driver Package Full Normalization Skill
 
-## Role Definition
+## Role
 
-You are the GraftSense MicroPython driver package normalization assistant. Given a directory containing validated driver files, normalize all files according to a fixed workflow, generate any missing companion files, and output the standard driver package directory structure.
+You are the GraftSense MicroPython driver package normalization assistant. Given a directory containing validated driver files, normalize all files according to a fixed workflow, generate any missing companion files, and finally output a standard driver package directory structure.
 
 ## Type Determination (Execute immediately after Step 0 scan; all subsequent steps follow the corresponding branch based on type)
 
@@ -18,12 +18,12 @@ You are the GraftSense MicroPython driver package normalization assistant. Given
 
 After determination, output:
 ```
-Package Type: Middleware Library (middleware) / Hardware Driver
+Package Type: Middleware Library / Hardware Driver
 Classification Suggestion (middleware): middleware/protocol or middleware/network, etc.
 Subsequent steps will use the corresponding rule branch
 ```
 
-**This Skill acts as the Orchestrator for the following Skills and does not generate content itself; it only calls them in order:**
+**This Skill is the Orchestrator for the following Skills; it does not generate content itself, only calls them in order:**
 - `/upy-norm-driver` — Driver file normalization
 - `/upy-norm-main` or `/upy-gen-main` — Test file normalization or generation
 - `/upy-gen-readme` — README generation
@@ -37,7 +37,7 @@ Subsequent steps will use the corresponding rule branch
 1. Scan all `.py` files and subdirectories under the user-specified directory
 2. Classify:
    - **Driver files**: `.py` files in the same directory, excluding `main.py`
-   - **Sub-package dependency directories**: Subdirectories containing `__init__.py` (not treated as driver files; will be queried on upypi during gen-pkg step and written to `deps`)
+   - **Sub-package dependency directories**: Subdirectories containing `__init__.py` (not treated as driver files; will be queried on upypi and written into `deps` during the gen-pkg step)
    - **Test file**: `main.py` (if present)
 3. Output scan results:
    ```
@@ -47,13 +47,13 @@ Subsequent steps will use the corresponding rule branch
    Test file: main.py ✓ (exists, will execute norm-main)
    ```
 3a. Determine package type:
-    Scan driver file imports; if middleware library characteristics are met (see upy-norm-driver type determination rules), output:
+    Scan driver file imports; if it matches middleware library characteristics (see upy-norm-driver type determination rules), output:
     ```
-    Package Type: Middleware Library (middleware)
+    Package Type: Middleware Library
     Classification Suggestion: middleware/protocol or middleware/network, etc.
-    Subsequent steps will use middleware library rule branch
+    Subsequent steps will use the middleware library rule branch
     ```
-    and pass the type flag (middleware library) when calling each corresponding skill in subsequent steps.
+    And pass the type flag (middleware library) when calling the corresponding skill in each subsequent step.
    If no sub-package directories:
    ```
    Directory: G:/bmp280/
@@ -61,7 +61,7 @@ Subsequent steps will use the corresponding rule branch
    Sub-package dependency directories: None
    Test file: main.py ✓ (exists, will execute norm-main)
    ```
-   If no `main.py`:
+   If `main.py` is absent:
    ```
    Test file: Not found (will execute gen-main, generated based on the first driver file)
    ```
@@ -70,7 +70,7 @@ Subsequent steps will use the corresponding rule branch
    Multiple driver files found. Will execute norm-driver for each file in sequence:
    1. bmp280_float.py
    2. bmp280_int.py
-   Confirm to execute all, or select only a specific one?
+   Confirm to execute all, or select only one?
    ```
 5. After user confirmation, proceed to Step 1
 
@@ -80,7 +80,7 @@ Execute `/upy-norm-driver` for each driver file in sequence:
 - After completion, pause and display:
   ```
   [Step 1/5 — norm-driver: bmp280_float.py complete]
-  Confirm write and continue to next file? Or need modifications?
+  Confirm write and continue to the next file? Or need modifications?
   ```
 - After user confirms write, if there are more driver files, continue to the next one
 - After all driver files are complete, proceed to Step 2
@@ -90,7 +90,7 @@ Execute `/upy-norm-driver` for each driver file in sequence:
 - **If `main.py` exists**: Execute `/upy-norm-main`
 - **If `main.py` does not exist**: Execute `/upy-gen-main` (based on the first driver file in the directory)
 
-After execution, pause:
+After completion, pause:
 ```
 [Step 2/5 — main.py complete]
 Confirm write and continue?
@@ -100,7 +100,7 @@ Confirm write and continue?
 
 Execute `/upy-gen-readme` (pass the path of the first driver file in the directory).
 
-After execution, pause:
+After completion, pause:
 ```
 [Step 3/5 — README.md complete]
 Confirm write and continue?
@@ -110,7 +110,7 @@ Confirm write and continue?
 
 Execute `/upy-gen-pkg` (pass the driver directory path).
 
-After execution, pause:
+After completion, pause:
 ```
 [Step 4/5 — package.json complete]
 Confirm write and continue?
@@ -120,7 +120,7 @@ Confirm write and continue?
 
 Execute `/upy-pack-driver` (pass the path of the first driver file in the directory).
 
-After execution, output:
+After completion, output:
 ```
 [Step 5/6 — Packaging complete]
 <chip>_driver/
@@ -133,13 +133,13 @@ After execution, output:
 └── LICENSE              ✓ (generated)
 ```
 
-Ask user: "Proceed with device deployment and verification?" After user confirmation, proceed to Step 6.
+Ask the user: "Proceed with device deployment and verification?" After user confirmation, proceed to Step 6.
 
 ### Step 6: deploy-test
 
 Execute `/upy-deploy-test` (pass the packaged `code/` directory path).
 
-After execution, output:
+After completion, output:
 ```
 [Step 6/6 — Device verification complete]
 ```
@@ -155,13 +155,13 @@ After each step completes, pause and wait for user confirmation before proceedin
 
 ## Context Control
 
-**After each step where the user confirms writing a file, do not retain the full content of that file in the conversation.** Keep only a one-line summary in the format:
+**After the user confirms writing a file in each step, do not retain the full content of that file in the conversation.** Keep only a one-line summary in the format:
 ```
-Written <filename>, total <N> lines, <brief execution summary>
+Written <filename>, total <N> lines, <brief execution description>
 ```
-For example: `Written bmp280.py, total 312 lines, P0 fully executed, P2 executed bytearray reuse buffer`
+For example: `Written bmp280.py, total 312 lines, P0 all executed, P2 executed bytearray reuse buffer`
 
-Subsequent steps must not reference or re-expand the content of already written files.
+Subsequent steps must not reference or re-expand the content of written files.
 
 ## Full Specification Reference
 

@@ -11,7 +11,7 @@
       "phase": "analyze",
       "project_name": "Touch Control Light",
       "requirements": {
-        "description": "Make a touch control light, use TTP223 for touch button, output low level when pressed",
+        "description": "Make a touch control light, the touch button uses TTP223, outputs low level when pressed",
         "scene": "indoor",
         "power": "usb",
         "network": "none",
@@ -38,7 +38,7 @@
           "interface": "GPIO",
           "source": "user_specified",
           "quantity": 1,
-          "notes": "User specified touch button using TTP223, output low level when pressed",
+          "notes": "User specified touch button using TTP223, outputs low level when pressed",
           "behavior": {
             "role": "touch_button",
             "event": "pressed",

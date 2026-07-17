@@ -24,8 +24,8 @@ This is the data the plugin needs to provide to this skill.
 
 | Input Item | Type | Required | Source | Description |
 |------------|------|----------|--------|-------------|
-| user_description | string | Yes | User input box | The user's project description |
-| pre_selected_board | object? | No | Board selector | The board pre-selected by the user in the plugin |
+| user_description | string | Yes | User input field | User's project description |
+| pre_selected_board | object? | No | Board selector | Board pre-selected by the user in the plugin |
 | preferences.mode | string | No | Plugin settings | "beginner" / "custom" |
 | ... | ... | ... | ... | ... |
 
@@ -51,8 +51,8 @@ List them by execution step, annotating the message type and key content for eac
 ### Step Message Table
 
 | Step | Message Type | Trigger Condition | Key Content |
-|------|-------------|-------------------|-------------|
-| Step X: xxx | status_update | When execution starts | message: "Processing xxx..." |
+|------|--------------|-------------------|-------------|
+| Step X: xxx | status_update | When execution starts | message: "Currently xxx..." |
 | Step Y: xxx | approval_request | When user confirmation is needed | header: "xxx", items: [...] |
 | ... | ... | ... | ... |
 | Final | phase_complete | When phase completes | result: "success"/"failed", artifacts: [...] |
@@ -63,22 +63,22 @@ For each approval card, draw the plugin's rendering effect (ASCII diagram or des
 
 ```
 ┌─────────────────────────────────────────┐
-│  Card Title                              │
+│  Card Title                             │
 │                                         │
-│  [Summary Information Area]              │
+│  [Summary Information Area]             │
 │                                         │
-│  ☑ Option 1 — Description               │
-│  ☑ Option 2 — Description               │
+│  ☑ Option 1 — Description              │
+│  ☑ Option 2 — Description              │
 │                                         │
-│  [+ Add]                                 │
+│  [+ Add]                                │
 │                                         │
-│  [Confirm Button]  [Cancel Button]       │
+│  [Confirm Button]  [Cancel Button]      │
 └─────────────────────────────────────────┘
 ```
 
 ### status_update List
 
-List all progress message texts this skill will emit:
+List all progress message texts that this skill will emit:
 
 | step_id | message | level | Trigger Timing |
 |---------|---------|-------|----------------|
@@ -87,7 +87,7 @@ List all progress message texts this skill will emit:
 ### phase_complete Artifacts
 
 | Artifact Type | Title | Content Description |
-|-------------|-------|---------------------|
+|---------------|-------|---------------------|
 | table | xxx | headers: [...], rows: [...] |
 | file_tree | xxx | ... |
 | ... | ... | ... |
@@ -96,12 +96,12 @@ List all progress message texts this skill will emit:
 
 ## IV. SKILL.md Modification Points
 
-> **This section is used for Phase B communication translation.** Phase A logic changes (process additions/deletions, step adjustments, branch corrections) should first be run through locally in Claude Code. After confirming the logic is correct, mechanically translate the communication method item by item according to this section. Do not mix logic changes and communication translation.
+> **This section is used for Phase B communication translation.** Phase A logic changes (process additions/deletions, step adjustments, branch corrections) should first be run through locally in Claude Code. After confirming the logic is correct, mechanically translate the communication method point by point according to this section. Do not mix logic changes and communication translation.
 
 List the specific locations and content that need modification. Format:
 
 | Modification Location | Current Behavior | Change To | Reason |
-|----------------------|-----------------|-----------|--------|
+|-----------------------|------------------|-----------|--------|
 | Step 2A Branching | AskUserQuestion(...) | approval_request(...) | Approval card replaces command-line Q&A |
 | Step X: xxx | Bash(...) | device_command(...) | Pass through to plugin for execution |
 | ... | ... | ... | ... |
@@ -120,12 +120,12 @@ List the specific locations and content that need modification. Format:
 
 ## VI. Independent Test Scenarios
 
-### Plugin-side Test (Without Server)
+### Plugin-side Testing (Without Server)
 
-1. Manually construct the phase_complete message for this skill, confirm the result panel renders correctly
-2. Manually construct the approval_request message for this skill, confirm the card interaction is correct
+1. Manually construct the phase_complete message of this skill, confirm the result panel renders correctly
+2. Manually construct the approval_request message of this skill, confirm the card interaction is correct
 
-### Skill-side Test (Without Plugin)
+### Skill-side Testing (Without Plugin)
 
 1. Use mock_plugin.py to simulate plugin responses, run through the complete skill flow
 2. Confirm all emitted message JSON conforms to the 02-protocol.md Schema

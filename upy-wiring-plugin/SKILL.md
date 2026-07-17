@@ -1,11 +1,11 @@
 ---
 name: upy-wiring-plugin
-description: Plugin-based MicroPython wiring diagram generation phase. Used after receiving the optional_next_phases selection from upy-generate-plugin success, reads the generated firmware and project-manifest.json, generates docs/wiring.json, validates the schema, renders wiring.md/svg/png/html/wiring_pins.md, and outputs phase_complete; this is an optional artifact phase that does not override the main deploy pipeline.
+description: Plugin-based MicroPython wiring diagram generation phase. Used after receiving the optional_next_phases selection from upy-generate-plugin success, reads the generated firmware and project-manifest.json, generates docs/wiring.json, validates the schema, renders wiring.md/svg/png/html/wiring_pins.md, and outputs phase_complete; this is an optional artifact phase and does not override the main deploy pipeline.
 ---
 
 # upy-wiring-plugin Plugin Workflow
 
-`upy-wiring-plugin` is the optional wiring diagram artifact phase of the "one-sentence build hardware" pipeline. It is migrated from the old `G:\MicroPython_Skills\upy-wiring`, but must change local I/O to the plugin protocol:
+`upy-wiring-plugin` is the optional wiring diagram artifact phase of the "one-sentence build hardware" pipeline. It is migrated from the old `G:\MicroPython_Skills\upy-wiring`, but local I/O must be changed to the plugin protocol:
 
 ```text
 status_update(...)
@@ -15,7 +15,7 @@ script_run(...)
 phase_complete(...)
 ```
 
-Official chain:
+Official pipeline:
 
 ```text
 upy-generate-plugin success
@@ -24,13 +24,13 @@ upy-generate-plugin success
   -> upy-wiring-plugin
 ```
 
-`upy-wiring-plugin` must not alter the main chain:
+`upy-wiring-plugin` must not alter the main pipeline:
 
 ```text
 upy-generate-plugin -> upy-deploy-plugin
 ```
 
-That is, wiring is an optional additional artifact phase; `phase_complete.payload.next_phase` must default to `null`.
+That is, wiring is an optional additional artifact phase, and `phase_complete.payload.next_phase` must default to `null`.
 
 ## Boundary Rules
 
@@ -38,12 +38,12 @@ That is, wiring is an optional additional artifact phase; `phase_complete.payloa
 - Do not overwrite or rename `G:\MicroPython_Skills\upy-deploy` or `G:\MicroPython_Skills\upy-deploy-plugin`.
 - Do not add hardware, replace MCU, change pinout, or modify firmware business code during the wiring phase.
 - Do not execute mpremote, flashing, serial debugging, or device-side testing.
-- Do not make wiring a mandatory phase for deploy.
+- Do not make wiring a mandatory phase of deploy.
 - Do not require the plugin side to understand MicroPython hardware semantics; the LLM is responsible for understanding, the scripts are responsible for validation and rendering.
 
 ## Data Authority Order
 
-When generating `docs/wiring.json`, facts must be determined by the following priority:
+When generating `docs/wiring.json`, facts must be determined according to the following priority:
 
 ```text
 firmware/ actual code > project-manifest.json > LLM inference
@@ -55,12 +55,12 @@ Where:
 - Fixed onboard pins and default bus mappings in `firmware/board.py` must be used for completion.
 - Default addresses or factory parameters in `firmware/drivers/*/__init__.py` are used to confirm I2C addresses.
 - `firmware/conf.py` is used to confirm the project name, board name, and configuration constants.
-- `firmware/tasks/*.py` and `firmware/lib/*.py` are used for supplementary checks on extra pins or hardcoded addresses.
-- `project-manifest.json` is the design intent and upstream hardware selection record, but in case of conflict with firmware, firmware takes precedence and alerts are generated. The Wiring phase is only allowed to supplement/update the `wiring` field; it must not modify the root-level `updated_at`.
+- `firmware/tasks/*.py` and `firmware/lib/*.py` are used to check for additional pins or hardcoded addresses.
+- `project-manifest.json` is the design intent and upstream hardware selection record, but in case of conflict with firmware, firmware takes precedence and alerts are generated. The Wiring phase is only allowed to supplement/update the `wiring` field and must not modify the root-level `updated_at`.
 
 ## start_phase Input
 
-The formal mode must start from the success phase_complete of `upy-generate-plugin`:
+The official mode must start from the success phase_complete of `upy-generate-plugin`:
 
 ```json
 {
@@ -100,7 +100,7 @@ The formal mode must start from the success phase_complete of `upy-generate-plug
 }
 ```
 
-During the migration period, `mode=direct_test` is allowed, but `source=test_only` must be recorded. If the complete firmware or generate phase_complete is missing, a formal success cannot be output.
+During migration, `mode=direct_test` is allowed, but `source=test_only` must be recorded. If the complete firmware or generate phase_complete is missing, an official success cannot be output.
 
 ## Protocol Field Semantics
 
@@ -111,26 +111,26 @@ These fields must use the same semantics for plugin protocol calls and local ski
 | `protocol_version` | Protocol version. Currently only accepts `"1.0"`; if unsupported, output `PROTOCOL_UNSUPPORTED` and do not continue execution. |
 | `type` | Message type, e.g., `start_phase`, `status_update`, `approval_request`, `phase_complete`. The plugin routes based on this. |
 | `phase` | Must be uniformly `upy-wiring-plugin`. Do not mix with `wiring` or `upy-wiring`. |
-| `session_id` | Stable ID for one user workflow. Checkpoint, resume, retry, artifact archiving, and log tracing all depend on it. |
+| `session_id` | Stable ID for a single user workflow. Checkpoint, resume, retry, artifact archiving, and log tracing all depend on it. |
 | `idempotency_key` | Idempotency key. Retries for the same session/phase/mode/attempt should remain stable to avoid duplicate artifact writes or state progression. |
-| `payload.mode` | `full` is the formal plugin chain; `direct_test` is the local skill test chain and cannot masquerade as a formal success. |
-| `payload.invocation_mode` | `plugin_protocol` means file/script/confirmation all go through protocol tools; `local_skill_test` means local tests can directly read/write the project root. |
-| `payload.source_phase` | The formal chain must be `upy-generate-plugin`; local tests can be `test_only`. |
+| `payload.mode` | `full` is the official plugin pipeline; `direct_test` is the local skill test pipeline and cannot masquerade as an official success. |
+| `payload.invocation_mode` | `plugin_protocol` means files/scripts/confirmations go through protocol tools; `local_skill_test` means local tests can directly read/write the project root. |
+| `payload.source_phase` | The official pipeline must be `upy-generate-plugin`; local tests can be `test_only`. |
 | `payload.source_phase_complete_path` | Path to the upstream generate phase_complete, used to prove firmware has been generated and hardware facts come from the generate output. |
 | `payload.source_phase_complete` | Optional inline upstream result. If both path and inline object exist, the result read from the path must be used and consistency verified. |
 | `runtime_context.session_root` | Root directory for the current session's state, checkpoint, phase_complete, logs, and temporary results. |
 | `runtime_context.project_root` | User project root. `project-manifest.json`, `firmware/`, `docs/` should all be here. |
 | `runtime_context.file_operation_root` | File boundary the plugin is allowed to read/write. Any file write must fall within this directory. |
 | `runtime_context.resource_root` | Plugin resource root, e.g., `upy-wiring-plugin`, used to locate scripts. |
-| `capabilities` | Capability negotiation result. The formal mode must not continue if `file_operation`, `script_run`, or `approval_request` are missing. |
-| `render_policy.formats` | Requested artifact formats. A formal success must include `json/md/html/pins/svg/png`. |
+| `capabilities` | Capability negotiation result. The official mode must not continue if `file_operation`, `script_run`, or `approval_request` is missing. |
+| `render_policy.formats` | Requested artifact formats. Official success must include `json/md/html/pins/svg/png`. |
 | `render_policy.network_rendering` | Network rendering strategy: `ask`, `allow`, `deny`. When `deny`, a local renderer must be attempted first. |
 | `render_policy.timeout_ms` | Timeout for a single SVG/PNG render, default 30000ms. |
 | `checks` | Structured validation results. Each check should include `ok`, `command`, `duration_ms`, `error_code`. |
 | `artifacts` | List of artifacts for UI and user display. Records type, path, required, sha256, bytes, generated_at. |
-| `file_manifest` | File manifest for recovery, acceptance, and idempotent deduplication. More filesystem-evidence oriented than artifacts. |
+| `file_manifest` | File manifest for recovery, acceptance, and idempotent deduplication. More file-system evidence oriented than artifacts. |
 | `errors` | Structured error array. Must not only write natural language strings. |
-| `warnings` | Non-blocking warning array. Missing SVG/PNG in formal mode is not a warning; it should result in partial. |
+| `warnings` | Non-blocking warning array. Missing SVG/PNG in official mode is not a warning; it should result in partial. |
 
 ## Plugin Calls and Local Skill Testing
 
@@ -146,7 +146,7 @@ Local skill test call:
   Allows direct read/write of project_root
   Still generates the same structure phase_complete
   Still writes session_state/checkpoint
-  Still runs schema, artifact, and file_manifest validation
+  Still runs schema, artifact, file_manifest validation
 ```
 
 Local tests can use:
@@ -177,9 +177,9 @@ Local tests can use:
    - `firmware/conf.py`
    - `firmware/board.py`
    - `firmware/main.py`
-5. The LLM generates `{project_root}/docs/wiring.json` based on the rules of the old `upy-wiring`. It must include `meta`, `mcu`, `buses`, `standalone`, `power`, `alerts`.
+5. The LLM generates `{project_root}/docs/wiring.json` according to the rules of the old `upy-wiring`. It must include `meta`, `mcu`, `buses`, `standalone`, `power`, `alerts`.
 6. Write `docs/wiring.json` via `file_operation(write)`.
-7. Run the deterministic topology derivation script to supplement or overwrite `components[]`, `connections[]`, `buses[]` using `project-manifest.json pinout`:
+7. Run the deterministic topology derivation script to complete or override `components[]`, `connections[]`, `buses[]` using `project-manifest.json pinout`:
 
 ```text
 script_run(
@@ -206,7 +206,7 @@ script_run(
 )
 ```
 
-A formal success must generate `wiring.svg` and `wiring.png`. Recommended rendering degradation chain:
+Official success must generate `wiring.svg` and `wiring.png`. Recommended rendering degradation chain:
 
 ```text
 Priority: Local Mermaid CLI / mmdc / available local renderer
@@ -216,8 +216,8 @@ Priority: Local Mermaid CLI / mmdc / available local renderer
 
 If `render_policy.network_rendering=deny`, do not immediately abandon image artifacts; first attempt a local renderer. If there is no local renderer and the user refuses network, output `partial` with error code `WIRING_IMAGE_RENDER_PERMISSION_DENIED`.
 
-11. Collect the actually generated files via `script_run` or `file_operation(list)`.
-12. Update the `wiring` field in `project-manifest.json`, without changing upstream facts like `mcu`, `board`, `devices`, `pinout`, `generate`, root-level `updated_at`; if recording the wiring generation time, only write to `wiring.generated_at` or the phase_complete `timestamp`.
+11. Collect actually generated files via `script_run` or `file_operation(list)`.
+12. Update the `wiring` field of `project-manifest.json`, without changing upstream facts like `mcu`, `board`, `devices`, `pinout`, `generate`, root-level `updated_at`; if recording the wiring generation time, only write to `wiring.generated_at` or the phase_complete `timestamp`.
 13. Run this plugin's validation:
 
 ```text
@@ -243,25 +243,25 @@ The wiring diagram must be expressed as a "component-level, pin-annotated electr
 - Actual hardware modules such as MCU, audio amplifier, microphone, LED, button, sensor must be rendered as independent component boxes.
 - Every real signal line, power line, and ground line must be displayed as an independent connection edge.
 - Connection edges must be annotated with MCU GPIO, MCU-side signal role, peripheral-side pin name, and necessary direction, e.g., `GPIO14 / I2S1 BCK -> BCLK`.
-- The main diagram must not place long text directly on Mermaid edge labels; use intermediate `net_*` label nodes to express short labels like `GPIO14 I2S1 BCK -> MAX98357.BCLK` to avoid text overlap on multiple edges.
-- The main diagram must not render `alerts_sg` or notes subgraphs; notes should only be placed in `wiring_pins.md` or the HTML description area, and must not crowd the wiring body of `wiring.svg/png`.
-- SVG/PNG must use a white or light background; do not rely on transparent backgrounds, otherwise lines and text will be unreadable in dark viewers.
-- Multi-line interfaces like I2S, SPI, I2C, UART can be visually grouped as buses, but the pin-to-pin mapping for each line must be preserved.
+- The main diagram must not place long text directly on Mermaid edge labels; intermediate `net_*` label nodes must be used to express short labels like `GPIO14 I2S1 BCK -> MAX98357.BCLK` to avoid text overlap on multiple edges.
+- The main diagram must not render `alerts_sg` or notes subgraphs; notes should only be placed in `wiring_pins.md` or the HTML notes section, and must not crowd the wiring body of `wiring.svg/png`.
+- SVG/PNG must use a white or light background, not rely on transparent backgrounds, otherwise lines and text will be unreadable in dark viewers.
+- Multi-line interfaces such as I2S, SPI, I2C, UART can be visually grouped as buses, but the pin-to-pin mapping of each line must be preserved.
 - Multi-pin peripherals must not be compressed into comma-separated strings like `standalone.pin="14,32,33"`; they must use `components[]` + `connections[]`, or provide device-side `pins[]` mapping in `buses[]`.
 
 Key fields:
 
 - `meta.project`: Project name.
-- `meta.generated_at`: Real ISO 8601 timestamp; do not use sample placeholder times.
-- `meta.source_phase`: Use `generate` for the formal chain.
+- `meta.generated_at`: Real ISO 8601 timestamp, cannot use sample placeholder time.
+- `meta.source_phase`: Use `generate` for the official pipeline.
 - `mcu.pins[]`: Includes actual used GPIO, power pins, ground pins, and fixed onboard pins.
 - `components[]`: Component-level nodes. Recommended to include MCU, peripheral modules, LEDs, buttons, power-related modules.
 - `connections[]`: Real electrical connections. Each item represents one wire and must include `from.component/from.pin` and `to.component/to.pin`.
-- `buses[]`: I2C/SPI/UART/OneWire/CAN/I2S buses. Used for protocol grouping and compatibility with old renderers; must not replace the pin-to-pin facts in `connections[]`.
-- When `project-manifest.json pinout` contains `i2s_*` records, success must include the corresponding I2S component, I2S bus, and the MCU GPIO to peripheral pin connection for each `i2s_bck/i2s_ws/i2s_data_in/i2s_data_out`; otherwise, it must be corrected or output as partial.
+- `buses[]`: I2C/SPI/UART/OneWire/CAN/I2S buses. Used for protocol grouping and compatibility with old renderers, must not replace the pin-to-pin facts in `connections[]`.
+- When `i2s_*` records exist in `project-manifest.json pinout`, success must include the corresponding I2S component, I2S bus, and the MCU GPIO to peripheral pin connection for each `i2s_bck/i2s_ws/i2s_data_in/i2s_data_out`; otherwise, it must be corrected or output as partial.
 - `standalone[]`: Single-pin independent GPIO devices like LEDs, buzzers, buttons, relays. Only single pins are allowed; cannot be used for multi-pin components like I2S audio modules.
-- `power[]`: 3.3V, 5V, Vin, GND power supply relationships.
-- `alerts[]`: Conflict, safety, power, pull-up, current limit prompts.
+- `power[]`: 3.3V, 5V, Vin, GND power relationships.
+- `alerts[]`: Conflict, safety, power, pull-up, current limit, etc., prompts.
 
 Alert `msg` must be concise, recommended not to exceed 60 English characters, to avoid expanding the wiring diagram layout.
 
@@ -345,7 +345,7 @@ Common cases for `result=partial`:
 - Blocking conflict between firmware and manifest requires user confirmation.
 - SVG/PNG rendering fails, times out, or is denied.
 
-Partial/failed must set `next_phase=null` and write to `errors` or `warnings`.
+partial/failed must set `next_phase=null` and write to `errors` or `warnings`.
 
 ## User Confirmation Points
 
@@ -361,7 +361,7 @@ User options:
 - `local_only`: Only allow local renderer; if local cannot generate SVG/PNG, output partial.
 - `cancel`: Stop wiring, output partial.
 
-If there are GPIO, address, or power conflicts between firmware and manifest, send:
+If there is a GPIO, address, or power conflict between firmware and manifest, send:
 
 ```text
 approval_request(approval_id="wiring_conflict_review")
@@ -396,7 +396,7 @@ Recommended checkpoints:
 | `artifacts_rendered` | wiring artifacts generated | Continue manifest update and file manifest |
 | `manifest_updated` | project-manifest wiring field updated | Continue phase_complete |
 | `phase_completed` | phase_complete output | Idempotently return existing result |
-| `cancelled` | User cancelled | Do not automatically continue |
+| `cancelled` | User cancelled | Do not auto-continue |
 | `failed` | Blocking failure | On retry, resume from last_ok_artifact |
 
 Recovery rules:
@@ -410,7 +410,7 @@ Recovery rules:
 
 ## Capability Negotiation and Permission Prompts
 
-The formal plugin mode must have:
+The official plugin mode must have:
 
 ```json
 {
@@ -431,12 +431,12 @@ When capabilities are missing:
 
 | Missing Capability | Handling |
 |---|---|
-| `file_operation` | Cannot execute in formal mode, output `CAPABILITY_UNAVAILABLE` |
+| `file_operation` | Cannot execute in official mode, output `CAPABILITY_UNAVAILABLE` |
 | `script_run` | Cannot validate or render, output `CAPABILITY_UNAVAILABLE` |
 | `approval_request` | Cannot request network rendering or conflict confirmation, default to conservative partial |
-| `checkpoint_resume` | Can direct_test, but formal mode success is not recommended |
-| `cancellation` | Must inform that it is not cancellable; long tasks still need timeout |
-| `permission_prompt` | Cannot perform write file, script, or network operations requiring authorization |
+| `checkpoint_resume` | Can direct_test, but official mode not recommended for success |
+| `cancellation` | Must inform that it is not cancellable, long tasks still need timeout |
+| `permission_prompt` | Cannot perform file writes, scripts, or network operations requiring authorization |
 
 Permission prompt scope:
 

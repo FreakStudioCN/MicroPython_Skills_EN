@@ -5,7 +5,7 @@ description: Use this skill when the user wants to package a MicroPython driver 
 
 # MicroPython Driver Packaging Skill
 
-## Role
+## Role Positioning
 
 You are the GraftSense MicroPython driver packaging assistant. After other Skills (`/upy-norm-driver`, `/upy-gen-main`, `/upy-gen-readme`, `/upy-gen-pkg`) have been executed, organize the generated files in the same directory into the standard driver package directory structure.
 
@@ -35,14 +35,14 @@ You are the GraftSense MicroPython driver packaging assistant. After other Skill
    - `README.md`
    - `package.json`
    - Subdirectory containing `__init__.py` (sub-package dependency; list the name if it exists)
-   For missing files, list a ⚠️ warning and prompt the user to run the corresponding Skill first
+   For missing files, list ⚠️ warnings and prompt the user to run the corresponding Skill first
 4. Preview the directory structure to be created (including file source descriptions)
 5. Ask the user: "Confirm creating the `<chip>_driver/` directory and organizing the files?"
 6. After user confirmation, execute:
    - Create the `<chip>_driver/code/` directory
    - Copy the driver file → `<chip>_driver/code/<chip>.py`
    - Copy `main.py` → `<chip>_driver/code/main.py`
-   - **If a sub-package directory containing `__init__.py` exists in the same directory**: copy the entire directory to `<chip>_driver/code/<subpkg>/` (preserve all files within the subdirectory)
+   - **If a sub-package directory containing `__init__.py` exists in the same directory**: copy it entirely to `<chip>_driver/code/<subpkg>/` (preserve all files within the subdirectory)
    - Copy `README.md` → `<chip>_driver/README.md`
    - Copy `package.json` → `<chip>_driver/package.json`
    - Generate `<chip>_driver/LICENSE` (fixed MIT template, see below)
@@ -93,7 +93,7 @@ SOFTWARE.
 
 ## Full Specification Reference
 
-The rewriting rules of this Skill are based on the GraftSense driver writing specification document. For the full specification (22 chapters, 2200+ lines), please refer to:
+The rewriting rules of this Skill are based on the GraftSense driver writing specification document. For the complete specification (22 chapters, 2200+ lines), please refer to:
 
 [Full Specification Document](https://github.com/FreakStudioCN/MicroPython_Skills/blob/main/upy_driver_dev_spec_summary.md)
 
@@ -106,6 +106,6 @@ After each execution, check whether the following situations occur:
 
 If any, immediately execute:
 1. Append the new rule to the corresponding section of this file
-2. Write the same modification to `G:/MicroPython_Skills/upy-pack-driver/SKILL.md`
-3. In the `G:/MicroPython_Skills/` directory, execute:
+2. Write the same modification synchronously to `G:/MicroPython_Skills/upy-pack-driver/SKILL.md`
+3. Execute in the `G:/MicroPython_Skills/` directory:
    `git add upy-pack-driver/SKILL.md && git commit -m "skill(upy-pack-driver): <rule description>"`

@@ -36,14 +36,14 @@ That is, the diagram is an optional additional artifact phase, and `phase_comple
 
 - Do not overwrite the old `G:\MicroPython_Skills\upy-diagram`.
 - Do not overwrite or rename `G:\MicroPython_Skills\upy-deploy` or `G:\MicroPython_Skills\upy-deploy-plugin`.
-- Do not add hardware, replace MCUs, change pinouts, or modify firmware business code during the diagram phase.
+- Do not add hardware, replace MCU, change pinout, or modify firmware business code during the diagram phase.
 - Do not execute mpremote, flashing, serial debugging, or device-side testing.
 - Do not make the diagram a mandatory phase for deployment.
-- Do not require the plugin side to understand MicroPython software architecture semantics; the LLM is responsible for understanding, the script is responsible for validation and rendering.
+- Do not let the plugin side understand MicroPython software architecture semantics; the LLM is responsible for understanding, the script is responsible for validation and rendering.
 
 ## Data Authority Order
 
-When generating `docs/diagram.json`, facts must be determined using the following priority:
+When generating `docs/diagram.json`, facts must be judged in the following priority:
 
 ```text
 firmware/ actual code > project-manifest.json > LLM inference
@@ -58,7 +58,7 @@ Where:
 - `firmware/tasks/*.py` represents business tasks, classified under the `task` layer.
 - `test/pc/*.py`, `test/device/*.py` represent the test layer; if present, classified under the `test` layer.
 - `project-manifest.json` is the design intent and upstream generation record, but in case of conflict with firmware, firmware takes precedence and warnings are generated.
-- The Diagram phase is only allowed to supplement/update the `diagrams` field; it must not modify upstream facts like `mcu`, `board`, `devices`, `pinout`, `generate`, or the root-level `updated_at`.
+- The Diagram phase is only allowed to supplement/update the `diagrams` field; it must not modify `mcu`, `board`, `devices`, `pinout`, `generate`, or root-level `updated_at` and other upstream facts.
 
 ## start_phase Input
 
@@ -111,7 +111,7 @@ The official mode must start from the success phase_complete of `upy-generate-pl
 }
 ```
 
-During migration, `mode=direct_test` is allowed, but `source_phase=test_only` must be recorded. If the complete firmware or generate phase_complete is missing, an official success cannot be output.
+During migration, `mode=direct_test` is allowed, but `source_phase=test_only` must be recorded. If the complete firmware or generate phase_complete is missing, a formal success cannot be output.
 
 ## Protocol Field Semantics
 
@@ -125,38 +125,38 @@ These fields must use the same semantics for both plugin protocol invocation and
 | `session_id` | Stable ID for one user workflow. Checkpoint, resume, retry, artifact archiving, and log tracing all depend on it. |
 | `msg_id` | Single message ID. On retry, `retry_of` points to the original `msg_id` or original `idempotency_key`. |
 | `idempotency_key` | Idempotency key. Retries for the same session/phase/mode/attempt should remain stable to avoid duplicate artifact writes or state progression. |
-| `payload.mode` | `full` is the official plugin chain; `direct_test` is the local skill test chain and cannot masquerade as an official success. |
-| `payload.invocation_mode` | `plugin_protocol` means files/scripts/confirmations go through protocol tools; `local_skill_test` means local tests can directly read/write the project root. |
+| `payload.mode` | `full` is the official plugin chain; `direct_test` is the local skill test chain and cannot masquerade as a formal success. |
+| `payload.invocation_mode` | `plugin_protocol` means files/scripts/confirmations all go through protocol tools; `local_skill_test` means local tests can directly read/write the project root directory. |
 | `payload.source_phase` | The official chain must be `upy-generate-plugin`; local tests can be `test_only`. |
-| `payload.source_phase_complete_path` | Path to the upstream generate phase_complete, used to prove firmware has been generated and code facts come from the generate output. |
+| `payload.source_phase_complete_path` | Path to the upstream generate phase_complete, used to prove firmware has been generated and code facts come from generate output. |
 | `payload.source_phase_complete` | Optional inline upstream result. If both path and inline object exist, the result read from the path must be used and consistency checked. |
-| `payload.complexity` | `simple`, `medium`, `full`, or null. If null, an `approval_request(approval_id="diagram_complexity")` is required. |
-| `runtime_context.session_root` | Root directory for the current session's state, checkpoints, phase_complete, logs, and temporary results. |
-| `runtime_context.project_root` | User project root. `project-manifest.json`, `firmware/`, `docs/` should all be here. |
+| `payload.complexity` | `simple`, `medium`, `full`, or null. If null, `approval_request(approval_id="diagram_complexity")` is required. |
+| `runtime_context.session_root` | Root directory for the current session's state, checkpoint, phase_complete, logs, and temporary results. |
+| `runtime_context.project_root` | User project root directory. `project-manifest.json`, `firmware/`, `docs/` should all be here. |
 | `runtime_context.file_operation_root` | File boundary the plugin is allowed to read/write. Any file write must fall within this directory. |
-| `runtime_context.resource_root` | Plugin resource root, e.g., `upy-diagram-plugin`, used to locate scripts. |
-| `capabilities` | Capability negotiation result. In official mode, if `file_operation`, `script_run`, or necessary `approval_request` are missing, do not proceed. |
-| `render_policy.formats` | Requested artifact formats. Official success must include `json/md/html/svg/png`. |
+| `runtime_context.resource_root` | Plugin resource root directory, e.g., `upy-diagram-plugin`, used to locate scripts. |
+| `capabilities` | Capability negotiation result. In official mode, if `file_operation`, `script_run`, or necessary `approval_request` is missing, do not proceed. |
+| `render_policy.formats` | Requested artifact formats. A formal success must include `json/md/html/svg/png`. |
 | `render_policy.network_rendering` | Network rendering policy: `ask`, `allow`, `deny`. If `deny`, only JSON/MD/HTML or local renderer results are allowed. |
 | `render_policy.timeout_ms` | Full rendering timeout, default 90000ms. |
 | `checks` | Structured validation results. Each check should include `ok`, `command`, `duration_ms`, `error_code`. |
 | `artifacts` | List of artifacts for UI and user display. Records type, path, required, sha256, bytes, generated_at. |
 | `file_manifest` | File manifest for recovery, acceptance, and idempotent deduplication. More file-system evidence oriented than artifacts. |
-| `errors` | Structured error array. Must not be just natural language strings. |
+| `errors` | Structured error array. Must not be plain natural language strings. |
 | `warnings` | Non-blocking warning array. Missing SVG/PNG in official mode is not a warning; it should result in `partial`. |
 
 ## Plugin Invocation and Local Skill Testing
 
-`upy-diagram-plugin` must be compatible with both invocation methods but must not split into two sets of business rules:
+`upy-diagram-plugin` must be compatible with both invocation methods, but must not split into two sets of business rules:
 
 ```text
 Plugin protocol invocation:
   All file reads/writes via file_operation
-  All script execution via script_run
-  User confirmation via approval_request
+  All script executions via script_run
+  User confirmations via approval_request
 
 Local skill invocation testing:
-  Allows direct read/write to project_root
+  Allows direct read/write of project_root
   Still generates phase_complete with the same structure
   Still writes session_state/checkpoint
   Still runs schema, artifact, file_manifest validation
@@ -176,19 +176,19 @@ Local testing can use:
 }
 ```
 
-Files written during local testing are only evidence of direct testing, not official pipeline artifacts. The official completion criteria only apply to `phase_complete.payload.manifest_content.diagrams` where `mode=full`, `invocation_mode=plugin_protocol`, and `source_phase=upy-generate-plugin`.
+Files written by local testing are only evidence of direct testing, not formal pipeline artifacts. The formal completion criteria only apply to `phase_complete.payload.manifest_content.diagrams` where `mode=full`, `invocation_mode=plugin_protocol`, and `source_phase=upy-generate-plugin`.
 
-Local direct testing and official plugin invocation must be strictly isolated:
+Local direct testing and formal plugin invocation must be strictly isolated:
 
-- When `mode=direct_test`, `invocation_mode=local_skill_test`, or `source_phase=test_only`, `phase_complete.payload.result` must be `partial`, and a `LOCAL_TEST_ONLY` warning must be declared in `warnings`; `success` or non-protocol enum values are not allowed.
-- Local direct testing must not write to the official `project-manifest.json.diagrams`, nor masquerade as official diagrams in `phase_complete.payload.manifest_content.diagrams`. Direct test artifacts should only be written to `phase_complete.payload.artifacts`, `file_manifest`, `checkpoints/diagram/`, or the test-specific field `project-manifest.json.test_artifacts.diagram`; if recording in `manifest_content` is needed, only `manifest_content.test_artifacts.diagram.files` can be used.
-- Official `success` must come from `mode=full`, `invocation_mode=plugin_protocol`, `source_phase=upy-generate-plugin`, and must have a `source_phase_complete_path` pointing to a successful `phase_complete.upy_generate_plugin.json`.
-- If existing `docs/diagram.json`, `docs/architecture.*`, `docs/flowchart.*`, `docs/data_flow.*` from `direct_test/test_only` are found, these artifacts must be cleaned or overwritten before official execution, and `diagram_file_manifest.json` and checkpoints must be rebuilt; old direct test artifacts must not be reused as official success.
+- When `mode=direct_test`, `invocation_mode=local_skill_test`, or `source_phase=test_only`, `phase_complete.payload.result` must be `partial`, and `warnings` must declare `LOCAL_TEST_ONLY`; must not use `success` or non-protocol enum values.
+- Local direct testing must not write to the formal `project-manifest.json.diagrams`, nor masquerade as formal diagrams in `phase_complete.payload.manifest_content.diagrams`. Direct test artifacts are only written to `phase_complete.payload.artifacts`, `file_manifest`, `checkpoints/diagram/`, or the test-specific field `project-manifest.json.test_artifacts.diagram`; if recording in `manifest_content` is needed, only `manifest_content.test_artifacts.diagram.files` can be used.
+- Formal `success` must come from `mode=full`, `invocation_mode=plugin_protocol`, `source_phase=upy-generate-plugin`, and must have a `source_phase_complete_path` pointing to a successful `phase_complete.upy_generate_plugin.json`.
+- If existing `docs/diagram.json`, `docs/architecture.*`, `docs/flowchart.*`, `docs/data_flow.*` from `direct_test/test_only` are found, these artifacts must be cleaned or overwritten before formal execution, and `diagram_file_manifest.json` and checkpoint must be rebuilt; old direct test artifacts must not be reused as formal success.
 
 ## Execution Steps
 
 1. Validate `protocol_version == "1.0"`, `phase == "upy-diagram-plugin"`, `session_id` is not empty.
-   - If the target project has `.upy/scripts/render_diagram_local.py`, first verify its SHA256 matches `<resource_root>/scripts/render_diagram_local.py`; if it doesn't match, overwrite the project's `.upy` copy with the script from `<resource_root>`, or directly execute `<resource_root>/scripts/render_diagram_local.py`; do not invoke the old project copy.
+   - If the target project has `.upy/scripts/render_diagram_local.py`, first confirm its SHA256 matches `<resource_root>/scripts/render_diagram_local.py`; if not, overwrite the project's `.upy` copy with the script from `<resource_root>`, or directly execute `<resource_root>/scripts/render_diagram_local.py`; must not invoke the old project copy.
 2. Send `status_update(stage="start")`, indicating validation of upstream generate output is in progress.
 3. Read `source_phase_complete_path` via `file_operation(read)`. The upstream must satisfy:
    - `type == "phase_complete"`
@@ -217,7 +217,7 @@ script_run(
 )
 ```
 
-11. If schema validation fails, correct `docs/diagram.json` and repeat validation. Maximum 3 rounds; after exceeding, output `phase_complete(result="failed",next_phase=null)`.
+11. If schema fails, correct `docs/diagram.json` and repeat validation. Maximum 3 rounds; after exceeding, output `phase_complete(result="failed",next_phase=null)`.
 12. Write checkpoint `diagram:after_validate_pass`.
 13. If `render_policy.network_rendering == "ask"` and SVG/PNG are needed, send a network permission request:
 
@@ -233,7 +233,7 @@ script_run(
 )
 ```
 
-Official success must generate 13 files:
+A formal success must generate 13 files:
 
 ```text
 docs/diagram.json
@@ -257,7 +257,7 @@ If the user denies network or network fails:
 - If degradation is not allowed, output `failed` with error code `DIAGRAM_RENDER_NETWORK_FAILED` or `DIAGRAM_IMAGE_RENDER_PERMISSION_DENIED`.
 
 15. Collect actually generated files via `script_run` or `file_operation(list)`.
-16. Update the `diagrams` field in `project-manifest.json` without changing upstream facts; if recording diagram generation time is needed, only write to `diagrams.generated_at` or the phase_complete `timestamp`.
+16. Update the `diagrams` field in `project-manifest.json` without changing upstream facts; if recording diagram generation time is needed, only write to `diagrams.generated_at` or phase_complete `timestamp`.
 17. Write session state:
 
 ```text
@@ -273,7 +273,7 @@ script_run(
 )
 ```
 
-`--artifact-root` must point to the project root directory, used to verify that files declared in `file_manifest.files[]` actually exist, `bytes` match, and `sha256` match. If `--artifact-root` is missing, the script only performs protocol structure validation and cannot be used as the final success acceptance criterion.
+`--artifact-root` must point to the project root directory, used to verify that files declared in `file_manifest.files[]` actually exist, `bytes` match, and `sha256` match. Without `--artifact-root`, the script only performs protocol structure validation and cannot be used as the final success acceptance basis.
 
 19. Output `phase_complete`.
 
@@ -289,15 +289,15 @@ script_run(
 | `flow[]` total steps | 5 | 8 | 14 |
 | `data_flow[]` total edges | 2 | 4 | 8 |
 
-The LLM must actively merge similar modules, steps, or data flows to avoid exceeding constraints. `diagnostics` must record the actual module count, dependency edge count, maximum depth, circular dependencies, orphan modules, and direct machine access.
+The LLM must actively merge similar modules, steps, or data flows to avoid exceeding constraints. `diagnostics` must record actual module count, dependency edge count, maximum depth, circular dependencies, orphan modules, and direct machine access.
 
 `data_flow[].data` and `data_flow[].rate` must keep short labels; do not write full expressions, long sentences, or Mermaid-sensitive delimiters. Avoid directly using ASCII `()`, `/`, `@`, `|`, `==`, arrow symbols, or code snippets in edge labels; prefer short text like `button press`, `poll 50ms`, `30ms chunk`. The rendering script must still perform final escaping, cleaning, and truncation to prevent mermaid.ink from returning 400 for SVG/PNG.
 
-`diagnostics.total_modules` must equal the actual number of modules in `architecture.layers[].modules`; if modules are merged for readability, count based on the merged graph's modules and explain the merge rationale in the module `role` or `diagnostics`.
+`diagnostics.total_modules` must equal the actual number of modules in `architecture.layers[].modules`; if modules are merged for readability, count based on the merged diagram's modules and explain the merge rationale in the module `role` or `diagnostics`.
 
 ## checkpoint / resume
 
-Each resumable boundary must define a checkpoint:
+Each recoverable boundary must define a checkpoint:
 
 | checkpoint | Generation Timing | resume Behavior |
 |---|---|---|
@@ -305,7 +305,7 @@ Each resumable boundary must define a checkpoint:
 | `source_read` | After firmware source code reading is complete | Reuse source summary, continue generating diagram.json |
 | `diagram_json_written` | After `docs/diagram.json` is written | Start from validation |
 | `diagram_json_validated` | After schema validation passes | Start from rendering |
-| `artifacts_rendered_partial` | After partial rendering success | Only re-run for missing files |
+| `artifacts_rendered_partial` | After partial rendering success | Only re-run missing files |
 | `manifest_updated` | After manifest is written back | Directly output phase_complete |
 | `phase_completed` | After phase_complete is output | Idempotently return existing result |
 
@@ -326,16 +326,16 @@ Each resumable boundary must define a checkpoint:
 }
 ```
 
-On resume, the artifact pointed to by the checkpoint must be used first; do not re-infer from natural language or old conversation.
+On resume, the artifact pointed to by the checkpoint must be used first; must not re-infer from natural language or old conversation.
 
 ## cancellation / retry / timeout
 
 - On user cancellation, output `phase_complete(result="cancelled", next_phase=null)`.
-- If cancellation occurs after source code reading or JSON generation, keep written artifacts, return `partial + checkpoint`.
+- If cancellation occurs after source reading or JSON generation, keep written artifacts, return `partial + checkpoint`.
 - Repeated `file_operation(write)` with the same `idempotency_key` should overwrite the same target file, not generate random new files.
 - Repeated `script_run(render)` with the same `idempotency_key` should recognize existing files and report actual file status via `--json-summary`.
-- Validation repair is limited to 3 rounds; after exceeding, return a structured error.
-- Network rendering failure is retried a maximum of 2 times; if still failing, return `partial` or `failed`.
+- Validation repair is limited to 3 rounds; after exceeding, return structured error.
+- Network rendering failure is retried up to 2 times; if still failing, return partial or failed.
 
 Suggested timeouts:
 
@@ -354,11 +354,11 @@ The Diagram phase typically requires:
 
 | Permission | Required | Description |
 |---|---|---|
-| File Read | Yes | Read manifest and firmware source code |
-| File Write | Yes | Write docs and project-manifest.json |
-| Script Execution | Yes | validate and render |
-| Network Access | Conditional | mermaid.ink rendering SVG/PNG |
-| Device Access | No | The diagram phase must not send `device_command` |
+| File read | Yes | Read manifest and firmware source code |
+| File write | Yes | Write docs and project-manifest.json |
+| Script execution | Yes | validate and render |
+| Network access | Conditional | mermaid.ink rendering SVG/PNG |
+| Device access | No | Diagram phase must not send `device_command` |
 
 If the host requires explicit authorization, `permission_request` or equivalent `approval_request` must be used, and the scope must be clearly stated:
 
@@ -428,7 +428,7 @@ A successful output must satisfy:
 
 ## Script Resources
 
-This skill comes with:
+This skill includes:
 
 ```text
 scripts/render_diagram_local.py
@@ -458,6 +458,6 @@ Tests must cover:
 - `.codex-plugin/plugin.json` is verifiable.
 - Sample JSON structure for phase, result, checkpoint, errors, file_manifest.
 - `diagram.sample.json` passes `diagram.schema.json`.
-- `render_diagram_local.py --format md --json-summary` can generate Markdown and output JSON summary.
-- `diagram_manifest.py` can validate success, partial, cancelled, timeout, permission_denied, capability_unavailable samples.
-- `diagram_manifest.py` must reject direct test success, direct test missing `LOCAL_TEST_ONLY`, direct test using official `manifest_content.diagrams`, non-success result missing `checkpoint_info`, and inconsistency between sidecar manifest and `payload.file_manifest`.
+- `render_diagram_local.py --format md --json-summary` generates Markdown and outputs JSON summary.
+- `diagram_manifest.py` validates success, partial, cancelled, timeout, permission_denied, capability_unavailable samples.
+- `diagram_manifest.py` must reject direct test success, direct test missing `LOCAL_TEST_ONLY`, direct test using formal `manifest_content.diagrams`, non-success result missing `checkpoint_info`, and sidecar manifest inconsistent with `payload.file_manifest`.
