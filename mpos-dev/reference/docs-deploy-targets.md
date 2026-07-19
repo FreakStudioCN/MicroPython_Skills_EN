@@ -1,0 +1,133 @@
+# MicroPythonOS Deployment Target Reference
+
+This file is generated based on a re-read of `docs.micropythonos.com`, `https://install.micropythonos.com/`, `https://web.micropythonos.com/`, and `/home/leeqingshui/MicroPythonOS/AGENTS.md` on 2026-07-14.
+
+## When to Read
+
+Read this file when handling desktop emulation, browser/WebAssembly preview, installing apps to devices, firmware flashing, or target selection. For internal OS build details, read `docs-os-development.md`.
+
+## Source Coverage
+
+- `getting-started/running/`
+- `getting-started/supported-hardware/`
+- `os-development/running-on-desktop/`
+- `os-development/installing-on-esp32/`
+- `os-development/linux/`
+- `os-development/macos/`
+- `os-development/windows/`
+- `os-development/emulating-esp32-on-desktop/`
+- `https://install.micropythonos.com/`
+- `https://web.micropythonos.com/`
+- Local `AGENTS.md`
+
+## Target Types
+
+MicroPythonOS can run on:
+
+- ESP32 and ESP32-S3 devices.
+- Linux/macOS desktops via SDL.
+- Raspberry Pi and Linux-like environments such as WSL2.
+- Browser/WebAssembly.
+- QEMU ESP32 emulator for deeper OS development and CI-style testing.
+
+## Local Desktop Emulation
+
+Local AGENTS rules take precedence:
+
+```bash
+make build-mpos-unix
+timeout -s 9 30 ./scripts/run_desktop.sh
+```
+
+For automated debugging, use `scripts/mpos_controller.py`. `MPOSController()` does not automatically start the process; you need to call `mpos.start()`, wait approximately 8 to 10 seconds, then call `startapp()` or perform REPL operations.
+
+Use `killall` to clean up residual simulator processes, not `pkill -f`:
+
+```bash
+killall lvgl_micropy_unix run_desktop.sh
+```
+
+Write controller/debug scripts under the repository's `tmp/` directory.
+
+## Browser/WebAssembly Preview
+
+`https://web.micropythonos.com/` is a browser runtime, not an installer or app publishing site.
+
+Observed page behavior:
+
+- Loads `micropython.js`.
+- Runs with `["-X", "heapsize=16M", "-m", "main"]`.
+- Displays a `320x240` LVGL canvas.
+- Provides Log and Reset storage controls.
+- Simulates NeoPixels, joystick, MENU, START, X/Y/A/B.
+- Mounts `/data` and `/apps` via IndexedDB/IDBFS, allowing preferences and user apps to persist across refreshes.
+
+It is suitable for quick user previews and Web port smoke checks. Do not use it as a substitute for Linux SDL emulation or physical device verification when hardware behavior is relevant.
+
+## Installing Apps to Physical Devices
+
+Installing an app is not the same as flashing firmware. For normal Python app iteration, use:
+
+```bash
+./scripts/install.sh com.micropythonos.appname
+```
+
+After installation:
+
+```python
+from mpos import AppManager
+AppManager.refresh_apps()
+```
+
+If necessary, you can also reboot/reset the device.
+
+To deploy a single file:
+
+```bash
+python3 lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py cp local.py :/remote.py
+```
+
+Then use `machine.reset()` and wait for startup.
+
+## Firmware Installation and Flashing
+
+Only use firmware flashing in the following situations:
+
+- The user explicitly requests firmware flashing.
+- The firmware is missing or the version is incorrect.
+- Changes have been made to C modules, LVGL bindings, board support, filesystem images, or OS internals.
+
+Current web installer facts:
+
+- `install.micropythonos.com` provides a WebSerial installer.
+- Requires USB and a WebSerial-compatible browser, such as Chrome or Edge.
+- The page uses `esp-web-install-button` and offers ESP32 and ESP32-S3 targets.
+- Currently lists 12 ESP32/ESP32-S3 manifests for versions `0.10.x`, `0.11.x`, `0.12.x`, `0.13.x`, `0.14.x`, and `0.15.x`.
+- The latest `0.15.x` manifest corresponds to `0.15.1`, with firmware paths `/firmware_images/esp32/MicroPythonOS_esp32_0.15.1.bin` and `/firmware_images/esp32s3/MicroPythonOS_esp32s3_0.15.1.bin`.
+- In the installer manifests that have been read, `new_install_prompt_erase` is always true.
+
+Local flashing path:
+
+```bash
+./scripts/build_mpos.sh <target>
+./scripts/flash_over_usb.sh
+```
+
+Do not perform destructive erase/flash actions without explicit user confirmation.
+
+## QEMU ESP32 Emulation
+
+The docs describe an ESP32 QEMU path for deeper OS testing, capable of simulating WiFi, storage, ULP/deepsleep, GPIO/touch buttons, and ST7789V display. Treat this as OS-development infrastructure, not the default app development path.
+
+## Supported Hardware Notes
+
+The docs list multiple ESP32/ESP32-S3 devices as well as browser/desktop targets. When an app depends on sensor, button, camera, display, LED, or radio hardware, enter the dependency preparation phase; if the target device is unknown, ask the user.
+
+## Security Rules from AGENTS
+
+- When equivalent entry points exist, prefer using `make build-mpos-unix`, `make syntax-tests`, `make unittest-tests`, `make tests`, `make lint`, and `make lint-fix`.
+- `make lint` must pass after every code change.
+- Use `timeout -s 9 30 ./scripts/run_desktop.sh`.
+- Use `killall`, not `pkill -f`.
+- Place temporary files in the project's `tmp/` directory.
+- Do not confuse app installation, MPK installation, and firmware flashing.
