@@ -1,13 +1,13 @@
 ---
 name: upy-select-hw-plugin
-description: Plugin-based workflow version of select-hw. Consumes the phase_complete.payload.manifest_content from upy-analyze-plugin, completes board/MCU confirmation, MicroPython firmware verification, pin assignment, and BOM, and outputs phase_complete(select-hw) for the MPY firmware flashing stage.
+description: Plugin-based workflow version of select-hw. Consumes phase_complete.payload.manifest_content from upy-analyze-plugin, completes board/MCU confirmation, MicroPython firmware verification, pin assignment, and BOM, and outputs phase_complete(select-hw) for the MPY firmware flashing stage.
 ---
 
-# Plugin Workflow Version: Hardware Selection and Pin Assignment Skill
+# Plugin-based Workflow Hardware Selection and Pin Assignment Skill
 
 ## Role Definition
 
-`upy-select-hw-plugin` is the `select-hw` phase in the long-term workflow protocol. It consumes the phase output from `upy-analyze-plugin` and prepares hardware facts for the subsequent "MicroPython firmware flashing step for the corresponding MCU".
+`upy-select-hw-plugin` is the `select-hw` phase in the long-running workflow protocol. It consumes the phase output from `upy-analyze-plugin` and prepares hardware facts for the subsequent "MicroPython firmware flashing step for the corresponding MCU".
 
 This phase is only responsible for:
 
@@ -25,7 +25,7 @@ This phase is NOT responsible for:
 - Searching for or generating drivers
 - Generating business code
 - Flashing devices
-- Using local disk write results directly as the phase fact source
+- Using local disk write results directly as phase fact sources
 
 ## Input Fact Source
 
@@ -35,7 +35,7 @@ The formal input is the upstream message:
 phase_complete(analyze).payload.manifest_content
 ```
 
-During direct testing, reading from the session directory `phase_complete.analyze.json` is allowed, but the `payload.manifest_content` must still be extracted. Do not infer project status from `manifest_draft.json`, logs, or old conversations.
+During direct testing, reading from the session directory `phase_complete.analyze.json` is allowed, but `payload.manifest_content` must still be extracted. Do not infer project status from `manifest_draft.json`, logs, or old conversations.
 
 The current real direct test output of `upy-analyze-plugin` uses session isolation:
 
@@ -60,7 +60,7 @@ Formal consumption order:
 
 Three roots must be distinguished:
 
-| root | meaning | allowed content |
+| root | Meaning | Allowed Content |
 | --- | --- | --- |
 | `resource_root` | Root where skill/resources reside, typically `G:\MicroPython_Skills` or the parent of an installed `.claude/skills` | `upy-select-hw-plugin`, `upy-analyze-plugin/boards` |
 | `artifact_root` | Current project/test output root, e.g., user-provided `G:\test\test`; `phase_complete.payload.artifacts.file_list.files[].path` is resolved relative to this by default | `sessions/<session_id>` and phase outputs |
@@ -85,17 +85,17 @@ sessions/<session_id>/phase_complete.select_hw.json
 
 `artifact_root` is the "root directory for this run's artifacts", not the skill/resource root. For example, when `artifact_root=G:\test\test`, the artifact path should be `sessions/<session_id>/select_hw_draft.json`; if the host sets `artifact_root` to the current `session_root`, then the artifact path should be `select_hw_draft.json`. Validation commands, phase logs, and file manifests must use the same root convention.
 
-The user-provided project directory (e.g., `G:\test\test`) defaults to `artifact_root`, not `resource_root`. Do not copy skill scripts, the boards directory, or partial skills to `artifact_root` just because `upy-select-hw-plugin` or `upy-analyze-plugin` is missing there.
+The user-provided project directory (e.g., `G:\test\test`) defaults to `artifact_root`, not `resource_root`. Do not copy skill scripts, the boards directory, or partial skills into `artifact_root` just because `upy-select-hw-plugin` or `upy-analyze-plugin` is missing from `artifact_root`.
 
-Do not hardcode `G:\MicroPython_Skills` as a business dependency in protocols, script parameters, or examples. Test commands can show absolute paths in documentation, but the implementation must use `resource_root / relative_path` to read resources and `artifact_root / relative_path` to write artifacts.
+Do not write `G:\MicroPython_Skills` as a business dependency in protocols, script parameters, or examples. Test commands can show absolute paths in documentation, but the implementation must use `resource_root / relative_path` to read resources and `artifact_root / relative_path` to write artifacts.
 
-Phase logs, command history, and artifact descriptions must also use relative paths. Do not write local plugin installation directories (e.g., skill/plugin paths under the user directory) as business fact sources.
+Phase logs, command history, and artifact descriptions must also use relative paths. Do not write the local plugin installation directory (e.g., the skill/plugin path under the user directory) as a business fact source.
 
-If the host can only execute scripts within the artifact workspace, the `resource_root` must be explicitly passed as a read-only resource path, or the host must provide a script execution capability; do not fake relative paths by copying `upy-select-hw-plugin/scripts` to the artifact workspace.
+If the host can only execute scripts within the artifact workspace, the `resource_root` must be explicitly passed as a read-only resource path, or the host must provide a script execution capability; do not fake relative paths by copying `upy-select-hw-plugin/scripts` into the artifact workspace.
 
-### runtime_context Convention
+### runtime_context Conventions
 
-Claude Code / plugin runtime must pass the current working directory and session directory convention via `phase_complete.payload.runtime_context`. The skill must not guess root directories:
+Claude Code / plugin runtime must pass the current working directory and session directory conventions via `phase_complete.payload.runtime_context`. The skill must not guess root directories:
 
 ```json
 {
@@ -110,34 +110,34 @@ Claude Code / plugin runtime must pass the current working directory and session
 
 Field constraints:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `artifact_root` | yes | Artifact root directory, defaults to `.` (current working directory) |
-| `artifact_root_mode` | yes | `cwd` or `session_root` |
-| `session_root` | yes | Relative path to the current session directory |
-| `resource_root` | yes | Root where skill/resources reside (provided by runtime) |
+| `artifact_root` | Yes | Artifact root directory, defaults to `.` (current working directory) |
+| `artifact_root_mode` | Yes | `cwd` or `session_root` |
+| `session_root` | Yes | Relative path to the current session directory |
+| `resource_root` | Yes | Root where skill/resources reside (provided by runtime) |
 
 Path convention rules:
 
 - When `artifact_root_mode=cwd`, `file_list.files[].path` must be relative to the current working directory, formatted as `sessions/<session_id>/<filename>`.
 - Only when `artifact_root_mode=session_root` are bare filenames (e.g., `select_hw_draft.json`) allowed.
-- Do not mix two path conventions within the same `phase_complete`.
-- Missing `runtime_context` is considered an error during validation.
+- Do not mix the two path conventions within the same `phase_complete`.
+- Missing `runtime_context` is treated as an error during validation.
 
 ## Time Rules
 
 All time fields must come from a unified runtime time source. Hardcoded placeholder times are forbidden:
 
-- `timestamp` — Must be injected by Claude Code / plugin runtime, or obtained via `upy-project-gen-toolchain-spec/scripts/workflow_time.py`.
-- `pin_review.confirmed_at` — Must be the real UTC time when the user confirmation occurred. Zero-date or sample placeholder values are forbidden.
+- `timestamp` — Injected by Claude Code / plugin runtime, or obtained via `upy-project-gen-toolchain-spec/scripts/workflow_time.py`.
+- `pin_review.confirmed_at` — Must be the real UTC time when user confirmation occurred. Date zero or sample placeholder values are forbidden.
 - `manifest_content.created_at` / `updated_at` — Automatically generated by `select_hw_manifest.py` during normalization.
 - All time fields must be ISO-8601 format with UTC timezone (`Z` suffix).
 
-`confirmed_at` write order: Must first write back to `select_hw_draft.json`, then use the draft as the single source of truth to generate `select_hw_validated.json` and `phase_complete.select_hw.json`.
+`confirmed_at` write order: Must first be written back to `select_hw_draft.json`, then use the draft as the single fact source to generate `select_hw_validated.json` and `phase_complete.select_hw.json`.
 
-`phase_complete.timestamp` must be obtained by re-calling `workflow_time.py --json` after script validation passes, ensuring it is >= all referenced artifact `updated_at` and `created_at` values. Reusing `pin_review.confirmed_at` or an earlier time as `phase_complete.timestamp` is forbidden.
+`phase_complete.timestamp` must be obtained by re-calling `workflow_time.py --json` after script validation passes, ensuring it is >= all referenced artifacts' `updated_at` and `created_at`. Reusing `pin_review.confirmed_at` or an earlier time as `phase_complete.timestamp` is forbidden.
 
-## Long-Term Protocol Requirements
+## Long-Running Protocol Requirements
 
 All formal messages must use the complete envelope:
 
@@ -157,16 +157,16 @@ All formal messages must use the complete envelope:
 
 Field constraints:
 
-| field | required | description |
+| Field | Required | Description |
 | --- | --- | --- |
-| `protocol_version` | yes | V0 fixed to `"1.0"` |
-| `msg_id` | yes | UUID of the current message |
-| `session_id` | yes | Created by the plugin, inherited by phases |
-| `phase` | yes | Current phase, fixed to `select-hw` |
-| `timestamp` | yes | UTC ISO time |
-| `type` | yes | Message type enum |
-| `idempotency_key` | recommended | Remains unchanged during retries of the same action |
-| `retry_of` | optional | Points to the original failed message |
+| `protocol_version` | Yes | V0 fixed to `"1.0"` |
+| `msg_id` | Yes | UUID of the current message |
+| `session_id` | Yes | Created by the plugin, inherited by phases |
+| `phase` | Yes | Current phase, fixed to `select-hw` |
+| `timestamp` | Yes | UTC ISO time |
+| `type` | Yes | Message type enum |
+| `idempotency_key` | Recommended | Remains unchanged during retries of the same action |
+| `retry_of` | Optional | Points to the original failed message |
 
 Message type enum:
 
@@ -186,7 +186,7 @@ phase_complete
 
 ## Capability Negotiation
 
-Before starting, the host's capabilities should be known:
+Host capabilities should be known before starting:
 
 ```json
 {
@@ -212,13 +212,13 @@ Step 0 Read upstream manifest
 
 Step 1 Board candidate generation
   -> status_update(board_matching)
-  -> approval_request(board_select)  # Can be skipped if pre_selected_board comes from plugin UI; if board library is missing, send board_unavailable instead
+  -> approval_request(board_select)  # Can be skipped if pre_selected_board comes from plugin UI; if board library is missing, change to board_unavailable
   <- approval_response
 
 Step 1B Load full board definition
   -> status_update(board_definition_loaded)
   Load full board JSON from upy-analyze-plugin/boards/<selected_board.id>.json
-  If it doesn't exist or lacks pin_layout:
+  If it does not exist or lacks pin_layout:
     -> approval_request(board_unavailable or board_select)
 
 Step 2 Firmware verification
@@ -234,7 +234,7 @@ Step 3 Pin assignment
     -> Prioritize generating pinout/pin_decisions based on user-specified pins; `pinout[].source` must be `user_wiring`
   -> status_update(pin_assignment_draft_ready)
 
-Step 3B Pin plan confirmation
+Step 3B Pin plan review
   -> approval_request(pin_plan_review)
   After user confirmation:
     -> status_update(pin_assignment_done)
@@ -302,7 +302,7 @@ manifest_validation
 Board confirmation boundaries:
 
 - `select-hw` is only allowed to confirm a specific development board within the compatible range of the MCU/chip/module already determined by the upstream `requirements`, or to select from the candidate pool when no MCU is specified.
-- If the user requests a board change in `select-hw` that crosses MCU, chip family, firmware target, or significantly changes the main controller's capability boundary, the upstream requirements must not be silently rewritten and a `success` output must not be produced.
+- If the user requests a board change in `select-hw` that crosses MCU, chip family, firmware target, or significantly changes the main controller's capability boundary, the upstream requirements must not be silently rewritten and `success` output.
 - Such changes must output `partial`, `next_phase=null`, `checkpoint.resume_step=load_upstream_manifest` or `board_select`, `reason=board_change_requires_analyze`, and remind the user to start a new conversation or re-run analyze/select-hw.
 - The general judgment basis is whether the upstream `requirements.mcu_specified`, the confirmed `pre_selected_board`, and the candidate board's `mcu`, `chip_family`, and `firmware.board_name` are still compatible. The rules must not be written as special cases for a specific MCU.
 
@@ -357,7 +357,7 @@ checkpoint is required
 
 Hard rules:
 
-- `hardware_plan.pinout[].device` must match upstream `devices[].name`. Only power/supply/system items like `power`, `GND`, `3V3`, `5V`, `board`, `mcu` are exceptions.
+- `hardware_plan.pinout[].device` must match an upstream `devices[].name`. Only power/system items like `power`, `GND`, `3V3`, `5V`, `board`, `mcu` are exceptions.
 - Functional hardware in `hardware_plan.bom[]` must be mappable to upstream `devices[]` via `name`, `model`, `device`, or `selected_model`. Supporting materials like Dupont wires, breadboards, resistors, capacitors, pin headers, USB cables, enclosures, battery holders, power modules, and adapter boards do not need to be in the upstream device list.
 - BOM fields like `url`, `link`, `product_url`, `shop_url`, `datasheet_url`, `supplier`, `sku` can be retained, but they are not a strong contract passed to generate/deploy and must not be a prerequisite for downstream success.
 - All physical BOM items must retain `product_url`, `shop_url`, `datasheet_url`, `supplier`, `sku` according to `references/bom_item_link_index.template.json`; write empty strings for unknowns. Empty links must not block select-hw success or progression to the next phase.
@@ -366,34 +366,34 @@ Hard rules:
 
 ## approval_request: board_unavailable
 
-When the user-specified specific board or `pre_selected_board.id` is not in `upy-analyze-plugin/boards`, do not fail immediately. First, sort by the same series, same `chip_family`, same firmware port, and similar functional requirements, and recommend a known alternative board that has `pin_layout`. Also, give the user the option to manually describe the wiring.
+When the user-specified specific board or `pre_selected_board.id` is not in `upy-analyze-plugin/boards`, do not fail immediately. First, sort by the same series, same `chip_family`, same firmware port, and similar functional requirements, recommend a known alternative board with `pin_layout`; also give the user the option to manually describe the wiring.
 
 These mutually exclusive actions must be provided:
 
-| action value | meaning | subsequent behavior |
+| action value | Meaning | Subsequent Behavior |
 | --- | --- | --- |
 | `use_recommended_similar` | Use the system-recommended known board from the same series/similar functionality | Continue with firmware verification and pin assignment |
 | `select_known_board` | User selects another known board from the board library | Re-enter `board_select` |
 | `manual_wiring_description` | User manually describes "MCU pin -> device pin" | Output partial/checkpoint, wait for user to provide structured wiring |
 | `save_partial` | Pause | Output partial/checkpoint |
 
-The manual wiring description requires an array, each record specifying `mcu_pin`, `device`, `device_pin`, `signal`, `voltage`, `notes`. Example: `GPIO21 -> AHT20 SDA`, `3V3 -> AHT20 VCC`, `GND -> AHT20 GND`.
+Manual wiring description requires an array, each record specifying `mcu_pin`, `device`, `device_pin`, `signal`, `voltage`, `notes`. Example: `GPIO21 -> AHT20 SDA`, `3V3 -> AHT20 VCC`, `GND -> AHT20 GND`.
 
 ## approval_request: pin_plan_review
 
-Pin assignment must not rely solely on a one-time LLM inference. V0 adopts a simplified strategy of "script only catches hard errors + user confirms the plan": after generating the preliminary `pinout` and `pin_decisions`, the user must confirm the pin plan. The user should be reminded to check the official schematic, board silkscreen, module version, and peripheral datasheet. `phase_complete(result=success)` must not be output before user confirmation.
+Pin assignment must not rely solely on a one-time LLM inference. V0 adopts a simplified strategy of "script only catches hard errors + user confirms the plan": after generating the preliminary `pinout` and `pin_decisions`, the user must confirm the pin plan, and be reminded to check the official schematic, board silkscreen, module version, and peripheral datasheet. `phase_complete(result=success)` must not be output before user confirmation.
 
-The user must be reminded to focus on checking:
+Users must be reminded to focus on checking:
 
 - Whether default bus pins are actually exposed and conflict with other devices
 - `restricted_gpio`, boot/strapping, flash/PSRAM, USB/JTAG/REPL/UART occupancy
 - Whether `onboard_peripherals` actually occupy that GPIO and whether it can be released
-- Whether the peripheral module's VCC/GND/configuration pins are controlled by the MCU or hardwired to power/ground
+- Whether the peripheral module's VCC/GND/configuration pins are MCU-controlled or hardwired to power/ground
 - Board variant differences, schematic version, silkscreen, and actual module consistency
 
 Action enum:
 
-| action value | meaning | subsequent behavior |
+| action value | Meaning | Subsequent Behavior |
 | --- | --- | --- |
 | `confirm_pin_plan` | User confirms the pin plan can proceed with the current draft | Continue with BOM and final validation |
 | `revise_pin_plan` | User requests reassignment of one or more pins | Return to `pin_assignment` |
@@ -421,14 +421,14 @@ When the user selects `revise_pin_plan` or `manual_wiring_description`, the plug
 
 `user_pin_constraints[]` field meanings:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `device` | yes | Device name, must correspond to upstream `devices[].name` or current `pinout[].device` |
-| `device_pin` | yes | Device-side pin/signal name, e.g., `SDA`, `SCL`, `OUT`, `DIN`, `VCC`, `GND` |
-| `mcu_pin` | yes | User-specified MCU/board-side pin. GPIO can be written as `GPIO21` or `21`; power/ground can be written as `3V3`, `5V`, `GND` |
-| `signal` | yes | Pin function type, should map to `pinout[].type`, e.g., `i2c_data`, `i2c_clock`, `gpio_in`, `gpio_out`, `uart_tx`, `uart_rx`, `power_3v3`, `gnd` |
-| `voltage` | no | Voltage description, e.g., `3.3V`, `5V`, `0V`, only used for validation hints and notes |
-| `notes` | no | User description or plugin UI remarks |
+| `device` | Yes | Device name, must correspond to upstream `devices[].name` or current `pinout[].device` |
+| `device_pin` | Yes | Device-side pin/signal name, e.g., `SDA`, `SCL`, `OUT`, `DIN`, `VCC`, `GND` |
+| `mcu_pin` | Yes | User-specified MCU/board-side pin. GPIO can be written as `GPIO21` or `21`; power/ground can be written as `3V3`, `5V`, `GND` |
+| `signal` | Yes | Pin function type, should map to `pinout[].type`, e.g., `i2c_data`, `i2c_clock`, `gpio_in`, `gpio_out`, `uart_tx`, `uart_rx`, `power_3v3`, `gnd` |
+| `voltage` | No | Voltage description, e.g., `3.3V`, `5V`, `0V`, only used for validation hints and notes |
+| `notes` | No | User description or plugin UI remarks |
 
 Processing rules:
 
@@ -457,14 +457,14 @@ The payload must include:
 
 After confirmation, write to `hardware_plan.pin_review`:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `approval_id` | yes | Fixed to `pin_plan_review` |
-| `confirmed` | yes | Whether the user confirmed; must be `true` before `success` |
-| `confirmed_by` | required when confirmed=true | User, plugin UI, or approval source |
-| `confirmed_at` | required when confirmed=true | Real UTC time of this confirmation, ISO-8601 format; sample placeholder times or zero-date are forbidden |
-| `source` | yes | `approval_response`, `plugin_ui_confirmed`, `user_confirmed` |
-| `note` | optional | User confirmation or adjustment notes |
+| `approval_id` | Yes | Fixed to `pin_plan_review` |
+| `confirmed` | Yes | Whether the user confirmed; must be `true` before `success` |
+| `confirmed_by` | Required when confirmed=true | User, plugin UI, or approval source |
+| `confirmed_at` | Required when confirmed=true | Real UTC time of this confirmation, ISO-8601 format; must not use sample placeholder times or date zero |
+| `source` | Yes | `approval_response`, `plugin_ui_confirmed`, `user_confirmed` |
+| `note` | Optional | User confirmation or adjustment description |
 
 ## Board Data
 
@@ -478,53 +478,56 @@ Do not copy board data to `artifact_root`, unless subsequent select-hw needs to 
 
 Processing strategy:
 
-- The candidate generation phase must enumerate the complete board library from `resource_root/upy-analyze-plugin/boards/*.json`, skipping `_template.json` and documentation files; it must not load only the selected board.
+- The candidate generation phase must enumerate the complete board library from `resource_root/upy-analyze-plugin/boards/*.json`, skipping `_template.json` and documentation files; do not load only the selected board.
 - When `requirements.mcu_specified` exists, match candidates by `mcu`, `chip_family`, `firmware.board_name`.
 - If `pre_selected_board` already comes from the plugin UI, confirmation can be skipped, but validation is still required.
-- `selected_board.id` must correspond to `upy-analyze-plugin/boards/<id>.json`. After confirming the board, the full board JSON must be loaded; pin assignment based solely on the MCU name or `selected_board` summary is not allowed.
-- The full board JSON is the source of truth for `firmware`, `pin_layout`, `restricted_gpio`, `onboard_peripherals`. `selected_board` can only be a UI summary.
+- `selected_board.id` must correspond to `upy-analyze-plugin/boards/<id>.json`. After confirming the board, the full board JSON must be loaded; pin assignment based solely on MCU name or `selected_board` summary is not allowed.
+- The full board JSON is the fact source for `firmware`, `pin_layout`, `restricted_gpio`, `onboard_peripherals`. `selected_board` can only be a UI summary.
 - When no MCU is specified, the candidate pool must prioritize the Pico/RP2 series and ESP32 series; unless the requirements clearly need another series, do not prioritize boards like STM32, Teensy, Pyboard.
 - Default sorting for unspecified MCU: Pico/Pico W, ESP32 DevKit, ESP32-S3, ESP32-C3; output Top 1 and Top 2 alternatives after scoring based on requirements.
-- Add points for ESP32 series and Pico W when WiFi/BLE is needed; add points for ESP32-S3 when AI/voice/camera is needed; add points for ESP32-C3 for low power/battery power; add points for Pico/Pico W for pure GPIO or beginner-friendliness; add points for ESP8266/Pico for extreme low cost, but ESP8266 should not outweigh Pico/ESP32 unless budget is the sole primary constraint.
-- When the user-specified board is not in the board library, prioritize recommending a known board from the same series or with similar functionality that has `pin_layout`; simultaneously send `approval_request(board_unavailable)`, allowing the user to select a known board or manually describe wiring.
+- When WiFi/BLE is needed, boost ESP32 series and Pico W; when AI/voice/camera is needed, boost ESP32-S3; low power/battery power boosts ESP32-C3; pure GPIO or beginner-friendly boosts Pico/Pico W; extreme low cost can boost ESP8266/Pico, but ESP8266 should not outweigh Pico/ESP32 unless budget is the sole primary constraint.
+- When the user-specified board is not in the board library, prioritize recommending a known board from the same series or with similar functionality and `pin_layout`; simultaneously send `approval_request(board_unavailable)`, allowing the user to select a known board or manually describe wiring.
 - When the user requests a board change in `select-hw` that crosses MCU/chip family/firmware target, do not continue with a successful output; output partial/checkpoint, requiring a new conversation or returning to the analyze phase to re-confirm requirements.
-- When `pin_layout` is missing, default to switching to a known board with similar functionality and `pin_layout`.
-- `cold-driver` does not affect MCU recommendation, pin assignment, or BOM; however, `devices[].driver.source="cold-driver"` must be normalized to `devices[].driver.status="cold_driver_required"` for use by the pre-generate gate and `upy-gen-driver-plugin`. `driver.source` is retained for provenance and is not a workflow gate.
-- select-hw is not responsible for confirming the real-time latest version of the MicroPython firmware. Firmware versions in the board library are only cache information; the formal flashing stage should access `firmware.url` to check the latest release. The select-hw output focuses on retaining `firmware_url`, `firmware_board_name`, `flash_tool`.
+- When `pin_layout` is missing, default to swapping to a known board with similar functionality and `pin_layout`.
+- `cold-driver` does not affect MCU recommendation, pin assignment, or BOM; however, `devices[].driver.source="cold-driver"` must be normalized to `devices[].driver.status="cold_driver_required"` for use by the pre-generate gate and `upy-gen-driver-plugin`. `driver.source` is retained as provenance, not as a workflow gate.
+- select-hw is not responsible for confirming the real-time latest version of the MicroPython firmware. Firmware versions in the board library are only cache information; the formal flashing stage should check `firmware.url` for the latest release. The select-hw output focuses on retaining `firmware_url`, `firmware_board_name`, `flash_tool`.
 
 ## Pin Assignment Rules
 
 Basic rules:
 
-- I2C devices default to sharing one I2C bus and prioritize using `pin_layout.default_bus_pins`; if `i2c_addr` conflicts, switch to a second I2C bus or output partial.
-- SPI devices share MOSI/MISO/SCK, each device has an independent CS, and prioritize using `pin_layout.default_bus_pins`.
+- I2C devices share one I2C bus by default and prioritize using `pin_layout.default_bus_pins`; if `i2c_addr` conflicts, use a second I2C or output partial.
+- SPI devices share MOSI/MISO/SCK, each device has its own CS, and prioritize using `pin_layout.default_bus_pins`.
 - UART avoids REPL/USB serial ports.
 - I2S requires BCK/WS/DIN/DOUT allocation; microphones and amplifiers can share BCK/WS, but data directions differ.
 - ADC can only use ADC-capable pins.
-- GPIO avoids boot/strapping, flash/PSRAM, USB OTG, read-only pins; conditionally usable pins can be included in the plan, but the user must be prompted to verify in warnings/notes and `pin_plan_review`.
+- GPIO avoids boot/strapping, flash/PSRAM, USB OTG, read-only pins; conditionally usable pins can enter the plan, but must prompt the user to verify in warnings/notes and `pin_plan_review`.
 - Power and GND must be included in `pinout`.
 - If the board JSON has `pin_options`, remapping is only allowed within the `pin_options` range; if it is a flexible matrix, hard-disabled pins must also be avoided. Conditionally usable pins are not schema hard failures; they are handled via warnings and user confirmation.
-- Deviation from `pin_layout.default_bus_pins` must be explained in `pinout[].notes` and warnings.
-- When the user provides wiring, the user's wiring should be preserved first, but it must pass the board JSON's restricted/occupied validation; illegal user wiring must not silently succeed.
-- User-specified pins only represent preferences/constraints, not a bypass of safety validation. If a specified pin hits a hard forbidden rule, input/output direction mismatch, or is already occupied by an `always_used` onboard peripheral, output `partial`, `checkpoint.resume_step=pin_assignment`, and explain the conflict reason in `structured_errors`; illegal pins must not be silently rewritten, and do not automatically change pins and continue to success.
-- When onboard devices match user-specified or system-recommended devices, reuse the onboard default/occupied pins declared in `onboard_peripherals`, do not allocate additional external GPIOs, and do not add them to the BOM again.
-- When onboard devices do not match the current requirements, `onboard_peripherals[].occupied_pins` are considered occupied resources; external devices can only use free pins.
-- If the user requests releasing pins occupied by onboard devices, `always_used=false` must be confirmed, and the release reason must be explained in notes/warnings.
-- GPIO summaries in `pin_assignment_log.md` and phase logs must be calculated from the full board JSON and the final `pinout`, not written as static lists. V0 must include at least `used_gpio`, `unused_gpio`, `restricted_or_occupied_gpio` groups; do not package conditionally usable pins as absolutely safe, just explain the limitations and confirmation points in warnings.
-- If WiFi is enabled and GPIOs from `adc2_wifi_conflict` are used, all related GPIOs must be fully listed. Conflict only occurs when `pinout[].type=adc`; using them as digital signals like I2C/I2S/GPIO is allowed, but a warning or note must state "WiFi only affects ADC readings, not digital usage".
-- When using board default UART/REPL/USB serial port related pins as regular GPIO, it must be confirmed that the serial port is not used for debugging/communication, or the occupancy must be written into a warning with suggestions for reallocation.
+- Deviations from `pin_layout.default_bus_pins` must be explained in `pinout[].notes` and warnings.
+- When the user provides wiring, prioritize retaining it, but it must pass the board JSON's restricted/occupied validation; illegal user wiring must not silently succeed.
+- User-specified pins only indicate preferences/constraints, not a bypass of safety checks. If a specified pin hits a hard forbidden rule, input/output direction mismatch, or is occupied by an `always_used` onboard peripheral, output `partial`, `checkpoint.resume_step=pin_assignment`, and explain the conflict reason in `structured_errors`; illegal pins must not be silently rewritten, and do not automatically swap pins and continue to success.
+- When an onboard device matches a user-specified or system-recommended device, reuse the onboard default/occupied pins declared in `onboard_peripherals`, do not allocate additional external GPIOs, and do not add duplicate entries to the BOM.
+- When an onboard device enters the project device list, do not change `devices[].source` to a new enum; keep `source` as `user_specified` or `system_recommended`, and additionally write `physical_source="board_onboard"`, `onboard_peripheral_ref={board_id,index,name,type,model,occupied_pins,verification}`. This allows downstream legacy plugins to still read `devices[]` while identifying it as not an external BOM item.
+- If the user's requirements include a display, IMU, microphone, camera, SD/storage, LoRa, Ethernet, LED/button, power management, etc., and the selected board JSON's `onboard_peripherals` has a matching item, prioritize reusing the onboard peripheral; if `occupied_pins` is empty or `verification` is marked `needs_pin_mapping`, only record it as a non-hard constraint and require verification in notes/warnings.
+- Onboard peripheral drivers only use deterministic mappings or existing `devices[].driver`. Do not guess package names for unverified models; set `driver.source="cold-driver"` and `driver.status="cold_driver_required"`, leaving it to `upy-gen-driver-plugin`.
+- When an onboard device does not match the current requirements, `onboard_peripherals[].occupied_pins` are considered occupied resources, and external devices can only use free pins.
+- If the user requests releasing pins occupied by an onboard device, `always_used=false` must be confirmed, and the release reason must be explained in notes/warnings.
+- GPIO summaries in `pin_assignment_log.md` and phase logs must be calculated from the full board JSON and the final `pinout`, not hardcoded static lists. V0 must include at least `used_gpio`, `unused_gpio`, `restricted_or_occupied_gpio` groups; do not package conditionally usable pins as absolutely safe, just explain the limitations and confirmation points in warnings.
+- If WiFi is enabled and GPIOs from `adc2_wifi_conflict` are used, all related GPIOs must be fully listed. Conflict only occurs when `pinout[].type=adc`; using them as digital signals like I2C/I2S/GPIO is allowed, but warnings or notes must state "WiFi only affects ADC readings, not digital usage".
+- When using board default UART/REPL/USB serial port related pins as regular GPIOs, it must be confirmed that the serial port is not used for debugging/communication, or the occupancy must be written into a warning with reassignment suggestions.
 
 `restricted_gpio` levels:
 
-| board field | default strategy | validation level |
+| board field | Default Strategy | Validation Level |
 | --- | --- | --- |
 | `flash_psram_occupied` | Forbidden | error |
 | `reserved` / `internal_only` | Forbidden | error |
 | `usb_serial_pins` | Forbidden by default, unless USB serial is explicitly not used or user explicitly wires | error or warning |
-| `strapping` / `boot` | Avoid by default; if must use, write warning and pass to pin_plan_review | warning; error in strict mode |
+| `strapping` / `boot` | Avoid by default; if must be used, write warning and pass to pin_plan_review | warning; error in strict mode |
 | `input_only` | Can only be used for input-type pin types | error |
 | `adc_only` | Can only be used for ADC input | error |
-| `adc2_wifi_conflict` | Conflict only when `type=adc` and WiFi is enabled; digital input/output is usable but should be noted | error for ADC; warning for digital use |
+| `adc2_wifi_conflict` | Only conflicts when `type=adc` and WiFi is enabled; digital input/output is allowed but should be noted | error for ADC; warning for digital use |
 | `onboard_peripherals[].occupied_pins` | Forbidden when `always_used=true`; otherwise avoid by default or explain release reason | error or warning |
 
 `pinout[].type` enum:
@@ -556,37 +559,37 @@ reserved
 
 `pinout[]` field meanings:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `device` | yes | Connected device name, `power` can be used for power items |
-| `pin_name` | yes | Device-side signal name, e.g., `SDA`, `SCL`, `VCC`, `GND`, `OUT` |
-| `gpio` | yes | MCU-side GPIO number or power name, e.g., `8`, `3V3`, `GND` |
-| `type` | yes | Pin electrical type, can only take values from the `pinout[].type` enum above |
-| `bus` | optional | Bus number, e.g., `i2c0`, `spi0`, `uart1`, `i2s0` |
-| `i2c_addr` | optional | I2C address, used for conflict detection |
-| `physical_pin` | optional | Board silkscreen/physical pin number, filled when board library has data |
-| `side` | optional | Which side of the board the pin is on, suggested `left/right/top/bottom` |
-| `pos` | optional | Sequential position on the `side`, suggested 0-based |
-| `notes` | optional | Limitations, reuse, or alternative reasons |
-| `source` | recommended | Pin source, can only take `default_bus`, `auto_assigned`, `user_wiring`, `onboard_peripheral`, `power` |
+| `device` | Yes | Connected device name, `power` can be used for power items |
+| `pin_name` | Yes | Device-side signal name, e.g., `SDA`, `SCL`, `VCC`, `GND`, `OUT` |
+| `gpio` | Yes | MCU-side GPIO number or power name, e.g., `8`, `3V3`, `GND` |
+| `type` | Yes | Pin electrical type, can only be from the `pinout[].type` enum above |
+| `bus` | Optional | Bus number, e.g., `i2c0`, `spi0`, `uart1`, `i2s0` |
+| `i2c_addr` | Optional | I2C address, used for conflict detection |
+| `physical_pin` | Optional | Board silkscreen/physical pin number, filled when board library has data |
+| `side` | Optional | Which side of the board the pin is on, suggested `left/right/top/bottom` |
+| `pos` | Optional | Sequential position on the `side`, suggested 0-based |
+| `notes` | Optional | Limitations, reuse, or alternative reasons |
+| `source` | Recommended | Pin source, can only be `default_bus`, `auto_assigned`, `user_wiring`, `onboard_peripheral`, `power` |
 
 ## pin_decisions and deviation
 
-Structured `pin_decisions[]` must be generated and retained in the final `manifest_content`. Default buses, auto-assignments, user wiring, onboard device reuse, and fixed power/ground all require corresponding decisions; natural language notes can only supplement, not replace structured evidence.
+Structured `pin_decisions[]` must be generated and retained in the final `manifest_content`. Default bus, auto-assignment, user wiring, onboard device reuse, fixed power/ground all require corresponding decisions; natural language notes can only supplement, not replace structured evidence.
 
 `pin_decisions[]` fields:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `device` | yes | Device name |
-| `pin_name` | yes | Device-side signal name |
-| `assigned_gpio` | yes | Final MCU GPIO or power/ground |
-| `decision_type` | yes | Decision type enum |
-| `source` | yes | `board_default`, `auto_assigned`, `user_wiring`, `onboard_peripheral`, `fixed_power` |
-| `evidence` | yes | Structured evidence from board JSON or user wiring |
-| `requires_user_review` | yes | Whether the user is advised to focus on confirming this in `pin_plan_review`; V0 does not require precise coverage of every risky pin |
-| `review_prompt` | optional | Hint for the user to check the schematic/silkscreen/module datasheet |
-| `deviation` | optional | Structured explanation of deviation from default or occupancy release |
+| `device` | Yes | Device name |
+| `pin_name` | Yes | Device-side signal name |
+| `assigned_gpio` | Yes | Final MCU GPIO or power/ground |
+| `decision_type` | Yes | Decision type enum |
+| `source` | Yes | `board_default`, `auto_assigned`, `user_wiring`, `onboard_peripheral`, `fixed_power` |
+| `evidence` | Yes | Structured evidence from board JSON or user wiring |
+| `requires_user_review` | Yes | Whether the user is advised to focus on confirming this in `pin_plan_review`; V0 does not require precise coverage of every risky pin |
+| `review_prompt` | Optional | Prompt for the user to check the schematic/silkscreen/module documentation |
+| `deviation` | Optional | Structured explanation of deviation from default or occupied release |
 
 `decision_type` enum:
 
@@ -604,14 +607,14 @@ manual_review_required
 
 `deviation` fields:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `from_gpio` | yes | Original default/candidate GPIO |
-| `to_gpio` | yes | Remapped GPIO or power/ground |
-| `reason_code` | yes | Deviation reason enum |
-| `evidence_path` | yes | Evidence path in board JSON, e.g., `pin_layout.default_bus_pins.i2s.data_out` |
-| `evidence_value` | yes | Value of the evidence field |
-| `validator_action` | yes | `error`, `warning`, `manual_review` |
+| `from_gpio` | Yes | Original default/candidate GPIO |
+| `to_gpio` | Yes | Remapped GPIO or power/ground |
+| `reason_code` | Yes | Deviation reason enum |
+| `evidence_path` | Yes | Evidence path in board JSON, e.g., `pin_layout.default_bus_pins.i2s.data_out` |
+| `evidence_value` | Yes | Value of the evidence field |
+| `validator_action` | Yes | `error`, `warning`, `manual_review` |
 
 `reason_code` enum:
 
@@ -625,17 +628,17 @@ fixed_power_tie
 insufficient_board_data
 ```
 
-If `reason_code=onboard_occupied`, `evidence_path` must point to `onboard_peripherals[].occupied_pins`, and `evidence_value` must match `from_gpio`; otherwise, it should be considered `pin_decision_invalid` or enter `manual_review_required`, and cannot rely on LLM notes to assert that a GPIO is occupied by an onboard device.
+If `reason_code=onboard_occupied`, `evidence_path` must point to `onboard_peripherals[].occupied_pins`, and `evidence_value` must match `from_gpio`; otherwise, it should be treated as `pin_decision_invalid` or enter `manual_review_required`, and cannot rely on LLM notes to self-assert that a GPIO is occupied by an onboard device.
 
-Power/ground connections must be recorded according to the actual rail: when `pinout.gpio` is `GND`, `3V3`, `5V`, `pinout.type` must be `gnd`, `power_3v3`, `power_5v` respectively; do not disguise `VDD`, `3V3`, `GND` as regular MCU GPIOs.
+Power/ground connections must be recorded by actual rail: when `pinout.gpio` is `GND`, `3V3`, `5V`, `pinout.type` must be `gnd`, `power_3v3`, `power_5v` respectively; do not disguise `VDD`, `3V3`, `GND` as regular MCU GPIOs.
 
-`fixed_power_tie` only indicates that a device-side pin is fixedly connected to power or ground. Regular power/ground pins (e.g., `VCC`, `VDD`, `VDDIO`, `VIN`, `VBUS`, `GND`) connected to `3V3/GND` are normal power connections; configuration, mode, enable, address, gain, startup, and other control pins (e.g., `ADDR`, `BOOT`, `CFG`, `CONFIG`, `EN`, `GAIN`, `MODE`, `SEL`) fixedly connected to `3V3/GND/5V` must use `decision_type=fixed_power_tie`, `source=fixed_power`, and it is recommended to provide a `review_prompt` for the user to check the module datasheet.
+`fixed_power_tie` only indicates that a device-side pin is fixed to power or ground. Regular power/ground pins (e.g., `VCC`, `VDD`, `VDDIO`, `VIN`, `VBUS`, `GND`) connected to `3V3/GND` are normal power connections; configuration, mode, enable, address, gain, startup, and other control pins (e.g., `ADDR`, `BOOT`, `CFG`, `CONFIG`, `EN`, `GAIN`, `MODE`, `SEL`) fixed to `3V3/GND/5V` must use `decision_type=fixed_power_tie`, `source=fixed_power`, and it is recommended to provide a `review_prompt` for the user to check the module documentation.
 
-V0 does not treat `requires_user_review` as a complex policy engine. The script only validates field types, enums, pinout correspondence, hard-disabled pins, conflicts, and power/ground types; risks like conditionally usable GPIOs, hardwired configuration pins, default bus deviations, and insufficient board data are uniformly placed in warnings/notes, and the user confirms or changes pins through the overall `pin_plan_review`.
+V0 does not treat `requires_user_review` as a complex policy engine. The script only validates field types, enums, pinout correspondence, hard-disabled pins, conflicts, and power/ground types; risks like conditionally usable GPIOs, hardwired configuration pins, default bus deviations, and insufficient board data are uniformly placed in warnings/notes and handled via the overall `pin_plan_review` for user confirmation or pin changes.
 
 ## select-hw Draft Schema
 
-`select_hw_manifest.py` only supports the new draft schema and is not compatible with the old `update_manifest.py` input shape.
+`select_hw_manifest.py` only supports the new draft schema, not the old `update_manifest.py` input shape.
 
 ```json
 {
@@ -661,25 +664,25 @@ V0 does not treat `requires_user_review` as a complex policy engine. The script 
 
 Draft field meanings:
 
-| field | required | meaning |
+| Field | Required | Meaning |
 | --- | --- | --- |
-| `protocol_version` | yes | Currently fixed to `"1.0"` |
-| `session_id` | yes | Current workflow session ID |
-| `source_phase` | yes | Fixed to `"analyze"` |
-| `upstream_manifest` | yes | From `phase_complete(analyze).payload.manifest_content` |
-| `selected_board` | yes | Summary of the board object confirmed from the board library |
-| `hardware_plan.mcu` | yes | MCU, firmware entry point, and flashing tool |
-| `hardware_plan.pinout` | yes | Pin assignment array |
-| `hardware_plan.pin_decisions` | yes | Structured decisions and evidence for each pin selection; script must validate and retain in the final `manifest_content` |
-| `hardware_plan.pin_review` | yes | User `pin_plan_review` confirmation status; must be `confirmed=true` before `success` |
-| `hardware_plan.bom` | yes | BOM array |
-| `hardware_plan.estimated_total_yuan` | recommended | BOM total price; if missing, the script calculates from BOM and issues a warning |
-| `warnings` | recommended | Non-blocking risks |
-| `metadata.idempotency_key` | recommended | Idempotency key for manifest validation action |
+| `protocol_version` | Yes | Currently fixed to `"1.0"` |
+| `session_id` | Yes | Current workflow session ID |
+| `source_phase` | Yes | Fixed to `"analyze"` |
+| `upstream_manifest` | Yes | From `phase_complete(analyze).payload.manifest_content` |
+| `selected_board` | Yes | Summary of the board object confirmed from the board library |
+| `hardware_plan.mcu` | Yes | MCU, firmware entry point, and flashing tool |
+| `hardware_plan.pinout` | Yes | Pin assignment array |
+| `hardware_plan.pin_decisions` | Yes | Structured decisions and evidence for each pin selection; script must validate and retain in the final `manifest_content` |
+| `hardware_plan.pin_review` | Yes | User `pin_plan_review` confirmation status; `confirmed=true` is required before `success` |
+| `hardware_plan.bom` | Yes | BOM array |
+| `hardware_plan.estimated_total_yuan` | Recommended | BOM total price; if missing, the script calculates from BOM and issues a warning |
+| `warnings` | Recommended | Non-blocking risks |
+| `metadata.idempotency_key` | Recommended | Idempotency key for manifest validation action |
 
 ## Output manifest_content
 
-The output must retain the core analyze fields and add new ones:
+The output must retain the core analyze fields and add:
 
 ```text
 phase = "select-hw"
@@ -701,7 +704,7 @@ teensy-loader
 unknown
 ```
 
-BOM prices in V0 temporarily accept LLM common-sense estimates and do not connect to store data sources.
+BOM prices in V0 temporarily accept LLM common-sense estimates, not connected to store data sources.
 
 ## phase_complete
 
@@ -719,15 +722,15 @@ Success prerequisites:
 
 - The board selection has not crossed the upstream MCU/chip family/firmware target boundary; if a cross-boundary change occurred, it must return to analyze or start a new conversation.
 - `pin_plan_review` has been confirmed, or `pre_selected_board`/plugin UI has explicitly provided confirmed structured wiring.
-- All `validator_action=error` or `manual_review` items in `pin_decisions` have been resolved.
+- All items in `pin_decisions` with `validator_action=error` or `manual_review` have been resolved.
 
 result enum:
 
-| result | meaning | next_phase | checkpoint |
+| result | Meaning | next_phase | checkpoint |
 | --- | --- | --- | --- |
-| `success` | MCU/firmware/pinout/BOM all complete | `upy-flash-mpy-firmware-plugin` | Not needed |
+| `success` | MCU/firmware/pinout/BOM all complete | `upy-flash-mpy-firmware-plugin` | Not required |
 | `partial` | Recoverable interruption | `null` | Required |
-| `failed` | Invalid input or invalid protocol output | `null` | Optional |
+| `failed` | Invalid input or protocol output | `null` | Optional |
 
 ## checkpoint/resume
 
@@ -782,7 +785,7 @@ permission_denied
 
 ## structured_errors
 
-Retain `errors: string[]` and support:
+Retain `errors: string[]`, and support:
 
 ```json
 {
@@ -871,7 +874,7 @@ pin_assignment_log.md
 select_hw_phase_log.md
 ```
 
-During direct testing, the `file_list` in `phase_complete.payload.artifacts` must declare all of the above files, and `--validate-phase-complete` must use `--expected-artifact` to validate each one. Missing any formal artifact declaration is considered a failure.
+During direct testing, the `file_list` in `phase_complete.payload.artifacts` must declare all the above files, and `--validate-phase-complete` must use `--expected-artifact` to validate each one. Missing any formal artifact declaration is considered a failure.
 
 ### Log Template Rules
 
@@ -903,12 +906,12 @@ V0 allows low-risk actions:
 Actions requiring a separate permission prompt:
 
 - Any non-whitelisted script
-- Copying `upy-select-hw-plugin`, `upy-analyze-plugin`, or partial skill/resource copies to `artifact_root`
+- Copying `upy-select-hw-plugin`, `upy-analyze-plugin`, or partial skill/resource copies into `artifact_root`
 - Copying only a single board JSON as the candidate board library
 - Deleting files
 - Accessing device serial ports
 - Flashing firmware
-- Connecting to the internet to query store prices
+- Connecting to the internet to check store prices
 
 ## Script Validation
 
@@ -918,7 +921,7 @@ Must use:
 upy-select-hw-plugin/scripts/select_hw_manifest.py
 ```
 
-It is a validator/normalizer, not a default write script.
+It is a validator/normalizer, not a default write-to-disk script.
 
 Must support:
 
@@ -944,12 +947,12 @@ Must validate:
 - Pinout conflicts
 - `pin_decisions` fields, enums, evidence, and deviations are valid and correspond to the final `pinout`
 - `pin_review.approval_id=pin_plan_review`; `pin_review.confirmed=true` when `result=success`
-- Phase_complete envelope is valid
+- phase_complete envelope is valid
 - `manifest_content` core fields are consistent with the compare manifest, and `pin_decisions` / `pin_review` are not lost
 - Declared relative paths in file artifacts actually exist
 - `selected_board` is consistent with the full board JSON
-- `pinout` complies with board JSON's `restricted_gpio`
-- `pinout` complies with board JSON's `onboard_peripherals[].occupied_pins`
+- `pinout` adheres to the board JSON's `restricted_gpio`
+- `pinout` adheres to the board JSON's `onboard_peripherals[].occupied_pins`
 - Three sources (user wiring, onboard device reuse, external device auto-assignment) are distinguishable
 - Bus pin deviations from `pin_layout.default_bus_pins` must have notes/warnings
 - `phase_complete.payload.artifacts` covers all formal artifacts written by this phase
@@ -962,7 +965,7 @@ python upy-select-hw-plugin/scripts/select_hw_manifest.py --input upy-select-hw-
 python upy-select-hw-plugin/scripts/select_hw_manifest.py --validate-manifest-content --input <artifact-root>/select_hw_validated.json --board-root upy-analyze-plugin/boards
 ```
 
-The second command is used to validate that the script output still conforms to the normalized `manifest_content` schema; the formal phase completion still needs to use `--validate-phase-complete` to validate `phase_complete.select_hw.json`.
+The second command validates that the script output still conforms to the normalized `manifest_content` schema; the formal phase completion still requires `--validate-phase-complete` to validate `phase_complete.select_hw.json`.
 
 ## Local Testing
 
@@ -972,20 +975,20 @@ Subsequent tests must cover:
 2. Use the complete board library from `resource_root/upy-analyze-plugin/boards` to match `ESP32-C3` candidate boards, without creating `upy-analyze-plugin` or `upy-select-hw-plugin` copies under `G:\test\test`.
 3. Trigger `approval_request(board_select)` when `mcu_specified` exists but `pre_selected_board` does not.
 4. Skip board_select when `pre_selected_board` comes from the plugin UI.
-5. Switch to a known board with similar functionality and `pin_layout` when `pin_layout` is missing.
-6. `cold-driver` does not block MCU recommendation and pinout, but must output `driver.status="cold_driver_required"`; a `ready` status with hardware verification passed and `driver.path` and `hardware_marker` can be retained.
-7. Prioritize recommending Pico/RP2 and ESP32 series when no MCU is specified.
-8. Send `approval_request(board_unavailable)` when the user-specified board is not in the board library, providing four options: similar board, select known board, manual wiring description, save checkpoint.
+5. When pin_layout is missing, swap to a known board with similar functionality and pin_layout.
+6. `cold-driver` does not block MCU recommendation and pinout, but must output `driver.status="cold_driver_required"`; a `ready` status with hardware verification and `driver.path` and `hardware_marker` can be retained.
+7. When no MCU is specified, prioritize recommending Pico/RP2 and ESP32 series.
+8. When the user-specified board is not in the board library, send `approval_request(board_unavailable)`, providing four options: similar board, select known board, manual wiring description, save checkpoint.
 9. The formatted manifest generated by `select_hw_manifest.py --write-path` can be read and validated again by the script.
 10. `phase_complete.select_hw.json` passes script validation, and `--expected-artifact` covers all direct test formal artifacts.
 11. Validator covers board-root, restricted pins, default bus deviations, user wiring, onboard device reuse, ADC2/WiFi digital usage warnings.
 12. `phase_complete.payload.artifacts` covers all formal artifacts, and logs/artifacts do not contain absolute paths to the local plugin installation directory.
-13. `user_pin_constraints` from `pin_plan_review`'s `approval_response.payload` can be converted to `user_wiring` pinout/pin_decisions.
-14. When the user specifies an illegal GPIO, it must not be silently auto-changed; must output partial/checkpoint or validation failure.
+13. `approval_response.payload.user_pin_constraints` from `pin_plan_review` can be converted to `user_wiring` pinout/pin_decisions.
+14. When the user specifies an illegal GPIO, it must not silently auto-swap pins; must output partial/checkpoint or validation failure.
 
 ## Maintenance Principles
 
-Subsequent updates will be based on the content of the `upy-select-hw-plugin` directory, and course documentation will be updated retroactively.
+Subsequent updates will be based on the contents of the `upy-select-hw-plugin` directory, and course documentation will be updated retroactively.
 ## Session Boundary Addendum
 
 - Treat `runtime_context.session_root` and explicit upstream `source_phase_complete_path` as the `workflow_session_root`.

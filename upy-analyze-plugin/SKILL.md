@@ -1,6 +1,6 @@
 ---
 name: upy-analyze-plugin
-description: Plugin-based workflow version of analyze. Reads user natural language and plugin context to perform requirement parsing, device confirmation, driver search, alternative recommendation or cold-driver marking, and delivers results downstream via phase_complete + manifest_content. Trigger: plugin start_phase(analyze).
+description: Plugin-based workflow version of analyze. Reads user natural language and plugin context to perform requirement parsing, device confirmation, driver search, alternative recommendations or cold-driver marking, and delivers results downstream via phase_complete + manifest_content. Trigger: plugin start_phase(analyze).
 ---
 
 # Plugin-based Workflow Requirement Parsing and Driver Search Skill
@@ -21,23 +21,23 @@ User natural language + plugin context
 -> phase_complete(next_phase=select-hw, next_skill=/upy-select-hw-plugin)
 ```
 
-This skill does not replace the original `G:\MicroPython_Skills\upy-analyze`; it is used for independent evolution of the plugin-based workflow.
+This skill does not replace the original `G:\MicroPython_Skills\upy-analyze`; it is used for the independent evolution of the plugin-based workflow.
 
 ## Hard Constraints
 
-- Input is fixed to plugin context fields; no longer asks "beginner/custom" first
+- Input is fixed to plugin context fields; no longer asking "beginner/custom" first
 - The main flow retains only 1 primary confirmation point: the device confirmation card
 - `custom` mode allows at most 1 supplementary card
 - `beginner` mode, if supplementary scene/power/performance/output is needed, must also converge into 1 supplementary card
-- `system_recommended` with no driver allows alternative recommendation, at most 2 candidates
-- `user_specified` with no driver does not automatically offer alternatives; directly mark the cold-driver path
-- analyze is only responsible for cold-driver tagging, not for generating drivers within this phase
+- `system_recommended` with no driver allows alternative recommendations, at most 2 candidates
+- `user_specified` with no driver does not automatically provide alternatives; directly mark the cold-driver path
+- analyze is only responsible for cold-driver tagging, not generating drivers within this phase
 - The completion criterion for analyze is `phase_complete`, not local manifest disk write
 - The standard handover artifact for downstream phases is `manifest_content`
 - `next_phase` is currently fixed to `select-hw`
 - `next_skill` is currently fixed to `/upy-select-hw-plugin`
 - `next_phase` represents the workflow stage name and cannot be changed to a plugin name; the entry point is represented by `next_skill`
-- In the Claude Code direct-test mode without a real plugin host, additional debug artifacts are allowed, but these files are only evidence of direct testing and do not replace `phase_complete.manifest_content`
+- In Claude Code direct-test mode without a real plugin host, additional debug artifacts are allowed, but these files are only evidence for direct testing and do not replace `phase_complete.manifest_content`
 - At any confirmation point, do not automatically proceed to the next step until explicit user confirmation is received
 - The model is not allowed to default-click "confirm" on behalf of the user
 - The model is not allowed to both "display a confirmation card" and "assume the user has confirmed and continue execution" in the same reply
@@ -70,10 +70,10 @@ This skill only accepts the following input fields:
 ### Input Explanation
 
 - `user_description`
-  - The user's natural language requirement description; this is the primary input for this phase
+  - The user's natural language requirement description, the main input for this phase
 - `pre_selected_board`
   - Can be empty
-  - When empty, only record "no board selected"; do not make a final selection within analyze
+  - When empty, only record "board not selected"; do not make a final selection within analyze
 - `preferences.mode`
   - Affects whether a supplementary card is needed
 - `preferences.locale`
@@ -105,7 +105,7 @@ This skill only accepts the following input fields:
 - Read `preferences.locale`
 - Read `existing_hardware`
 
-Output goal:
+Output Goal:
 
 - Establish the working context for this analyze session
 - Do not ask the user questions at this step
@@ -119,7 +119,7 @@ Output goal:
 - Supplement system-recommended devices
 - Distinguish between `user_specified` / `system_recommended`
 
-Structured artifacts that must be completed:
+Required structured output:
 
 - `project_name`
 - `requirements.description`
@@ -130,12 +130,13 @@ Structured artifacts that must be completed:
   - `interface`
   - `source`
 
-Work requirements:
+Work Requirements:
 
 - Do not silently lock the user into a specific model when the device model is unclear
 - Models explicitly specified by the user must be retained as `user_specified`
-- Behavioral/level/trigger semantics supplemented by the user for a specified device must be retained on that device, not just written into `requirements.description`. For example, "touch button uses TTP223, outputs low level when pressed" should output `devices[].notes`, and be structured as `devices[].behavior.active_level="low"` where possible.
+- Behavioral/level/trigger semantics supplemented by the user for specified devices must be retained on that device, not just written into `requirements.description`. For example, "touch button uses TTP223, outputs low level when pressed" should output `devices[].notes` and, where possible, be structured as `devices[].behavior.active_level="low"`.
 - System-supplemented devices must be marked as `system_recommended`
+- If the user's selected board may already have built-in displays, IMUs, microphones, cameras, SD/storage, LoRa, Ethernet, LEDs, buttons, or power management chips that meet the requirements, do not add a `devices[].source` enum; still use `user_specified` or `system_recommended` to express the requirement source, and may write `physical_source="board_onboard"` as a hint. Formal onboard peripheral matching, `onboard_peripheral_ref`, and pin/BOM deduplication are handled by `select-hw` based on the complete board JSON normalization.
 
 After completing this step, must output:
 
@@ -144,7 +145,7 @@ After completing this step, must output:
 ### Step 3: Device Confirmation
 
 - Issue a device confirmation card
-- The user can confirm, delete, or add devices
+- User can confirm, delete, or add devices
 
 This is the only mandatory confirmation point in the main flow.
 
@@ -155,7 +156,7 @@ After confirmation, must obtain:
 - List of removed devices
 - Whether the user modified system-recommended devices
 
-If the user provides supplementary information midway:
+If the user provides supplementary explanations midway:
 
 - Treat this supplement as a trigger for re-analysis
 - Retain the current context
@@ -168,14 +169,14 @@ Protocol goal for this step:
 
 - Issue `approval_request(device_confirm)`
 - Plugin returns `approval_response`
-- analyze updates the devices list based on the result
+- Analyze updates the devices list based on the result
 
-Hard stop rule:
+Hard Stop Rule:
 
 - Upon reaching `device_confirm`, must stop and wait for user reply
-- Do not proceed to Step 4 or Step 5 until the user has explicitly expressed "confirm / modify / supplement"
-- If the current runtime environment does not have a real plugin card UI, must still stop in dialogue form and wait for user input
-- Do not automatically treat "user has confirmed device list" just because of `beginner` mode
+- Do not proceed to Step 4 or Step 5 until the user explicitly expresses "confirm / modify / supplement"
+- If the current runtime environment lacks a real plugin card UI, must still stop in dialogue form and wait for user input
+- Do not automatically treat `beginner` mode as "user has confirmed the device list"
 
 ### Step 4: Optional Supplementary Card
 
@@ -194,43 +195,43 @@ Purpose:
 
 Requirements:
 
-- Only 1 structured card is allowed
-- Do not break it down into multiple command-line prompts
-- Allow falling back to default values if the user does not fill them in
+- Only 1 structured card allowed
+- Not allowed to be split into multiple command-line questions
+- If the user does not fill it in, allow falling back to default values
 
 Protocol goal for this step:
 
 - Issue 1 supplementary `approval_request`
 - Plugin returns `approval_response`
-- analyze updates the corresponding fields in requirements
+- Analyze updates the corresponding fields in requirements
 
-Hard stop rule:
+Hard Stop Rule:
 
 - If `requirement_supplement` is issued, must stop and wait for user selection
-- Do not display a supplementary card and simultaneously default to recommended values and continue execution in the same reply
-- Only proceed to driver search after the user has explicitly confirmed
+- Do not display a supplementary card and simultaneously adopt recommended values to continue execution in the same reply
+- Only proceed to driver search after the user explicitly confirms
 
 ### Step 5: Driver Search
 
 - Perform driver search for each device
-- Write the `driver` status based on the result
+- Write `driver` status based on results
 - Specific device driver search must be delegated to the `upy-pkg-guide` skill; analyze must not fabricate upypi package names or installation commands itself
 - The local runner/mock environment can use `pkg_guide_adapter` to return fixed test results, but this adapter must simulate the output semantics of `upy-pkg-guide`
 
-Mandatory evidence requirements:
+Mandatory Evidence Requirements:
 
 - When `driver.source = "upypi" | "awesome-micropython" | "github"`, must write `driver.search_provider`
 - In formal plugin mode, the `driver.search_provider` for specific device drivers must be `upy-pkg-guide`
-- The local `test/` mock runner is only allowed to use `pkg_guide_adapter`, and must simultaneously write `driver.search_mode = "mock"` and `driver.mock = true`
-- When `driver.source = "none" | "cold-driver"` and the device is not builtin runtime only, must also record `driver.search_provider` and query description, proving that the conclusion was not reached without searching
-- When `driver.source = "builtin_runtime"`, must write `driver.search_required = false`, and use `driver.search_provider = "builtin_runtime_classifier"` to indicate this is a classification of built-in capability, not a package search result
+- The local `test/` mock runner is only allowed to use `pkg_guide_adapter`, and must also write `driver.search_mode = "mock"` and `driver.mock = true`
+- When `driver.source = "none" | "cold-driver"` and the device is not builtin runtime only, must also record `driver.search_provider` and query description, proving that a conclusion was not reached without searching
+- When `driver.source = "builtin_runtime"`, must write `driver.search_required = false`, and use `driver.search_provider = "builtin_runtime_classifier"` to indicate this is a built-in capability classification, not a package search result
 - When `driver.source = "micropython_lib"`, must write `driver.search_provider = "micropython_lib_classifier"` or `driver.search_provider = "upy-pkg-guide"`
 
-The `test/` directory is only for local JSON/protocol exercises; the real plugin flow must not treat `pkg_guide_adapter` as a real driver search source.
+The `test/` directory is only for local JSON/protocol exercises; the real plugin flow must not use `pkg_guide_adapter` as a real driver search source.
 
-#### 5A. General Principles of Driver Search
+#### 5A. General Principles for Driver Search
 
-Before performing driver search, Analyze must first distinguish two layers:
+Before performing driver search, analyze must first distinguish two layers:
 
 1. `builtin_runtime`
 2. Specific device driver source
@@ -239,8 +240,8 @@ Do not conflate "MCU/firmware already provides underlying peripheral API" with "
 
 First answer two questions:
 
-1. Does this device's underlying layer depend on MicroPython's built-in peripheral API?
-2. Does a ready-made MicroPython driver package exist for this specific device?
+1. Does this device fundamentally rely on MicroPython's built-in peripheral API?
+2. Does an existing MicroPython driver package exist for this specific device?
 
 If the second question involves a specific device driver package, `upy-pkg-guide` must be called for that device:
 
@@ -255,18 +256,18 @@ for device in confirmed_devices:
 
 Responsibility boundary of `upy-pkg-guide`:
 
-- First check `upypi`
-- If no result, fallback to `awesome-micropython`
+- First search `upypi`
+- Fallback to `awesome-micropython` if no results
 - For available packages, extract `package_name`, `version`, `install_cmd`, `api_ref`, `repo_url`
-- `api_ref` should preferably be written as a structured object, e.g., `{"init": "...", "read": "...", "calibration": "..."}`; do not just write an unparseable string. If the source material can only confirm a summary sentence, it can be written into `notes` first; do not pretend it is a complete API.
-- If no available MicroPython driver is found, return "no driver", and let analyze decide on alternative recommendation or cold-driver marking
+- `api_ref` should preferably be written as a structured object, e.g., `{"init": "...", "read": "...", "calibration": "..."}`; do not write only an unparseable string. If the source material can only confirm a one-sentence summary, it can be written into `notes` first; do not pretend it is a complete API.
+- Return "no driver" when no usable MicroPython driver is found; analyze decides on alternative recommendation or cold-driver marking
 
 #### 5B. Builtin Runtime Determination
 
 `builtin_runtime` only means:
 
 - The MicroPython firmware already provides the underlying runtime/peripheral API
-- The current device can at least perform low-level access based on these built-in APIs
+- The current device can at least be accessed at a low level based on these built-in APIs
 
 Typical examples:
 
@@ -287,7 +288,7 @@ Typical examples:
 - WS2812 / NeoPixel
   - `neopixel`
 
-These cases should not be reported as "no driver", but marked as:
+These cases should not be reported as "no driver", but should be marked as:
 
 - `driver.source = "builtin_runtime"`
 
@@ -299,19 +300,19 @@ And it is recommended to supplement:
 But note:
 
 - `builtin_runtime` does not equal "a ready-made driver package for this specific device has been found"
-- For specific devices on `I2C / SPI / UART`, Analyze should still continue to prioritize checking `upypi`
+- For specific devices on `I2C / SPI / UART`, analyze should still prioritize checking `upypi`
 
 #### 5C. micropython-lib Determination
 
-If the capability does not belong to the firmware's built-in, but belongs to the MicroPython official ecosystem general library/middleware, it should be separately marked as:
+If the capability is not built into the firmware but belongs to the official MicroPython ecosystem general-purpose library/middleware, it should be separately marked as:
 
 - `driver.source = "micropython_lib"`
 
-This source is not "built-in firmware", nor should it be confused with ordinary third-party GitHub libraries.
+This source is not "built-in firmware" and should not be conflated with ordinary third-party GitHub libraries.
 
 In the analyze phase, the positioning of `micropython_lib` is:
 
-- Official ecosystem general library
+- Official ecosystem general-purpose library
 - Middleware
 - Protocol/capability extension
 
@@ -325,41 +326,41 @@ It is recommended to supplement:
 - `driver.install_cmd`
 - `driver.repo_url`
 
-Hard constraints:
+Hard Constraints:
 
 - `micropython_lib` is not the default first search source for specific device drivers like temperature/humidity, soil, displays, actuators, etc.
 - If a result is essentially a "specific device driver", `upypi` should be considered first
 
 #### 5D. Specific Device Driver Priority
 
-If the target is a "specific device driver", not an "official ecosystem general library/middleware", check external driver sources in the following order:
+If the target is a "specific device driver" rather than an "official ecosystem general-purpose library/middleware", check external driver sources in the following order:
 
 1. `upypi`
 2. `awesome-micropython`
 3. `github`
 4. Other clearly verifiable MicroPython-compatible sources
 
-Execution requirements:
+Execution Requirements:
 
 - analyze does not directly use string concatenation to generate `package_name` / `install_cmd`
 - analyze does not directly write rule-inferred results as `driver.source = "upypi"`
 - `driver.source = "upypi" | "awesome-micropython" | "github"` must come from the structured result of `upy-pkg-guide` or an equivalent adapter
 - Fixed results returned by the local mock adapter must be marked as mock/test data and must not be disguised as real network queries
 
-Hard constraints:
+Hard Constraints:
 
-- Do not treat Python `PyPI` as the primary search entry point for MicroPython driver packages
-- Prioritize searching the MicroPython official/compatible ecosystem
-- If only ordinary Python packages are found, do not directly treat them as available MicroPython drivers
-- In the analyze phase, do not write "firmware built-in capabilities" as `local`
+- Do not treat Python `PyPI` as the main search entry point for MicroPython driver packages
+- Prioritize searching the official MicroPython/compatible ecosystem
+- If only ordinary Python packages are found, they should not be directly treated as usable MicroPython drivers
+- In the analyze phase, "firmware built-in capabilities" should not be written as `local`
 - In the analyze phase, `local` is only allowed when there is a very clear existence of local private driver assets
 - For capabilities like `machine.*`, `network`, `bluetooth`, `neopixel`, they should be uniformly written as `builtin_runtime`
-- If a device essentially depends on built-in capabilities like `machine.ADC`, `machine.Pin`, `machine.I2S`, `network`, `bluetooth`, but is written as `driver.source = "none"`, it should be considered an analyze output error, not an acceptable weak result
+- If a device fundamentally relies on built-in capabilities like `machine.ADC`, `machine.Pin`, `machine.I2S`, `network`, `bluetooth`, etc., but is written as `driver.source = "none"`, this should be considered an analyze output error, not an acceptable weak result
 - `driver.source = "none"` should only be used in the following two cases:
   - It is indeed not a built-in runtime capability
-  - And `upypi / awesome-micropython / github / micropython_lib` have no available ready-made driver
+  - And `upypi / awesome-micropython / github / micropython_lib` all have no available ready-made drivers
 
-For devices that are "not a single model, but a broad category of implementation schemes", the implementation family must first be decomposed before driver search.
+For devices that are "not a single model, but a broad category of implementation schemes", the implementation family must first be decomposed before performing driver search.
 
 For example, "soil temperature and humidity sensor" could at least be decomposed into:
 
@@ -370,19 +371,19 @@ For example, "soil temperature and humidity sensor" could at least be decomposed
 
 Rules:
 
-- When the user has clearly specified the protocol/interface/model, search according to the user-specified family
-- When the user has not specified, only generate "system-recommended implementation families"; do not pretend to have locked in a specific model
+- When the user has specified the protocol/interface/model, search according to the user-specified family
+- When the user has not specified, only "system-recommended implementation families" can be generated; do not pretend a specific model has been locked
 
 #### 5E. No Driver and Cold Driver
 
-Only enter the "no ready-made driver/cold driver" judgment when none of the following conditions are met:
+Only enter the "no ready-made driver/cold driver" determination when none of the following conditions are met:
 
 - Not `builtin_runtime`
-- `upypi` has no available result
-- `awesome-micropython / github / other trusted MicroPython driver sources` have no available result
-- If it belongs to the official ecosystem general capability library, `micropython_lib` also has no available result
+- `upypi` has no available results
+- `awesome-micropython / github / other trusted MicroPython driver sources` have no available results
+- If it belongs to the official ecosystem general-purpose capability library, `micropython_lib` also has no available results
 
-Each device must obtain one of the following results:
+Each device must receive one of the following results:
 
 1. `driver.source = "builtin_runtime"`
 2. `driver.source = "micropython_lib"`
@@ -392,7 +393,7 @@ Each device must obtain one of the following results:
 6. `driver.source = "none"`
 7. `driver.source = "cold-driver"`
 
-The set of `driver.source` values recommended for the current analyze phase is:
+The currently recommended `driver.source` set for the analyze phase is:
 
 - `builtin_runtime`
 - `micropython_lib`
@@ -405,13 +406,13 @@ The set of `driver.source` values recommended for the current analyze phase is:
 Explanation:
 
 - `local` is not a default regular option in the analyze phase
-- If `local` is actually used, it must be clearly explained where the corresponding local private driver assets come from
+- If `local` is actually used, it must be possible to clearly explain where the corresponding local private driver assets come from
 
 Must continuously output progress:
 
-- Start of search
-- Completion of search for each device
-- Hit driver source
+- Search start
+- Each device search completion
+- Driver source hit
 - No driver result
 
 Do not silently run the entire search and only give the final conclusion.
@@ -420,41 +421,41 @@ Protocol goal for this step:
 
 - When search starts:
   - `status_update(step_id="driver_search", level="info", message="Searching for drivers... (1/N)")`
-- After each device is completed, output based on the result:
+- After each device completes, output based on the result:
   - `driver_found`
   - `driver_fallback`
   - `driver_none`
   - `driver_cold`
 
-Supplementary explanation:
+Supplementary Explanation:
 
 - `builtin_runtime` falls under the "supportable" category, but the message should clearly state:
   - e.g., `OK INMP441 -> builtin_runtime (machine.I2S)`
   - or `OK Soil moisture sensor -> builtin_runtime (machine.ADC)`
 
-### Step 6: Diversion
+### Step 6: Branching
 
-- `system_recommended` with no driver -> alternative recommendation possible
+- `system_recommended` with no driver -> alternative recommendation allowed
 - `user_specified` with no driver -> directly mark cold-driver
-- User rejects alternative and insists on original device -> cold-driver marking
+- User rejects alternative and insists on original device -> mark cold-driver
 
 #### 6A. Alternative Recommendation Conditions
 
-Alternative recommendation is only allowed when all of the following conditions are met:
+Alternative recommendations are only allowed when all the following conditions are met simultaneously:
 
-- The device source is `system_recommended`
-- The current device has no ready-made driver
+- Device source is `system_recommended`
+- Current device has no ready-made driver
 - An alternative device of the same category, same interface, with an existing driver can be found
 
 Alternative candidates must also be verified through `upy-pkg-guide`:
 
-- First generate candidate chip/module keywords based on the category
+- First generate candidate chip/module keywords by category
 - Call `upy-pkg-guide` for each candidate
-- Only allow displaying candidates that `upy-pkg-guide` confirms have an available MicroPython driver
+- Only allow presenting candidates that `upy-pkg-guide` confirms have available MicroPython drivers to the user
 
-Alternative recommendation constraints:
+Alternative Recommendation Constraints:
 
-- Give at most 2 candidates
+- At most 2 candidates
 - Do not provide an overly long candidate list
 - After the user confirms the alternative, the device list must be updated
 
@@ -467,10 +468,10 @@ The following cases directly enter the cold path marking:
 
 Analyze only does the following here:
 
-- Mark in the manifest
-- Explain in warnings that subsequent cold driver generation and verification will follow
+- Tagging in the manifest
+- Explanation in warnings that subsequent cold driver generation and verification will follow
 
-Analyze does not:
+Analyze does NOT do:
 
 - PDF collection
 - Arduino collection
@@ -482,7 +483,7 @@ Protocol goal for this step:
 - When `system_recommended` with no driver:
   - Issue `approval_request(alternative_device)`
   - Plugin returns `approval_response`
-  - analyze updates the devices list based on user selection
+  - Analyze updates the devices list based on user selection
 - When `user_specified` with no driver:
   - Do not issue an alternative recommendation card
   - Directly mark the cold path in the manifest
@@ -498,7 +499,7 @@ Protocol goal for this step:
 
 #### 7A. Manifest Draft Requirements
 
-Must at least include:
+Must include at least:
 
 - `schema_version`
 - `phase = "analyze"`
@@ -514,7 +515,7 @@ And ensure:
 
 #### 7B. Validation Requirements
 
-The validation script's responsibilities are:
+The validation script's responsibility is:
 
 - Validate enum values
 - Fill in default values
@@ -522,7 +523,7 @@ The validation script's responsibilities are:
 
 The validation script is not the completion criterion for analyze.
 
-The completion criterion for analyze is:
+Analyze's completion criterion is:
 
 - Successfully generate `manifest_content` that can be consumed downstream
 - Output `phase_complete`
@@ -547,11 +548,11 @@ Protocol goal for this step:
 
 #### 7D. Claude Code Direct-Test Mode Debug Artifacts
 
-When there is no real plugin host and no message bus to persist `phase_complete`, it is difficult for Claude Code direct tests to check results from the file system. Therefore, additional debug artifacts are allowed.
+When there is no real plugin host and no message bus to save `phase_complete`, it is difficult for Claude Code direct tests to check results from the file system. Therefore, additional debug artifacts are allowed.
 
-Trigger conditions:
+Trigger Conditions:
 
-- The current runtime environment is a normal Claude Code conversation/local skill invocation
+- The current runtime environment is a normal Claude Code conversation/local skill call
 - The user has provided a project directory, test directory, or the current working directory is clearly a test project directory
 - For example, the user is testing this skill under `G:\test\test`
 
@@ -591,15 +592,15 @@ Content to write:
     }
     ```
 - `driver_search_log.md`
-  - Search keywords for each device, results of calling `upy-pkg-guide`, final `driver.source`
+  - Search keywords for each device, results from calling `upy-pkg-guide`, final `driver.source`
 
 Constraints:
 
 - These files are only for Claude Code direct testing and manual troubleshooting
 - In formal plugin mode, `phase_complete.manifest_content` remains the sole phase handover artifact
-- Do not judge analyze as successful or failed due to failure to write debug files; the phase result is still determined by manifest validation and `phase_complete`
+- Do not judge analyze as successful or failed due to debug file write failure; the phase result is still determined by manifest validation and `phase_complete`
 - Before writing, explain that these are direct-test debug artifacts, not final project code
-- After writing `phase_complete.analyze.json`, it must be validated using the validation script's phase_complete mode:
+- After writing `phase_complete.analyze.json`, must validate using the validation script's phase_complete mode:
   ```bash
   python {skill_dir}/scripts/init_manifest.py --validate-phase-complete --input {project_dir}/phase_complete.analyze.json
   ```
@@ -647,8 +648,8 @@ Step 8 Phase complete
 Purpose:
 
 - Confirm the device list
-- Display project name, function summary, board status
-- Allow adding/deleting/confirming devices
+- Display project name, functional summary, board status
+- Allow adding/removing/confirming devices
 
 Requirements:
 
@@ -666,10 +667,10 @@ Suggested payload example:
   "payload": {
     "approval_id": "device_confirm",
     "header": "Confirm Project Plan",
-    "question": "Please confirm if the following devices are correct",
+    "question": "Please confirm the following devices are correct",
     "summary": {
       "project_name": "Plant Assistant",
-      "description": "Reads soil temperature and humidity, supports touch interaction and voice dialogue",
+      "description": "Read soil temperature and humidity, support touch interaction and voice dialogue",
       "board": {
         "status": "selected",
         "display_name": "ESP32-S3-DevKitC-1",
@@ -710,7 +711,7 @@ Suggested payload example:
 }
 ```
 
-Field constraints:
+Field Constraints:
 
 - `summary.project_name` is required
 - `summary.description` is required
@@ -719,25 +720,25 @@ Field constraints:
   - `none`
 - `items[].id/name/subtitle/meta/selected` are required
 - `actions` must contain at least 1 primary action
-- If `board.status = "none"`, then `display_name/mcu` are not required
+- If `board.status = "none"`, `display_name/mcu` are not required
 
 In a dialogue environment without a real UI, after displaying this card, must adhere to:
 
 - The reply ends here
 - Wait for user input
-- Do not output "Confirmed, starting driver search" below the card
-- If the questioning tool of the runtime environment has a "limit on the number of options", first compress grouped options or change to a text confirmation format, then stop and wait for user reply; do not skip the confirmation point due to tool limitations
+- Do not continue outputting "Confirmed, starting driver search" below the card
+- If the questioning tool of the runtime environment has a "number of options limit", first compress grouped options or change to a text confirmation format, then stop and wait for user reply; do not skip the confirmation point due to tool limitations
 
 ### approval_request #2: requirement_supplement
 
 Purpose:
 
-- Supplement important but missing requirements fields in beginner/custom modes
+- Supplement missing but important requirements fields in beginner/custom modes
 
 Requirements:
 
-- At most 1 card is allowed
-- Do not break it down into multiple rounds
+- At most 1 card allowed
+- Must not be split into multiple rounds
 
 Suggested payload example:
 
@@ -769,7 +770,7 @@ Suggested payload example:
       {
         "id": "perf_normal",
         "name": "General Performance",
-        "subtitle": "1Hz / Normal Precision / 1-second Response",
+        "subtitle": "1Hz / Normal Precision / 1 Second Response",
         "meta": "sample_rate=normal_1hz",
         "selected": true
       },
@@ -809,19 +810,19 @@ Suggested payload example:
   "payload": {
     "approval_id": "alternative_device",
     "header": "Sensor: Recommended Alternative Devices",
-    "question": "The current device has no ready-made driver. The following alternative devices are recommended",
+    "question": "Current device has no ready-made driver. The following alternative devices are recommended",
     "items": [
       {
         "id": "alt1",
         "name": "HDC1080",
-        "subtitle": "Higher precision, has upypi driver",
+        "subtitle": "Higher precision, driver available on upypi",
         "meta": "Recommended",
         "selected": false
       },
       {
         "id": "alt2",
         "name": "AHT20",
-        "subtitle": "Lower cost, has upypi driver",
+        "subtitle": "Lower cost, driver available on upypi",
         "meta": "Alternative",
         "selected": false
       }
@@ -862,7 +863,7 @@ Analyze should currently define at least the following progress messages:
 
 ### phase_complete
 
-Analyze's `phase_complete` must at least include:
+Analyze's `phase_complete` must include at least:
 
 - `phase = "analyze"`
 - `result`
@@ -870,13 +871,13 @@ Analyze's `phase_complete` must at least include:
 - `next_phase = "select-hw"`
 - `next_skill = "/upy-select-hw-plugin"`
 - `manifest_content`
-- `artifacts`: Must be an array. Debug file paths are expressed using `file_list` artifacts; object mapping is not allowed to replace the array.
+- `artifacts`: Must be an array. Debug file paths are expressed using `file_list` artifacts; object mapping is not allowed to replace arrays.
 - `warnings`
 - `errors`
 
 ## Dialogue Environment Specific Constraints
 
-If analyze is running in an environment without a real plugin card host, such as a normal chat-style skill invocation, the following rules must be followed:
+If analyze runs in an environment without a real plugin card host, such as a normal chat-style skill call, the following rules must be followed:
 
 1. After `approval_request(device_confirm)` appears, the reply must end, waiting for user input
 2. After `approval_request(requirement_supplement)` appears, the reply must end, waiting for user input
@@ -885,7 +886,7 @@ If analyze is running in an environment without a real plugin card host, such as
    - Driver search
    - Manifest validation
    - phase_complete
-5. If the user's reply is "modify device" or "supplement requirement", re-analyze based on the user's new input; do not pretend it is still the old list
+5. If the user's reply is "modify devices" or "supplement requirements", re-analyze based on the user's new input; do not pretend it is still the old list
 
 One-sentence requirement:
 
@@ -893,7 +894,7 @@ One-sentence requirement:
 
 ## manifest_content Minimum Delivery Requirements
 
-The `manifest_content` that Analyze hands over to the downstream `select-hw` must at least include:
+The `manifest_content` that analyze hands over to downstream `select-hw` must include at least:
 
 - `schema_version`
 - `phase = "analyze"`
@@ -905,7 +906,7 @@ The `manifest_content` that Analyze hands over to the downstream `select-hw` mus
 - `requirements.mcu_specified`
 - `devices`
 
-Where each `devices[]` must at least include:
+Where each `devices[]` must include at least:
 
 - `name`
 - `type`
@@ -915,10 +916,10 @@ Where each `devices[]` must at least include:
 
 Optional but should be retained device-level fields:
 
-- `notes`: The user's natural language supplement for the device, such as module model, trigger method, level semantics, installation method
+- `notes`: User's natural language supplement for the device, such as module model, trigger method, level semantics, installation method
 - `behavior`: Structurable behavioral facts, such as `role`, `event`, `active_level`, `idle_level`
 
-When the user clearly describes device behavior, write both `notes` and `behavior` preferentially. For example, the TTP223 touch button "outputs low level when pressed" should be retained as a device-level fact for select-hw and generate to determine GPIO input, pull-up/pull-down, and trigger conditions.
+When the user clearly describes device behavior, write to both `notes` and `behavior` preferentially. For example, the TTP223 touch button "outputs low level when pressed" should be retained as a device-level fact for select-hw and generate to determine GPIO input, pull-up/pull-down, and trigger conditions.
 
 If `driver.source` belongs to a ready-made driver source, subsequently continue to complete:
 
@@ -938,7 +939,7 @@ If `driver.source` belongs to a ready-made driver source, subsequently continue 
 
 ## boards Asset Constraints
 
-`upy-analyze-plugin` should carry its own independent `boards/` directory assets.
+`upy-analyze-plugin` should come with its own independent `boards/` directory assets.
 
 Purpose:
 
@@ -949,7 +950,7 @@ Purpose:
 Principle:
 
 - Do not overwrite the original skill's `boards`
-- The plugin version independently maintains its own board data copy
+- The plugin version independently maintains its own copy of board data
 
 ## Local Simulation Test Entry Points
 
@@ -964,21 +965,22 @@ Currently available local test entry points include:
 
 ## Current Status
 
-This is the first version of the plugin-based analyze workflow that can be exercised, and it currently has:
+This is the first drillable workflow of the plugin-based analyze, and currently already has:
 
 - Plugin input boundary
 - Main confirmation card
 - Optional supplementary card
-- Alternative recommendation / cold driver diversion
+- Alternative recommendation / cold driver branching
 - `script_run(init_manifest.py)` validation chain
 - `phase_complete(next_phase=select-hw, next_skill=/upy-select-hw-plugin)` handover chain
 
-Subsequent enhancement focus is no longer on "whether there is a workflow", but on supplementing:
+Subsequent enhancement focus is no longer on supplementing "whether there is a workflow", but on supplementing:
 
 - Stricter protocol constraints
 - More complete board assets
 - Stronger manifest validation
 - A more realistic analyze engine
+
 ## Session Boundary Addendum
 
 - Treat an explicit user-supplied session path as the `workflow_session_root` unless the user explicitly says it is only a diagnostic/log source.
