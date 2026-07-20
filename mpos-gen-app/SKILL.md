@@ -14,9 +14,13 @@ Translate confirmed MicroPythonOS App requirements into code. Default to a two-p
 
 If the user provides natural language ideas directly without `mpos-analyze-app` results, first route to `mpos-analyze-app`. If external pure Python drivers are needed but no `mpos-prepare-deps` handoff exists, first route to `mpos-prepare-deps`.
 
+## User-Visible Language
+
+Follow the language continuity rules of `mpos-dev`: if the current workflow starts in Chinese, the generation plan, confirmation questions, validation summaries, and repair instructions continue in Chinese; if it starts in English, continue in English. Code, commands, paths, API names, and JSON field names remain in English.
+
 ## Unified Project Log
 
-After each plan/create/update/repair produces a `generation_result.json` or a confirmed plan, it must be recorded in the project state directory:
+Every plan/create/update/repair that produces a `generation_result.json` or a confirmed plan must be recorded in the project state directory:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
@@ -31,11 +35,13 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --event "Generated, updated, or repaired App files"
 ```
 
-When the user modifies requirements, do not decide to directly overwrite old artifacts yourself; first let `mpos-plan-app` list the artifacts that will become invalid and wait for user confirmation. The two-phase confirmation is still enforced; `mpos-plan-app` cannot confirm writing files on behalf of the user.
+When the user modifies requirements, do not decide to directly overwrite old artifacts yourself; first let `mpos-plan-app` list the artifacts that will become invalid and wait for user confirmation. The two-phase confirmation is still mandatory; `mpos-plan-app` cannot confirm file writing on behalf of the user.
+
+Routing, recovery, or state recording by `mpos-plan-app` does not equal user confirmation to write files; the user must explicitly confirm after the `mpos-gen-app` plan before entering the create/update/repair execution phase.
 
 ## Required Context
 
-Before generating or modifying, first load `mpos-dev` and read as needed:
+Before generating or modifying, load `mpos-dev` and read as needed:
 
 - App/Activity/Service/Intent: `mpos-dev/reference/docs-app-model.md`
 - System manager, TaskManager, DownloadManager, WebServer, Service: `mpos-dev/reference/docs-frameworks.md`
@@ -51,23 +57,28 @@ Local facts take precedence:
 - `<repo-root>/tests/test_apps_manifest.py`
 - `<repo-root>/internal_filesystem/lib/mpos/content/app_manager.py`
 
+`mpos_api_summary.json` and `lvgl_api_summary.json` are mandatory inputs; they must be fully read and used for generation plans and code validation; they cannot be omitted because the App is simple. The planning phase must list the `mpos.*` / `lv.*` APIs that will be used and indicate whether there are existing App use cases in the repository for reference.
+
 ## Modes
 
 ### plan
 
-Default mode. Suitable for creating a new App, modifying features, or as the first step in a repair request after test failure.
+Default mode. Applicable to creating a new App, modifying features, or the first step of a repair request after test failure.
 
 Must output:
 
 - Target App: `fullname`, `name`, `category`, `version`.
+- Publisher: manifest `publisher`, defaults to the organization prefix of `fullname`, e.g., `com.example` or `com.micropythonos`.
 - Operation type: `create`, `update`, or `repair`.
-- File plan: files to create/modify/keep.
+- File plan: files to be created/modified/kept.
 - Activity/Service plan.
-- Dependency plan: whether to consume `mpos-prepare-deps`, whether to generate a synchronous adapter layer.
-- Icon plan: use `scripts/generate_icon.py` to generate the root `icon_64x64.png` based on the user's feature description.
-- Version strategy: new App `1.0.0`; feature modification bumps patch; test-failure repair does not bump.
-- Validation plan: list the gates to run during the execution phase.
-- Questions requiring confirmation; even without blocking issues, must ask "I will write files after your confirmation."
+- Dependency plan: whether to consume `mpos-prepare-deps`, whether to generate a synchronous adaptation layer.
+- Icon plan: use `scripts/generate_icon.py` to generate root `icon_64x64.png` based on the user's functional description.
+- Version strategy: new App `1.0.0`; feature modification bumps patch; test failure repair does not bump.
+- API risk: list `lv.*`, `mpos.*`, and LVGL widget method calls item by item; any API not in the summary must be warned about in the plan and an alternative solution provided.
+- Zero-reference widget risk: if a certain LVGL widget has no use case in the existing repository Apps, a warning must be issued and a simpler alternative given.
+- Validation plan: list the gates to be run during the execution phase, must include `api_usage` and `app_only_changes`.
+- Questions requiring confirmation; even if there are no blocking issues, must ask "Shall I write the files after confirmation?".
 
 ### create
 
@@ -80,27 +91,37 @@ internal_filesystem/apps/<fullname>/
   assets/<entrypoint>.py
 ```
 
-`MANIFEST.JSON` uses full objects, not string-type activities:
+`MANIFEST.JSON` uses the full object, not string-type activities:
 
 ```json
 {
-  "classname": "ExampleActivity",
-  "entrypoint": "assets/main.py",
-  "intent_filters": [{"action": "main", "category": "launcher"}]
+  "fullname": "com.example.app",
+  "name": "Example App",
+  "publisher": "com.example",
+  "version": "1.0.0",
+  "category": "utilities",
+  "activities": [
+    {
+      "classname": "ExampleActivity",
+      "entrypoint": "assets/main.py",
+      "intent_filters": [{"action": "main", "category": "launcher"}]
+    }
+  ],
+  "services": []
 }
 ```
 
 ### update
 
-When the user modifies features, first read the existing App's manifest, entrypoint, assets, and related tests, then make minimal changes. Do not rewrite unrelated files, do not overwrite existing user resources. Feature modifications default to bumping the patch version, e.g., `1.0.0` -> `1.0.1`.
+When the user modifies features, first read the existing App's manifest, entrypoint, assets, and related tests, then make minimal modifications. Do not rewrite unrelated files, do not overwrite user's existing resources. Feature modifications default to bumping patch, e.g., `1.0.0` -> `1.0.1`.
 
 If the user proposes adding new hardware, external drivers, or protocol libraries without a dependency handoff, stop and route to `mpos-analyze-app` or `mpos-prepare-deps`.
 
 ### repair
 
-When tests fail or the user reports runtime failure, read the failure logs, command output, traceback, the last `generation_result.json`, and related source code. Only repair App files generated by this skill or explicitly involved in this round.
+When tests fail or the user reports runtime failure, read the failure logs, command output, traceback, the last `generation_result.json`, and related source code. Only repair App files generated by this skill or explicitly involved in the current round.
 
-Allow unlimited automatic repairs of self-generated/modified files: make minimal patches each round, re-run the failed gates and necessary full gates until they pass or an external blockage is encountered. External blockages include missing user requirements, missing dependency handoffs, uninstalled tools, changed hardware facts, or failures originating from non-this-App files.
+Allow unlimited automatic repairs of self-generated/modified files: make minimal patches each round, re-run the failed gates and necessary full gates until they pass or an external block is encountered. External blocks include missing user requirements, missing dependency handoffs, uninstalled tools, changed hardware facts, or failures originating from non-this-App files.
 
 Repair does not bump the version unless the user explicitly requests the fix as a release version.
 
@@ -109,23 +130,24 @@ Repair does not bump the version unless the user explicitly requests the fix as 
 Before writing files, these items must be confirmed:
 
 - Whether `fullname` is acceptable, and whether the directory is `internal_filesystem/apps/<fullname>`.
-- The App's visible behavior and MVP scope.
-- The number of Activities/Services and entry files.
-- Whether to integrate the runtime files, imports, and adapter requirements from `mpos-prepare-deps`.
-- Whether to generate the icon automatically based on the feature description.
+- Whether `publisher` is acceptable; if missing, default derived from the `fullname` prefix, e.g., `com.example.cc_skill_smoke` -> `com.example`.
+- App visible behavior and MVP scope.
+- Number of Activities/Services and entrypoint files.
+- Whether to integrate `mpos-prepare-deps` runtime files, imports, and adapter requirements.
+- Whether to generate the icon automatically based on the functional description.
 - Whether the version strategy is acceptable.
 - Whether the validation scope is acceptable.
 
-Provide default values for missing non-blocking fields, but still include the default values in the confirmation plan. Do not write files without user confirmation.
+Provide default values for missing non-blocking fields, but still include the default values in the confirmation plan. Do not write files until the user confirms.
 
 ## Dependency Integration
 
 If there is a `mpos-prepare-deps` handoff:
 
-- Place runtime files at the handoff's `target_path`, typically `assets/<module>.py` or `assets/<package>/...`.
+- Place runtime files at the handoff's `target_path`, usually `assets/<module>.py` or `assets/<package>/...`.
 - If the handoff has a `staged_path`, copy from the staged cache to the App directory.
-- For dependencies with `async_compatible=true`, use them directly according to `imports[]`.
-- For dependencies with `sync_needs_adapter=true`, a `assets/<name>_adapter.py` or equivalent adapter layer must be generated, and the handoff's `adapter_requirements[]` must be implemented item by item.
+- For dependencies with `async_compatible=true`, use directly according to `imports[]`.
+- For dependencies with `sync_needs_adapter=true`, must generate `assets/<name>_adapter.py` or an equivalent adaptation layer, and implement the handoff's `adapter_requirements[]` item by item.
 - If `requires_vendor_path_injection=true`, only add minimal path injection at the beginning of the entrypoint:
 
 ```python
@@ -136,27 +158,29 @@ if _VENDOR_DIR not in sys.path:
     sys.path.insert(0, _VENDOR_DIR)
 ```
 
-Do not place synchronous libraries directly into `async def` or LVGL event callbacks to block execution. Use `TaskManager.create_task`, `TaskManager.sleep_ms`, short-cycle state machines, timeouts, and cancellation paths.
+Do not place synchronous libraries directly into `async def` or LVGL event callbacks for blocking execution. Use `TaskManager.create_task`, `TaskManager.sleep_ms`, short-cycle state machines, timeouts, and cancellation paths.
 
 ## Icon Generation
 
-For new Apps or when the icon is missing, use this skill's script to generate the icon:
+For new Apps or missing icons, use this skill's script to generate the icon:
 
 ```bash
 python3 /home/leeqingshui/MicroPython_Skills/mpos-gen-app/scripts/generate_icon.py \
-  --prompt "<user feature description>" \
+  --prompt "<User functional description>" \
   --label "<App name>" \
   --output internal_filesystem/apps/<fullname>/icon_64x64.png
 ```
 
-The script uses only the Python standard library to generate a 64x64 PNG, without relying on Pillow. The icon should be based on simple symbols derived from feature keywords; if the keywords are ambiguous, use the first letter of the App name.
+The script only uses the Python standard library to generate a 64x64 PNG, no Pillow dependency. The icon should select a simple symbol based on functional keywords; if the keywords are ambiguous, use the first letter of the App name.
 
 ## Code Rules
 
-- New code should preferentially import from the root `mpos` module: `from mpos import Activity, TaskManager, SharedPreferences`.
-- UI code must `import lvgl as lv` and follow the LVGL rules of `mpos-dev`.
+- New code should import from the root `mpos` module first: `from mpos import Activity, TaskManager, SharedPreferences`.
+- UI code must `import lvgl as lv` and follow `mpos-dev`'s LVGL rules.
+- All `lv.*` / `mpos.*` / LVGL widget method calls must pass `check_app_api_usage.py`; guessing APIs not in the summary, such as unlisted `set_style_row_gap()`, is prohibited.
+- `lv.buttonmatrix.set_map()` map must use `"\n"` to separate rows and terminate with `""`; dynamic maps must state in a warning that manual review has been performed.
 - Do not hardcode screen resolution; use `lv.pct(100)`, flex, align.
-- Immediately call `set_text("")` or set the final text on new labels.
+- New labels should immediately `set_text("")` or set the final text.
 - After `lv.style_t()`, must call `init()` before setters.
 - Event callbacks accept an event parameter; use `obj.add_event_cb(callback, lv.EVENT.CLICKED, None)`.
 - Do not arbitrarily assign Python attributes to LVGL objects; use closures, dicts, or parallel lists to store state.
@@ -191,7 +215,9 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --app-fullname <fullname>
 ```
 
-3. MicroPython import risk check:
+`check_app_syntax.py` will attempt to build `mpy-cross` if `<repo-root>/lvgl_micropython/lib/micropython/mpy-cross/build/mpy-cross` is missing. If submodules are missing or the build fails, mark as external/tooling blocked; do not silently skip the MicroPython bytecode compilation gate.
+
+3. MicroPython import risk:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
@@ -199,13 +225,28 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --app-dir internal_filesystem/apps/<fullname>
 ```
 
-4. Project lint:
+4. API cross-validation:
 
 ```bash
-make lint
+PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
+  /home/leeqingshui/MicroPython_Skills/mpos-gen-app/scripts/check_app_api_usage.py \
+  --repo <repo-root> \
+  --app-fullname <fullname>
 ```
 
-5. flake8:
+This gate must be executed after writing the code and before entering runtime tests. Unknown APIs are failures; `buttonmatrix.set_map()` missing `"\n"` row separators or trailing `""` terminator is a failure; zero-reference widgets are warnings, and the alternative solution or review reason must be recorded in `generation_result.validation.warnings`.
+
+5. Project lint:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
+  /home/leeqingshui/MicroPython_Skills/mpos-gen-app/scripts/prepare_lint_tooling.py \
+  --repo <repo-root>
+```
+
+This helper first runs `make lint`. If the failure is due to missing `uv`, install `uv` using the current Python environment, prepend that environment's `bin/` to `PATH`, then re-run `make lint`. If `uv` installation fails, `ruff` fails, or lint times out, record as blocked; do not skip.
+
+6. flake8:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python -m flake8 \
@@ -213,9 +254,9 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python -m flake8 \
   internal_filesystem/apps/<fullname>
 ```
 
-Use the fixed template `templates/flake8-mpos-app.ini`. This template is calibrated against the current baseline of all real Apps: it selects only `E9,F63,F7,F82`, supplements MicroPython/native/viper/RP2 PIO instruction built-in names, and does not globally ignore `F821`; it only applies file-level `F821` ignoring for `rp2_*.py` and `*_pio.py` to prevent PIO assembly pseudo-operands from polluting normal Python checks. If a newly generated App has undefined names, fix the code; do not temporarily relax the template.
+Use the fixed template `templates/flake8-mpos-app.ini`. This template is calibrated against the baseline of all current real Apps: only selects `E9,F63,F7,F82`, supplements MicroPython/native/viper/RP2 PIO instruction built-in names, does not globally ignore `F821`; only applies file-level `F821` ignore for `rp2_*.py`, `*_pio.py` to prevent PIO assembly pseudo-operands from polluting normal Python checks. If undefined names appear in newly generated Apps, fix the code; do not temporarily relax the template.
 
-6. pylint. Use the fixed MicroPython-aware rcfile; do not modify the repository configuration:
+7. pylint. Use the fixed MicroPython-aware rcfile; do not modify the repository configuration:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python -m pylint \
@@ -224,19 +265,30 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python -m pylint \
   internal_filesystem/apps/<fullname>/assets
 ```
 
-Use the fixed template `templates/pylintrc-mpos-app`. This template is calibrated against the current baseline of all real Apps: it ignores MicroPython/MPOS imports, LVGL dynamic members, docstrings, naming, and historical style noise; it retains fatal/error/usage class issues, such as `undefined-variable`, `used-before-assignment`, `function-redefined`, `no-method-argument`. Do not add common variable names like `x`, `y`, `pin` to global builtins; if an RP2 PIO helper is genuinely generated, only allow a local `# pylint: disable=undefined-variable` declaration at the top of that helper file and record the reason in `generation_result.validation.warnings`. The Pylint exit code is a bitmask: fatal(1), error(2), usage(32) are hard failures; warning(4), refactor(8), convention(16) are only recorded as warnings unless the user requests strict mode.
+Use the fixed template `templates/pylintrc-mpos-app`. This template is calibrated against the baseline of all current real Apps: ignores MicroPython/MPOS imports, LVGL dynamic members, docstrings, naming, and historical style noise; retains fatal/error/usage class issues, such as `undefined-variable`, `used-before-assignment`, `function-redefined`, `no-method-argument`. Do not add common variable names like `x`, `y`, `pin` to global builtins; if an RP2 PIO helper is indeed generated, only allow a local `# pylint: disable=undefined-variable` declaration at the top of that helper file and record the reason in `generation_result.validation.warnings`. Pylint exit code is a bitmask: fatal(1), error(2), usage(32) are hard failures; warning(4), refactor(8), convention(16) are only recorded as warnings, unless the user requests strict mode.
 
-7. Clean up cached artifacts:
+8. Clean up cache artifacts:
 
 ```bash
-find internal_filesystem/apps/<fullname> -name __pycache__ -o -name '*.pyc' -print
+find internal_filesystem/apps/<fullname> \( -name __pycache__ -o -name '*.pyc' \) -print
 ```
 
-If there is output, delete it and re-run the relevant gates. Do not write `__pycache__/` or `.pyc` into the handoff JSON.
+If there is output, delete and re-run the relevant gates. Do not write `__pycache__/` or `.pyc` into the handoff JSON.
+
+9. App-only change check:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
+  /home/leeqingshui/MicroPython_Skills/mpos-dev/scripts/check_app_only_changes.py \
+  --repo <repo-root> \
+  --app-fullname <fullname>
+```
+
+This gate only allows changes under `internal_filesystem/apps/<fullname>/` and `tmp/mpos-*`. If changes to OS/build/framework/existing App files are detected, must mark as failed/blocked; do not arbitrarily roll back user changes, and do not allow the release pipeline to consider it successful.
 
 ## Output JSON
 
-At the end of the execution phase, output and optionally save `generation_result.json`. Refer to the structure in `templates/generation_result.json` and validate it with the script:
+At the end of the execution phase, output and optionally save `generation_result.json`. The structure references `templates/generation_result.json`, and is validated with the script:
 
 ```bash
 python3 /home/leeqingshui/MicroPython_Skills/mpos-gen-app/scripts/validate_generation_result.py \
@@ -251,9 +303,10 @@ A successful `create/update/repair` must record:
 - Icon generation result
 - Dependency and sync adapter results
 - All validation gates and their return codes
+- `api_usage` and `app_only_changes` gates must exist and pass
 - `handoff.next_skill: "mpos-test-app"`
 
-In the plan phase, `confirmed_by_user` must be `false`, and `handoff.next_skill` must still point to `mpos-gen-app`.
+In the plan phase, `confirmed_by_user` must be `false`, and `handoff.next_skill` still points to `mpos-gen-app`.
 
 ## Downstream
 

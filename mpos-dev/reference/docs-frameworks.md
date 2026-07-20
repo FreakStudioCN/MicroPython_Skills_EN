@@ -68,7 +68,7 @@ Common usage:
 - `AppManager.install_mpk(temp_zip_path, dest_folder)`
 - `AppManager.refresh_apps()`
 
-After installing an app to a physical device using a local script, call `AppManager.refresh_apps()` first, then expect `start_app()` to find it.
+After installing an app to a physical device using a local script, first call `AppManager.refresh_apps()`, then expect `start_app()` to find it.
 
 ### DownloadManager
 
@@ -90,7 +90,7 @@ When background tasks affect widgets, use the foreground-safe UI update path pro
 
 ### SharedPreferences
 
-Used for app-level persistence. In Activity, prefer `SharedPreferences(self.appFullName)`, do not hardcode the package name.
+Used for app-level persistence. In an Activity, prefer `SharedPreferences(self.appFullName)`, do not hardcode the package name.
 
 Do not write custom JSON configuration files directly for normal app preferences, unless there is a clear reason.
 
@@ -102,7 +102,7 @@ Service is used for long-running tasks without UI or startup tasks. Service has 
 
 - `AudioManager`: Playback and recording; coordinates audio priority and hardware output.
 - `BatteryManager`: Battery/voltage status.
-- `CameraManager`: Camera access; check if the C module is available for camera functions.
+- `CameraManager`: Camera access; check if the C module is available for camera functionality.
 - `ConnectivityManager`: Network-aware app behavior and reconnection flow.
 - `InputManager`, `InputActivity`, focus helpers: Keyboard, touch, buttons, and focus navigation.
 - `LightsManager`: LED/NeoPixel-like device lighting.
@@ -120,9 +120,10 @@ Service is used for long-running tasks without UI or startup tasks. Service has 
 - Event callbacks need an event parameter, and register with `obj.add_event_cb(callback, lv.EVENT.CLICKED, None)`.
 - Use `event.get_target_obj()`, not `event.get_current_target()`.
 - Do not hardcode screen resolution.
-- New labels must not keep the default `"Text"`.
+- New labels must not retain the default `"Text"`.
 - Before a setter, always `style = lv.style_t(); style.init()`.
 - LVGL object wrappers do not accept arbitrary Python attributes; use closures or parallel state structures.
+- `lv.buttonmatrix.set_map()` parameter is `list[str]`; use a separate `"\n"` element for row separation, and a `""` terminator at the end, e.g., `["1", "2", "\n", "3", "4", ""]`.
 - `lv.buttonmatrix.set_map()` may trigger value-changed asynchronously; debounce by time.
 - SDL keyboard has no key-up event; model long press with timeout.
 
@@ -134,7 +135,7 @@ Service is used for long-running tasks without UI or startup tasks. Service has 
 
 ## Test Entry Points
 
-For UI verification, prefer:
+For UI verification, prefer using:
 
 - `mpos.ui.testing.GraphicalTestCase`
 - `KeyboardTestCase`

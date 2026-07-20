@@ -7,13 +7,12 @@ import argparse
 import datetime
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 from _deploy_common import (
-    DEFAULT_REPO,
     board_matches,
     controller_command,
-    default_output_dir,
     inspect_mpk,
     load_app_metadata,
     installed_apps_code,
@@ -23,6 +22,8 @@ from _deploy_common import (
     query_device_info,
     query_installed_apps,
     resolve_app_dir,
+    resolve_output_dir,
+    resolve_repo_arg,
     run_mpremote,
     safe_fullname,
     write_json,
@@ -31,7 +32,7 @@ from _deploy_common import (
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", default=str(DEFAULT_REPO), help="MicroPythonOS repository root")
+    parser.add_argument("--repo", help="MicroPythonOS repository root")
     parser.add_argument("--app-fullname", required=True, help="App fullname")
     parser.add_argument("--mpk-path", required=True, help="Path to the MPK file")
     parser.add_argument("--board", required=True, help="Confirmed target board")
@@ -42,11 +43,11 @@ def main() -> int:
     parser.add_argument("--output-dir", help="Output directory for deploy_result.json")
     args = parser.parse_args()
 
-    repo = Path(args.repo).resolve()
+    repo = resolve_repo_arg(args.repo)
     fullname = safe_fullname(args.app_fullname)
     app_dir = resolve_app_dir(repo, fullname)
     mpk_path = Path(args.mpk_path).resolve()
-    output_dir = Path(args.output_dir).resolve() if args.output_dir else default_output_dir(repo, fullname)
+    output_dir = resolve_output_dir(repo, fullname, args.output_dir)
     output_path = output_dir / "deploy_result.json"
 
     warnings: list[str] = []
@@ -60,6 +61,7 @@ def main() -> int:
         app_info = {
             "fullname": fullname,
             "name": fullname,
+            "publisher": "",
             "version": "unknown",
             "app_dir": str(app_dir),
             "manifest": str(app_dir / "MANIFEST.JSON"),
@@ -83,6 +85,7 @@ def main() -> int:
     machine = device.get("machine")
     if not device_probe.get("ok"):
         errors.append("device probe failed")
+        warnings.append("MPK install requires MPOS runtime probe/AppManager; use deploy_app_copy.py for direct mpremote filesystem copy if probe fails")
     if not board_matches(args.board, machine):
         errors.append(f"target board mismatch: expected {args.board!r}, got {machine!r}")
     if not device.get("has_mpos"):
@@ -99,6 +102,17 @@ def main() -> int:
         f"AppManager.install_mpk({remote_temp_path!r}, {dest_folder!r})"
     )
     mpremote_path = str(mpremote_script(repo))
+    mkdir_command = [sys.executable, mpremote_path, "connect", args.serial_port, "fs", "mkdir", ":/tmp"]
+    copy_command = [
+        sys.executable,
+        mpremote_path,
+        "connect",
+        args.serial_port,
+        "fs",
+        "cp",
+        str(mpk_path),
+        f":{remote_temp_path}",
+    ]
     install_command = controller_command(
         repo,
         "exec",
@@ -109,13 +123,19 @@ def main() -> int:
     )
     install_proc = None
     if not errors:
-        mkdir_proc = run_mpremote(repo, ["fs", "mkdir", ":/tmp"], timeout=min(args.timeout, 60))
+        mkdir_proc = run_mpremote(
+            repo,
+            ["fs", "mkdir", ":/tmp"],
+            serial_port=args.serial_port,
+            timeout=min(args.timeout, 60),
+        )
         if mkdir_proc.returncode != 0:
             if mkdir_proc.stdout:
                 warnings.append(mkdir_proc.stdout.strip()[-1000:])
         copy_proc = run_mpremote(
             repo,
             ["fs", "cp", str(mpk_path), f":{remote_temp_path}"],
+            serial_port=args.serial_port,
             timeout=min(args.timeout, 120),
         )
         if copy_proc.returncode != 0:
@@ -157,6 +177,8 @@ def main() -> int:
 
     if not app_info.get("name"):
         warnings.append("manifest name is missing")
+    if not app_info.get("publisher"):
+        errors.append("manifest publisher is missing")
     if not app_info.get("version"):
         warnings.append("manifest version is missing")
 
@@ -174,14 +196,15 @@ def main() -> int:
             "port": args.serial_port,
             "device_id": machine,
             "confirmed": True,
+            "hardware_available": True,
             "install_url": None,
             "web_url": None,
         },
         "command": {
             "primary": " && ".join(
                 [
-                    shlex.join([mpremote_path, "fs", "mkdir", ":/tmp"]),
-                    shlex.join([mpremote_path, "fs", "cp", str(mpk_path), f":{remote_temp_path}"]),
+                    shlex.join(mkdir_command),
+                    shlex.join(copy_command),
                     shlex.join(install_command),
                 ]
             ),
@@ -240,9 +263,17 @@ def main() -> int:
         "errors": errors,
         "artifacts": [{"kind": "deploy_result", "path": str(output_path)}],
         "handoff": {
-            "next_skill": "mpos-test-app" if result != "failed" else "mpos-package-app",
-            "next_step": "Run mpos-test-app if you want a runtime smoke check after the MPK install.",
-            "reason": "The MPK was installed on the target device and the registry was refreshed.",
+            "next_skill": "mpos-publish-app" if result in {"success", "partial"} else "mpos-deploy-app",
+            "next_step": (
+                "Prepare the manual upystore publishing handoff."
+                if result in {"success", "partial"}
+                else "Retry MPK install after checking the package, board, port, and device state."
+            ),
+            "reason": (
+                "The MPK was installed on the target device and the publish-chain deploy record is available."
+                if result in {"success", "partial"}
+                else "MPK install did not produce a usable deploy record."
+            ),
         },
     }
     write_json(output_path, deploy_result)

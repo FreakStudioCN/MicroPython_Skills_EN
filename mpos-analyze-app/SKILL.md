@@ -14,7 +14,11 @@ Analyze one or more user statements about a MicroPythonOS App idea into a stable
 
 This skill performs analysis and handoff only; it does not write code, download drivers, package, install apps, flash firmware, or upload to upystore.
 
-## Unified Project Log
+## User-Visible Language
+
+Follow the language continuity rules of `mpos-dev`: if the current workflow starts in Chinese, analysis, questions, and summaries continue in Chinese; if it starts in English, continue in English. Code, commands, paths, API names, and JSON field names remain in English.
+
+## Unified Project Logging
 
 After completing the analysis and producing `analysis_result.json`, it must be recorded in the project state directory:
 
@@ -31,9 +35,9 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --event "Analyzed requirements and produced analysis_result.json"
 ```
 
-If `fullname` is only a suggested value, still create `tmp/mpos-plan-app/<fullname>/plan_state.json` using that suggestion, so it can be tracked during subsequent confirmation or renaming.
+If `fullname` is only a suggested value, still create `tmp/mpos-plan-app/<fullname>/plan_state.json` with that suggested value to allow tracking during subsequent confirmation or renaming.
 
-## Required Context
+## Required Reading Context
 
 First load `mpos-dev`. Read as needed during analysis:
 
@@ -41,45 +45,46 @@ First load `mpos-dev`. Read as needed during analysis:
 - System manager, persistence, networking, audio, camera, sensors, background tasks: `mpos-dev/reference/docs-frameworks.md`
 - MPOS API precise index: `mpos-dev/reference/mpos_api_summary.json`
 - LVGL API precise index: `mpos-dev/reference/lvgl_api_summary.json`
-- Target device, OS installation, desktop emulation, Web runtime: `mpos-dev/reference/docs-deploy-targets.md`
-- Browser emulation details: `mpos-dev/reference/docs-web-port.md`
+- Target devices, OS installation, desktop simulation, web execution: `mpos-dev/reference/docs-deploy-targets.md`
+- Browser simulation details: `mpos-dev/reference/docs-web-port.md`
 - MPK, AppStore, upystore: `mpos-dev/reference/docs-packaging.md`
 
-API decisions should prioritize the JSON files. LVGL `type_aliases[]` only explains signature types; they are not runtime APIs that can be generated.
+API decisions should prioritize the JSON files. LVGL `type_aliases[]` only explain signature types; they are not runtime APIs that can be generated.
+`mpos_api_summary.json` and `lvgl_api_summary.json` must be fully read and used for decisions; they cannot be omitted because the requirement is simple, the UI is simple, or the task is only a fix.
 
-## Fixed Resource Entry Points
+## Fixed Resource Links
 
-Every user-visible output must display these entry points; the JSON `resource_links[]` must also include them:
+Every user-visible output must display these links; the JSON `resource_links[]` must also include them:
 
 - Official documentation: `https://docs.micropythonos.com/`
 - UpyStore: `https://upystore.io/`
 - Install MicroPythonOS: `https://install.micropythonos.com/`
-- Browser emulation: `https://web.micropythonos.com/`
+- Browser simulation: `https://web.micropythonos.com/`
 
-These links are fixed entry points, not blocking prerequisites. Only ask "Is MicroPythonOS already installed?" when the user wants to run on real hardware, the device status is unknown, or they explicitly state the OS is not installed; recommend the installer if not installed. `web.micropythonos.com` can be used for quick browser emulation/smoke testing, but cannot replace Linux SDL desktop emulation or real hardware verification.
+These links are fixed entry points, not blocking prerequisites. Only ask "Is MicroPythonOS already installed?" when the user wants to run on real hardware, the device status is unknown, or they explicitly haven't installed the OS; if not installed, recommend the installer. `web.micropythonos.com` can be used for quick browser simulation/smoke testing, but cannot replace Linux SDL desktop simulation or real hardware verification.
 
 ## Workflow
 
-1. Read the user's requirements and any existing context. Preserve the app name, features, target device, hardware, and publishing intent explicitly specified by the user.
-2. Generate a default app identity. If `fullname` is missing, suggest `com.micropythonos.<slug>` based on the feature name; if `name`, `category`, or `version` is missing, provide reasonable defaults without blocking.
+1. Read the user's requirements and existing context, preserving the app name, features, target device, hardware, and publishing intent explicitly specified by the user.
+2. Generate a default app identity. When `fullname` is missing, suggest `com.micropythonos.<slug>` based on the feature name; when `name`, `category`, `version`, or `publisher` is missing, provide reasonable defaults without blocking. `publisher` defaults to deriving from the organization prefix of `fullname`, e.g., `com.example.calc` -> `com.example`.
 3. Split feature boundaries: MVP, future features, non-goals, risk points.
-4. Determine the app structure: which Activities are needed, whether a Service is required, and whether `boot_completed`, Intents, persistence, or background tasks are needed.
-5. Determine if built-in APIs are sufficient: prioritize using MPOS managers/frameworks and LVGL MicroPython APIs; only flag whether external drivers are needed — do not search for or generate driver implementations at this stage.
-6. Produce a test plan: syntax, manifest, standard unittest, GraphicalTestCase, desktop emulation, Web smoke, device hardware verification.
-7. Produce a deployment/runtime plan: desktop first; Web for preview; confirm OS installation before real device; separate app installation from firmware flashing.
+4. Determine the app structure: which Activities are needed, whether a Service is needed, whether `boot_completed`, Intent, persistence, or background tasks are required.
+5. Determine if built-in APIs are sufficient: prioritize using MPOS managers/frameworks and LVGL MicroPython APIs; only mark whether external drivers are needed, do not search for or generate driver implementations at this stage.
+6. Produce a test plan: syntax, manifest, API cross-validation, app-only change checks, regular unittest, GraphicalTestCase, Linux SDL desktop simulation, optional Web smoke test, device hardware verification.
+7. Produce a deployment/runtime plan: desktop first; Web for preview; before real hardware, confirm the device, serial port, and whether MicroPythonOS is installed; separate app installation from firmware flashing.
 8. Only ask blocking questions. The analysis phase can proceed with default values; only block when code generation is imminent and essential identity, hardware, or target constraints are missing.
 9. Output a Markdown summary and mandatory JSON. The JSON should match `templates/analysis_result.json` and be validatable with `scripts/validate_analysis_json.py`.
 
 ## Output Requirements
 
-User-visible output in this order:
+The user-visible section must follow this order:
 
 1. `MicroPythonOS Entry Points`: List the four fixed links.
 2. `Analysis Summary`: One sentence describing the app goal and default identity.
 3. `Features and Boundaries`: MVP, future, non-goals.
 4. `Implementation Plan`: Activity/Service, framework/LVGL/API, dependency assessment.
-5. `Testing and Runtime`: Test plan, desktop/Web/device paths.
-6. `Items to Confirm`: Only list truly blocking questions; write "No blocking issues" if none.
+5. `Testing and Running`: Test plan, desktop/web/device paths.
+6. `Items to Confirm`: Only list truly blocking questions; if none, write "No blocking issues."
 7. `JSON`: A fenced `json` code block containing the complete analysis object.
 
 ## JSON Contract
@@ -89,16 +94,17 @@ Use `templates/analysis_result.json` as the field template. Key requirements:
 - `schema_version` is fixed to `"mpos-analyze-v1"`.
 - `phase` is fixed to `"analyze"`.
 - `result` uses `"success"`, `"partial"`, or `"failed"`.
-- `resource_links[]` must contain the four fixed URLs.
-- `app.fullname` can be a suggested value; still provide a usable default when unknown, do not leave it empty due to lack of user confirmation.
+- `resource_links[]` must include the four fixed URLs.
+- `app.fullname` can be a suggested value; if unknown, still provide a usable default, do not leave it empty due to lack of user confirmation.
+- `app.publisher` and `manifest_draft.publisher` must be non-empty strings; default to deriving from the organization prefix of `fullname`.
 - `manifest_draft.activities[]` and `services[]` use full objects: `classname`, `entrypoint`, `intent_filters`.
 - `entrypoint` must include `.py`, recommended to use `assets/main.py` or `assets/service.py`.
-- `app_structure.manifest` for new apps defaults to root directory `MANIFEST.JSON`.
-- `app_structure.icon` for new apps defaults to root directory `icon_64x64.png`.
-- Legacy `META-INF/MANIFEST.JSON` and `res/mipmap-mdpi/icon_64x64.png` are only used as compatibility paths when analyzing an existing legacy app.
-- `dependency_plan.builtin_api_sufficient` and `external_driver_required` are core judgments at this stage.
+- `app_structure.manifest` for new apps defaults to the root directory `MANIFEST.JSON`.
+- `app_structure.icon` for new apps defaults to the root directory `icon_64x64.png`.
+- Legacy `META-INF/MANIFEST.JSON` and `res/mipmap-mdpi/icon_64x64.png` are only used as compatibility paths when analyzing existing legacy apps.
+- `dependency_plan.builtin_api_sufficient` and `external_driver_required` are core decisions at this stage.
 - `blocking_questions[]` only contains questions that block downstream.
-- `handoff.next_skill` recommended values: `mpos-gen-app`, `mpos-prepare-deps`, `mpos-test-app`, `mpos-package-app`, `mpos-deploy-app`, `mpos-publish-app`, or `mpos-plan-app`.
+- `handoff.next_skill` recommended values are `mpos-gen-app`, `mpos-prepare-deps`, `mpos-test-app`, `mpos-package-app`, `mpos-deploy-app`, `mpos-publish-app`, or `mpos-plan-app`.
 
 Validation command:
 
@@ -110,17 +116,17 @@ python3 /home/leeqingshui/MicroPython_Skills/mpos-analyze-app/scripts/validate_a
 ## Downstream Routing
 
 - Built-in APIs sufficient, requirements clear: `handoff.next_skill = "mpos-gen-app"`.
-- External Python driver, component documentation, or dependency organization needed: `mpos-prepare-deps`.
+- External Python drivers, component datasheets, dependency organization needed: `mpos-prepare-deps`.
 - User only wants to verify an existing app: `mpos-test-app`.
-- User mentions running, emulation, real device installation, or flashing: `mpos-deploy-app`, and clarify that app installation is not firmware flashing.
-- User mentions MPK, AppStore, upystore, or publishing: `mpos-package-app` or `mpos-publish-app`.
-- Multi-stage orchestration from requirements to publishing needed: hand back to `mpos-plan-app`.
+- User mentions running, simulation, real device installation, flashing: `mpos-deploy-app`, and clarify that app installation is not firmware flashing.
+- User mentions MPK, AppStore, upystore, publishing: `mpos-package-app` or `mpos-publish-app`.
+- Full multi-stage orchestration from requirements to publishing needed: hand back to `mpos-plan-app`.
 
 ## Boundaries
 
 - Do not generate or modify `internal_filesystem/apps/<fullname>/`.
 - Do not invoke driver downloads, datasheet extraction, or niche driver generation.
-- Do not treat string-type `activities` from upystore seed data as the new manifest format.
-- Do not require the user to read docs or install the OS first to complete the analysis.
+- Do not treat string-type `activities` in upystore seed data as the new manifest format.
+- Do not require the user to read docs or install the OS before completing the analysis.
 - Do not describe `web.micropythonos.com` as an installer or publishing site.
 - Do not describe `install.micropythonos.com` as an app installation tool; it is the OS/firmware installation entry point.

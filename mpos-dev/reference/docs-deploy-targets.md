@@ -4,7 +4,7 @@ This file is generated based on a re-read of `docs.micropythonos.com`, `https://
 
 ## When to Read
 
-Read this file when handling desktop emulation, browser/WebAssembly preview, installing apps to devices, firmware flashing, or target selection. For internal OS build details, read `docs-os-development.md`.
+Read this file when handling desktop emulation, browser/WebAssembly preview, installing apps to devices, firmware flashing, or target selection. For OS build internals, read `docs-os-development.md`.
 
 ## Source Coverage
 
@@ -47,7 +47,7 @@ Use `killall` to clean up residual simulator processes, not `pkill -f`:
 killall lvgl_micropy_unix run_desktop.sh
 ```
 
-Write controller/debug scripts under the repository's `tmp/` directory.
+Write controller/debug scripts under the repository `tmp/` directory.
 
 ## Browser/WebAssembly Preview
 
@@ -72,6 +72,8 @@ Installing an app is not the same as flashing firmware. For normal Python app it
 ./scripts/install.sh com.micropythonos.appname
 ```
 
+Before starting a real-device app installation, confirm that the device has MicroPythonOS installed, the target board model, and the serial port. If the device does not have the OS installed or its status is unknown, first use `https://install.micropythonos.com/` to install/confirm the firmware.
+
 After installation:
 
 ```python
@@ -79,13 +81,23 @@ from mpos import AppManager
 AppManager.refresh_apps()
 ```
 
-If necessary, you can also reboot/reset the device.
+A reboot/reset of the device may also be necessary.
 
 To deploy a single file:
 
 ```bash
 python3 lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py cp local.py :/remote.py
 ```
+
+If `mpos_controller.py` / AIOREPL probe fails, but the serial filesystem is accessible, direct app directory copying can be used as a `device-copy` record:
+
+```bash
+python3 lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py connect /dev/ttyACM0 fs mkdir :/apps
+python3 lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py connect /dev/ttyACM0 fs cp -r internal_filesystem/apps/<fullname> :/apps/
+python3 lvgl_micropython/lib/micropython/tools/mpremote/mpremote.py connect /dev/ttyACM0 fs ls :/apps/<fullname>
+```
+
+This only proves the file has been copied to the device; for release verification, the MPK install path that calls `AppManager.install_mpk()` should still be preferred.
 
 Then use `machine.reset()` and wait for startup.
 
@@ -101,10 +113,10 @@ Current web installer facts:
 
 - `install.micropythonos.com` provides a WebSerial installer.
 - Requires USB and a WebSerial-compatible browser, such as Chrome or Edge.
-- The page uses `esp-web-install-button` and offers ESP32 and ESP32-S3 targets.
-- Currently lists 12 ESP32/ESP32-S3 manifests for versions `0.10.x`, `0.11.x`, `0.12.x`, `0.13.x`, `0.14.x`, and `0.15.x`.
+- The page uses `esp-web-install-button`, offering ESP32 and ESP32-S3 targets.
+- Currently lists 12 ESP32/ESP32-S3 manifests for `0.10.x`, `0.11.x`, `0.12.x`, `0.13.x`, `0.14.x`, `0.15.x`.
 - The latest `0.15.x` manifest corresponds to `0.15.1`, with firmware paths `/firmware_images/esp32/MicroPythonOS_esp32_0.15.1.bin` and `/firmware_images/esp32s3/MicroPythonOS_esp32s3_0.15.1.bin`.
-- In the installer manifests that have been read, `new_install_prompt_erase` is always true.
+- In the installer manifests read, `new_install_prompt_erase` is `true` for all.
 
 Local flashing path:
 
@@ -117,17 +129,17 @@ Do not perform destructive erase/flash actions without explicit user confirmatio
 
 ## QEMU ESP32 Emulation
 
-The docs describe an ESP32 QEMU path for deeper OS testing, capable of simulating WiFi, storage, ULP/deepsleep, GPIO/touch buttons, and ST7789V display. Treat this as OS-development infrastructure, not the default app development path.
+The docs describe an ESP32 QEMU path for deeper OS testing, capable of emulating WiFi, storage, ULP/deepsleep, GPIO/touch buttons, and ST7789V display. Treat this as OS-development infrastructure, not the default app development path.
 
-## Supported Hardware Notes
+## Supported Hardware Description
 
-The docs list multiple ESP32/ESP32-S3 devices as well as browser/desktop targets. When an app depends on sensor, button, camera, display, LED, or radio hardware, enter the dependency preparation phase; if the target device is unknown, ask the user.
+The docs list multiple ESP32/ESP32-S3 devices as well as browser/desktop targets. When an app depends on sensor, button, camera, display, LED, or radio hardware, enter the dependency preparation phase; ask the user if the target device is unknown.
 
 ## Security Rules from AGENTS
 
-- When equivalent entry points exist, prefer using `make build-mpos-unix`, `make syntax-tests`, `make unittest-tests`, `make tests`, `make lint`, and `make lint-fix`.
-- `make lint` must pass after every code change.
+- When equivalent entry points exist, prefer `make build-mpos-unix`, `make syntax-tests`, `make unittest-tests`, `make tests`, `make lint`, `make lint-fix`.
+- Every code modification must pass `make lint`.
 - Use `timeout -s 9 30 ./scripts/run_desktop.sh`.
 - Use `killall`, not `pkill -f`.
-- Place temporary files in the project's `tmp/` directory.
+- Place temporary files in the project `tmp/` directory.
 - Do not confuse app installation, MPK installation, and firmware flashing.

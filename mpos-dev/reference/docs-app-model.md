@@ -1,6 +1,6 @@
 # MicroPythonOS App Model Reference
 
-This file is generated based on the `docs.micropythonos.com` sitemap/search index re-read on 2026-07-14, and corrected with `/home/leeqingshui/MicroPythonOS/AGENTS.md` and current local repository facts.
+This file is generated based on the `docs.micropythonos.com` sitemap/search index re-read on 2026-07-14, and corrected with reference to `/home/leeqingshui/MicroPythonOS/AGENTS.md` and current local repository facts.
 
 ## When to Read
 
@@ -40,15 +40,16 @@ internal_filesystem/apps/<fullname>/
 
 ## App Identity and Manifest
 
-Each App is located at `internal_filesystem/apps/<fullname>/`, and `<fullname>` must match the `fullname` field in `MANIFEST.JSON`. For compatibility with legacy Apps, `META-INF/MANIFEST.JSON` can be read, but newly generated Apps should not use the old path.
+Each App is located at `internal_filesystem/apps/<fullname>/`, and `<fullname>` must match the `fullname` field in `MANIFEST.JSON`. For compatibility with old Apps, `META-INF/MANIFEST.JSON` can be read, but newly generated Apps should not use the old path.
 
 Manifest fields required by local tests:
 
 - `fullname`: Must match the directory name.
 - `name`: Display name.
-- `version`: Standard dotted integer version, e.g., `1.0.0`. Do not use `01.0` or `1.0-beta`.
+- `publisher`: Publisher/organisation identifier, must be a non-empty string; can be derived from the `fullname` prefix by default, e.g. `com.example.app` -> `com.example`.
+- `version`: Standard dotted integer version, e.g. `1.0.0`, do not write `01.0` or `1.0-beta`.
 - `activities`: Optional list, but each entry must have an existing `.py` entrypoint, and the source code must contain the corresponding classname.
-- `services`: Optional list, with the same entrypoint/classname validation rules.
+- `services`: Optional list, entrypoint/classname validation rules are the same.
 
 Activity/Service metadata uses full objects:
 
@@ -94,15 +95,15 @@ class ExampleActivity(Activity):
         self.setContentView(screen)
 ```
 
-`self.appFullName` is set by `ActivityNavigator`. Used for App-level preferences, e.g., `SharedPreferences(self.appFullName)`.
+`self.appFullName` is set by `ActivityNavigator`. Used for App-level preferences, e.g. `SharedPreferences(self.appFullName)`.
 
 ## Service Model
 
-A Service is a background component without UI. Suitable for startup tasks and long-running tasks, such as automatic WiFi connection, web server startup, async REPL tasks, periodic checks, notifications, etc.
+A Service is a background component without UI. Suitable for startup tasks and long-running tasks, such as WiFi auto-connect, web server startup, async REPL tasks, periodic checks, notifications, etc.
 
 Lifecycle:
 
-- `onCreate()`: Initialize resources.
+- `onCreate()`: Initialise resources.
 - `onStart(intent=None)`: Execute or schedule work.
 - `onDestroy()`: Clean up resources.
 
@@ -130,17 +131,17 @@ New code should import from the main `mpos` module first:
 from mpos import Activity, Intent
 ```
 
-Existing local code may import from submodules; do not unnecessarily modify unrelated files just to unify imports.
+Existing local code may import from submodules; do not modify unrelated files just to unify imports.
 
 ## Built-in Apps and AppStore Context
 
-Built-in Apps are located at `/builtin/apps/` on the device, including launcher, WiFi, AppStore, OSUpdate, Settings, File Manager. User-installed Apps are at `/apps/`.
+Built-in Apps are located at `/builtin/apps/` on the device, including launcher, WiFi, AppStore, OSUpdate, Settings, File Manager. User-installed Apps are located at `/apps/`.
 
-The AppStore installs `.mpk` packages to `/apps/` and supports multiple backends. Publishing and MPK validation are separate steps; see `docs-packaging.md`.
+The AppStore installs `.mpk` packages to `/apps/` and supports multiple backends. Publishing and MPK validation are separate steps, see `docs-packaging.md`.
 
 ## Native Modules
 
-Most Apps should be written in MicroPython. Use C/C++ native modules only when pure MicroPython is insufficient, such as for high-frequency game loops, signal processing, calling C libraries, etc.
+Most Apps should be written in MicroPython. Use C/C++ native modules only when pure MicroPython is insufficient, e.g. high-frequency game loops, signal processing, calling C libraries, etc.
 
 Native modules increase build complexity and are architecture-dependent. If functionality requires a C module, first enter the dependency preparation and deployment/build phase before committing to device support.
 

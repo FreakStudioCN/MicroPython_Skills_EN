@@ -7,13 +7,17 @@ description: Prepare application-layer dependencies for MicroPythonOS Apps after
 
 ## Role
 
-Transform `mpos-analyze-app`'s `dependency_plan.items` into a dependency handoff that can be passed to `mpos-gen-app`. Only handle dependencies available at the application layer: pure Python files, MicroPython packages, source code that can be vendored with the App, and runtime dependencies already available as MPY.
+Transform `mpos-analyze-app`'s `dependency_plan.items` into a dependency handoff that can be passed to `mpos-gen-app`. Only handle dependencies available at the application layer: pure Python files, MicroPython packages, source code that can be vendored with the App, and MPY runtime dependencies that are already available.
 
 This skill can actually download files to the App directory, but only downloads runtime-required pure Python/MPY dependency files. Search results, READMEs, examples, package metadata, and candidate repository evidence are written to the cache directory, not to the skill directory.
 
-## Unified Project Logging
+## User-Visible Language
 
-After completing dependency preparation and producing `dependency_handoff.json`, registration in the project state directory is mandatory:
+Follow `mpos-dev`'s language continuity rules: if the current workflow started in Chinese, continue dependency summaries, risks, confirmation questions, and handoff notes in Chinese; if it started in English, continue in English. Code, commands, paths, API names, and JSON field names remain in English.
+
+## Unified Project Log
+
+After completing dependency preparation and producing `dependency_handoff.json`, it must be recorded in the project state directory:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
@@ -28,32 +32,34 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --event "Prepared runtime dependencies and adapter requirements"
 ```
 
-Cache remains in `tmp/mpos-deps-cache/<fullname>/`; project state only records the handoff, cache path, and summary, without copying cache contents.
+Cache still goes to `tmp/mpos-deps-cache/<fullname>/`; the project state only records the handoff, cache path, and summary, without copying cache contents.
 
-## Required Reading Context
+## Required Context
 
-First load `mpos-dev` and read:
+First load `mpos-dev`, and read:
 
 - App structure and entrypoint rules: `mpos-dev/reference/docs-app-model.md`
 - System manager, TaskManager, DownloadManager, WebServer, Service: `mpos-dev/reference/docs-frameworks.md`
 - Packaging validation and manifest constraints: `mpos-dev/reference/docs-packaging.md`
 - MPOS API precise index: `mpos-dev/reference/mpos_api_summary.json`
+- LVGL API precise index: `mpos-dev/reference/lvgl_api_summary.json`
 
 If input comes from `mpos-analyze-app`, read its JSON. If no JSON is available, first derive equivalent `app.fullname`, target functionality, hardware/protocol, and dependencies from user requirements.
+`mpos_api_summary.json` and `lvgl_api_summary.json` must be read completely to confirm whether built-in APIs already cover the requirements; do not skip this step just because the task appears to be "just finding dependencies."
 
-The `upy-pkg-guide`'s upypi / awesome-micropython search flow can be reused, but async search strategies must be appended on top of it; do not search only by synchronous drivers.
+The upypi / awesome-micropython search flow from `upy-pkg-guide` can be reused, but an async search strategy must be added on top of it; do not search only for synchronous drivers.
 
 ## Boundaries
 
-- Do not discuss "whether firmware must be recompiled". This skill series only handles application-layer development.
+- Do not discuss "whether firmware must be recompiled." This skill series only handles application-layer development.
 - Do not modify `lvgl_micropython`, board ports, CMake, manifest board configurations, or native bindings.
-- Do not accept dependencies requiring C extensions, frozen modules, native modules, private binary blobs, or firmware integration; mark them in `rejected[]` and suggest pure Python/MPY alternatives.
+- Do not accept dependencies that require C extensions, frozen modules, native modules, private binary blobs, or firmware integration; mark them in `rejected[]` and suggest a pure Python/MPY alternative.
 - Do not generate business App code; only write adapter suggestions for non-blocking wrappers of synchronous libraries, leaving implementation to `mpos-gen-app`.
 - Do not write cache into `MicroPython_Skills/` or `.claude/skills/`.
 
 ## Driver Placement Strategy
 
-MicroPythonOS's current runner inserts the entrypoint's directory into `sys.path`. The current App entrypoint is typically `assets/main.py`, so `assets/` is the default import root.
+The MicroPythonOS runtime currently inserts the directory containing the entrypoint into `sys.path`. The current App entrypoint is typically `assets/main.py`, so `assets/` is the default import root.
 
 Prefer the following paths; `target_path` is always relative to the App root:
 
@@ -63,9 +69,9 @@ Prefer the following paths; `target_path` is always relative to the App root:
 | Multi-file package | `assets/<package>/__init__.py` etc. | `import <package>` or `from <package> import ...` |
 | App's own adapter layer | `assets/<name>_adapter.py` | Generated by `mpos-gen-app` |
 | README/example/metadata for reference only | `tmp/mpos-deps-cache/<fullname>/<dependency>/` | Not included in App runtime |
-| Third-party source requiring isolation | `assets/vendor/<dependency>/...` | Only used when marked with `requires_vendor_path_injection=true` in handoff |
+| Third-party source that must be isolated | `assets/vendor/<dependency>/...` | Only used after marking `requires_vendor_path_injection=true` in handoff |
 
-Do not use `assets/vendor/` by default. Only use it when the dependency name conflicts with App files or when the upstream directory structure must be preserved; once used, declare in JSON:
+Do not use `assets/vendor/` by default. Only use it when the dependency name conflicts with App files, or when the upstream directory structure must be preserved; once used, declare in JSON:
 
 - `requires_vendor_path_injection: true`
 - `vendor_sys_path: "assets/vendor"`
@@ -77,7 +83,7 @@ If the App directory does not yet exist, do not generate manifests or business c
 tmp/mpos-deps-cache/<fullname>/staged/assets/
 ```
 
-Meanwhile, keep the final target `target_path: "assets/..."` in the handoff, letting `mpos-gen-app` migrate or copy them after creating the App.
+Meanwhile, keep the final target `target_path: "assets/..."` in the handoff, so `mpos-gen-app` can migrate or copy them after creating the App.
 
 When downloading accepted runtime files, prefer using the script to avoid path drift:
 
@@ -106,7 +112,7 @@ External search follows this source order:
 5. GitHub/GitLab/Codeberg repositories
 6. Single-file pure Python driver
 
-Each dependency must use at least two sets of searches: base terms and async terms:
+For each dependency, use at least two sets of searches: basic terms and async terms:
 
 ```text
 <name> micropython
@@ -129,7 +135,7 @@ queue, lock, event, callback, reconnect, timeout, websocket,
 web server, mqtt, ble, aioble, espnow, aioespnow
 ```
 
-Before starting external search, generate and cache a query plan using the script:
+Before starting external search, generate and cache a search plan using the script:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
@@ -141,11 +147,11 @@ PYTHONDONTWRITEBYTECODE=1 /home/leeqingshui/mp_env/bin/python \
   --write-cache
 ```
 
-When executing real searches, the `base_queries` and `async_queries` from the script output must be covered. If base terms find a synchronous library, continue executing async/aio/uasyncio/non-blocking queries; only accept a synchronous library and mark the adapter when async candidates are unavailable, incompatible, or higher risk.
+When performing actual searches, the `base_queries` and `async_queries` from the script output must be covered. If basic terms find a synchronous library, continue executing async/aio/uasyncio/non-blocking queries; only accept a synchronous library with an adapter when async candidates are unavailable, incompatible, or higher risk.
 
 ## Cache Rules
 
-The cache directory is fixed to:
+The cache directory is fixed as:
 
 ```text
 tmp/mpos-deps-cache/<fullname>/
@@ -156,22 +162,22 @@ Cache may contain:
 - Search queries, result lists, timestamps, source URLs
 - upypi package JSON, mip metadata, awesome-micropython hits
 - GitHub/GitLab repo metadata, READMEs, examples, licenses
-- Candidate file manifests and compatibility notes before download
+- Candidate file lists and compatibility notes before download
 - `search_plan.json` generated by `build_search_plan.py` and `search_queries.json` for each dependency
-- `downloads/*.json` generated by `stage_runtime_file.py`, recording source URL, target path, sha256, and whether actually written to App or staging
+- `downloads/*.json` generated by `stage_runtime_file.py`, recording source URL, target path, sha256, actual write location (App or staging)
 
-Cache must not contain accounts, tokens, private network credentials, or user device information. Cache files should not be packaged as App runtime files unless the user explicitly requests including license or attribution in the App.
+Cache must not contain accounts, tokens, private network credentials, or user device information. Cache files should not be packaged as App runtime files unless the user explicitly requests that licenses or attributions be included in the App.
 
 ## Compatibility Screening
 
-Check before accepting a dependency:
+Before accepting a dependency, check:
 
-- Is it pure Python/MPY that can be placed in the App directory?
+- Is it pure Python/MPY and can it be placed in the App directory?
 - Does it support MicroPython, without depending on CPython-only modules such as `requests`, `threading`, `pathlib`, runtime `typing`, `dataclasses`?
-- Does it use async patterns: `import asyncio` / `uasyncio`, `async def`, `await`, `create_task`, `sleep_ms`, `wait_for`, stream, queue, lock?
+- Does it use async mode: `import asyncio` / `uasyncio`, `async def`, `await`, `create_task`, `sleep_ms`, `wait_for`, stream, queue, lock?
 - Does it have blocking patterns: `while True` with `time.sleep`, blocking sockets, synchronous `urequests`, long busy loops?
 - Does it have explicit hardware bus requirements: I2C/SPI/UART/GPIO/ADC/PWM/BLE/WiFi, and can these be provided by MPOS/device APIs?
-- Does the license allow vendoring; if unclear, mark in `risks[]`.
+- Does the license allow vendoring? If unclear, mark in `risks[]`.
 
 Synchronous libraries are allowed as candidates, but if accepted, must satisfy:
 
@@ -180,7 +186,7 @@ Synchronous libraries are allowed as candidates, but if accepted, must satisfy:
 "sync_needs_adapter": true
 ```
 
-And `adapter_requirements[]` must describe how `mpos-gen-app` should wrap it, for example:
+And in `adapter_requirements[]`, describe what `mpos-gen-app` needs to wrap, for example:
 
 - Use `TaskManager.create_task` to schedule polling.
 - Use `TaskManager.sleep_ms` or `asyncio.sleep_ms` instead of `time.sleep`.
@@ -189,11 +195,11 @@ And `adapter_requirements[]` must describe how `mpos-gen-app` should wrap it, fo
 
 ## Workflow
 
-1. Read `mpos-analyze-app` JSON or equivalent requirements, determine `app.fullname`, App directory, target hardware/protocol, and `dependency_plan.items`.
+1. Read `mpos-analyze-app` JSON or equivalent requirements, determine `app.fullname`, App directory, target hardware/protocol, `dependency_plan.items`.
 2. Read `mpos-dev`, first check if MPOS built-in APIs cover the requirements.
-3. For each external requirement, first run `build_search_plan.py --write-cache` to generate base and async/aio/uasyncio/non-blocking queries.
-4. Execute real searches and write search evidence to `tmp/mpos-deps-cache/<fullname>/`; each external dependency in the handoff must record `search_queries[]` and `cache_records[]`.
-5. Check candidate dependencies for application layer compatibility, MicroPython compatibility, async support, blocking behavior, license, file size, and import paths.
+3. For each external requirement, first run `build_search_plan.py --write-cache` to generate basic terms and async/aio/uasyncio/non-blocking queries.
+4. Perform actual searches, and write search evidence to `tmp/mpos-deps-cache/<fullname>/`; each external dependency in the handoff must record `search_queries[]` and `cache_records[]`.
+5. For candidate dependencies, perform checks on application layer, MicroPython compatibility, async support, blocking patterns, license, file size, and import path.
 6. Use `stage_runtime_file.py --mode auto` to download only accepted runtime files to the App's `assets/` path; if the App does not exist, download to the staging cache.
 7. For synchronous dependencies, clearly write `sync_needs_adapter=true` and `adapter_requirements[]`.
 8. Output a Markdown summary and JSON handoff. The JSON should match `templates/dependency_handoff.json` and be checkable with the validation script.
@@ -202,10 +208,10 @@ And `adapter_requirements[]` must describe how `mpos-gen-app` should wrap it, fo
 
 User-visible output follows this order:
 
-1. `Dependency Locations`: Explain that runtime files are ultimately placed under `internal_filesystem/apps/<fullname>/assets/`, with cache in `tmp/mpos-deps-cache/<fullname>/`.
+1. `Dependency Location`: Explain that runtime files are ultimately placed under `internal_filesystem/apps/<fullname>/assets/`, and cache is under `tmp/mpos-deps-cache/<fullname>/`.
 2. `Accepted/Rejected Dependencies`: List each dependency's source, target path, async status, and risks.
-3. `Synchronous Adapters`: List all dependencies with `sync_needs_adapter=true` and the wrapping requirements passed to `mpos-gen-app`.
-4. `Items Requiring Confirmation`: Only list truly blocking issues; if none, write "No blocking issues".
+3. `Synchronous Adapters`: List all dependencies with `sync_needs_adapter=true` and the wrapping requirements for `mpos-gen-app`.
+4. `Items Requiring Confirmation`: Only list truly blocking issues; if none, write "No blocking issues."
 5. `JSON`: A fenced `json` code block containing the complete dependency handoff.
 
 ## JSON Contract
@@ -221,7 +227,7 @@ Use `templates/dependency_handoff.json` as the field template. Key requirements:
 - Accepted dependencies must have `name`, `source`, `url`, `target_path`, `install_action`, `imports`, `app_layer_ok`, `async_compatible`, `sync_needs_adapter`.
 - Accepted dependencies' `target_path` must start with `assets/`.
 - Externally accepted dependencies must have `search_queries[]`, including async/aio/uasyncio/non-blocking queries.
-- When `cache.enabled=true`, externally accepted dependencies must have `cache_records[]`, with paths under `tmp/mpos-deps-cache/<fullname>/`.
+- When `cache.enabled=true`, externally accepted dependencies must have `cache_records[]`, and paths must be under `tmp/mpos-deps-cache/<fullname>/`.
 - `staged_path` must be under `tmp/mpos-deps-cache/<fullname>/staged/assets/`.
 - Accepted dependencies with `async_compatible=false` must set `sync_needs_adapter=true`.
 - Rejected dependencies are written to `rejected[]`, must include `name` and `reason`.
@@ -236,9 +242,9 @@ python3 /home/leeqingshui/MicroPython_Skills/mpos-prepare-deps/scripts/validate_
 
 ## Downstream Handoff
 
-The key information passed to `mpos-gen-app` is not "which library was found", but "how to safely import and how to avoid blocking MPOS/LVGL async scheduling":
+The key information to pass to `mpos-gen-app` is not "which library was found," but "how to safely import and how not to block the MPOS/LVGL async scheduler":
 
-- Final runtime file manifest and `target_path`.
+- Final runtime file list and `target_path`.
 - Accurate `imports[]` syntax.
 - `async_compatible` / `sync_needs_adapter`.
 - `adapter_requirements[]`.

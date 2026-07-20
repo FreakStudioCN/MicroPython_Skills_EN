@@ -21,7 +21,7 @@ It is not:
 
 - A firmware installer.
 - An app store publishing entry point.
-- A replacement for the Linux SDL emulation when debugging local source changes.
+- A replacement for Linux SDL emulation when debugging local source changes.
 - A substitute for physical device verification when hardware behavior is involved.
 
 ## Live Page Facts
@@ -35,7 +35,7 @@ Page behavior:
 - Uses a `320x240` LVGL canvas.
 - Starts MicroPythonOS via `["-X", "heapsize=16M", "-m", "main"]`.
 - Provides a toggleable Log panel.
-- Provides a Reset storage button.
+- Provides Reset storage.
 - Simulates NeoPixels, joystick, MENU, START, X/Y/A/B.
 - Uses `Module.__webio` to simulate badge peripherals.
 - Mounts `/data` and `/apps` using IndexedDB/IDBFS.
@@ -45,7 +45,7 @@ Page behavior:
 
 The browser stores writable `/data` and `/apps` in IndexedDB. This means preferences and installed apps persist across page refreshes.
 
-To force a clean state:
+To force clear state:
 
 - Use the Reset storage button on the page if available.
 - Or clear site data/IndexedDB in the browser developer tools.
@@ -67,9 +67,11 @@ Output is located in `web/`, including `micropython.html`, `micropython.js`, `mi
 
 Building requires the Emscripten SDK. If the environment is configured as per the docs, the build can automatically activate a nearby `emsdk` checkout.
 
+If the Web build/link reports low-level symbol errors like `machine_timer_type`, first classify them as Web port, MicroPythonOS, or toolchain issues. The resolution order is to confirm Emscripten/emsdk, submodules, and the current OS Web target state; do not write it off as a missing Python dependency of the target app, and do not modify OS/build source code during normal app generation/fix phases.
+
 ## Integration Notes
 
-The Web port is self-contained within the main MicroPythonOS repository. Submodule modifications required by the web target are stored in `scripts/web_port/` and applied automatically during the build. Do not leave persistent changes in nested `lvgl_micropython`, `micropython`, or `lvgl` directories unless the task explicitly requires modifying these projects.
+The Web port is self-contained within the main MicroPythonOS repository. Submodule modifications required by the web target are stored in `scripts/web_port/` and applied automatically during the build. Unless the task explicitly requires modifying these projects, do not leave persistent changes in nested `lvgl_micropython`, `micropython`, or `lvgl` directories.
 
 ## Testing Recommendations
 
@@ -77,14 +79,14 @@ Web port checks are suitable for:
 
 - Quick user previews.
 - Browser-specific input/storage regression testing.
-- Verifying WebAssembly boot and bundled app seeding.
+- Confirming WebAssembly boot and bundled app seeding.
 - Checking `/data` and `/apps` persistence behavior.
 
-Local automated app debugging should still use the Linux SDL desktop emulation and `mpos_controller.py`. Hardware-specific behavior should be verified with physical devices.
+Local automated app debugging should still use Linux SDL desktop emulation and `mpos_controller.py`. Hardware-specific behavior should be verified with physical devices.
 
 ## Local Rules from AGENTS
 
-- For desktop work, prefer `make build-mpos-unix`; use the web build only when targeting browser/WebAssembly.
+- For desktop work, prefer `make build-mpos-unix`; only use the web build when the target is browser/WebAssembly.
 - Place temporary scripts and debug artifacts in the repository `tmp/` directory.
 - Every code modification must pass `make lint`.
 - Do not modify `AGENTS.md` or `ruff.toml`.

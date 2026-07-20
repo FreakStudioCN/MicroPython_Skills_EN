@@ -27,7 +27,7 @@ def validate(path: Path) -> None:
     require(isinstance(data, dict), "top-level JSON must be an object")
     require(data.get("schema_version") == "mpos-test-app-v1", "schema_version must be mpos-test-app-v1")
     require(data.get("phase") == "test-app", "phase must be test-app")
-    require(data.get("result") in {"success", "partial", "failed"}, "result must be success, partial, or failed")
+    require(data.get("result") in {"success", "partial", "failed", "blocked"}, "result must be success, partial, failed, or blocked")
 
     app = data.get("app")
     require(isinstance(app, dict), "app must be an object")
@@ -57,10 +57,22 @@ def validate(path: Path) -> None:
     require(isinstance(artifacts, list), "artifacts must be a list")
     for index, artifact in enumerate(artifacts):
         require(isinstance(artifact, dict), f"artifacts[{index}] must be an object")
-        require(bool(artifact.get("kind")), f"artifacts[{index}].kind is required")
+        kind = artifact.get("kind")
+        require(bool(kind), f"artifacts[{index}].kind is required")
         path_value = artifact.get("path")
         require(isinstance(path_value, str) and path_value, f"artifacts[{index}].path is required")
         require("__pycache__" not in path_value and not path_value.endswith(".pyc"), "artifacts must not include Python cache files")
+        if kind == "screenshot":
+            require(artifact.get("format") == "png", f"artifacts[{index}] publish screenshot must be PNG")
+            require(artifact.get("publish_ready") is True, f"artifacts[{index}] publish screenshot must be publish_ready=true")
+
+    manual_commands = data.get("manual_preview_commands")
+    require(isinstance(manual_commands, dict), "manual_preview_commands must be an object")
+    for key in ("release_elf_desktop", "local_build_desktop", "web_port_optional"):
+        commands = manual_commands.get(key)
+        require(isinstance(commands, list) and commands, f"manual_preview_commands.{key} must be a non-empty list")
+        for index, command in enumerate(commands):
+            require(isinstance(command, str) and command, f"manual_preview_commands.{key}[{index}] must be a string")
 
     handoff = data.get("handoff")
     require(isinstance(handoff, dict), "handoff must be an object")

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import struct
 import json
 import os
 import re
@@ -15,6 +16,7 @@ import sys
 import tempfile
 import time
 import traceback
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -27,12 +29,41 @@ STATIC_GATES = {
     "cpython_syntax",
     "mpy_syntax",
     "mpy_imports",
+    "api_usage",
     "make_lint",
     "flake8",
     "pylint",
+    "app_only_changes",
 }
 PYLINT_STRONG_FAIL_BITS = 1 | 2 | 32
 MARKER = "__MPOS_TEST_JSON__"
+
+
+def is_repo_root(path: Path) -> bool:
+    return (path / "internal_filesystem" / "apps").is_dir() and (path / "scripts").is_dir()
+
+
+def default_repo() -> Path | None:
+    env_repo = os.environ.get("MPOS_REPO")
+    if env_repo:
+        return Path(env_repo)
+    cwd = Path.cwd()
+    if is_repo_root(cwd):
+        return cwd
+    return None
+
+
+def resolve_repo_arg(value: str | None) -> Path:
+    repo = Path(value).expanduser() if value else default_repo()
+    if repo is None:
+        raise SystemExit(
+            "ERROR: --repo is required when the current directory is not a MicroPythonOS repo "
+            "and MPOS_REPO is unset"
+        )
+    repo = repo.resolve()
+    if not is_repo_root(repo):
+        raise SystemExit(f"ERROR: not a MicroPythonOS repo root: {repo}")
+    return repo
 
 
 def utc_now() -> str:
@@ -48,6 +79,71 @@ def safe_fullname(value: str) -> str:
     if "/" in value or "\\" in value or ".." in value.split("."):
         raise ValueError("app fullname must not contain path separators or '..' components")
     return value
+
+
+def _png_chunk(kind: bytes, payload: bytes) -> bytes:
+    crc = zlib.crc32(kind)
+    crc = zlib.crc32(payload, crc)
+    return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", crc & 0xFFFFFFFF)
+
+
+def bmp_to_png_bytes(data: bytes) -> bytes:
+    if data[:2] != b"BM":
+        raise ValueError("screenshot is not a BMP image")
+    pixel_offset = struct.unpack_from("<I", data, 10)[0]
+    dib_size = struct.unpack_from("<I", data, 14)[0]
+    if dib_size < 40:
+        raise ValueError("unsupported BMP DIB header")
+    width = struct.unpack_from("<i", data, 18)[0]
+    height = struct.unpack_from("<i", data, 22)[0]
+    planes = struct.unpack_from("<H", data, 26)[0]
+    bpp = struct.unpack_from("<H", data, 28)[0]
+    compression = struct.unpack_from("<I", data, 30)[0]
+    if planes != 1 or compression != 0 or bpp not in {24, 32}:
+        raise ValueError("only uncompressed 24-bit or 32-bit BMP screenshots are supported")
+    if width <= 0 or height == 0:
+        raise ValueError("invalid BMP dimensions")
+
+    abs_height = abs(height)
+    top_down = height < 0
+    row_stride = ((width * bpp + 31) // 32) * 4
+    rows: list[bytes] = []
+    for out_y in range(abs_height):
+        src_y = out_y if top_down else abs_height - 1 - out_y
+        row_start = pixel_offset + src_y * row_stride
+        row = data[row_start:row_start + row_stride]
+        rgb = bytearray()
+        step = bpp // 8
+        for x in range(width):
+            px = row[x * step:x * step + step]
+            if len(px) < step:
+                raise ValueError("truncated BMP pixel data")
+            rgb.extend((px[2], px[1], px[0]))
+        rows.append(b"\x00" + bytes(rgb))
+
+    ihdr = struct.pack(">IIBBBBB", width, abs_height, 8, 2, 0, 0, 0)
+    compressed = zlib.compress(b"".join(rows), 9)
+    return b"\x89PNG\r\n\x1a\n" + _png_chunk(b"IHDR", ihdr) + _png_chunk(b"IDAT", compressed) + _png_chunk(b"IEND", b"")
+
+
+def manual_preview_commands(repo: Path, fullname: str) -> dict[str, list[str]]:
+    python = "/home/leeqingshui/mp_env/bin/python"
+    skill_root = "/home/leeqingshui/MicroPython_Skills/mpos-test-app"
+    return {
+        "release_elf_desktop": [
+            f"PYTHONDONTWRITEBYTECODE=1 {python} {skill_root}/scripts/prepare_desktop_binary.py --repo {repo} --run-app {fullname}",
+        ],
+        "local_build_desktop": [
+            f"cd {repo}",
+            "scripts/build_mpos.sh unix",
+            f"scripts/run_desktop.sh {fullname}",
+        ],
+        "web_port_optional": [
+            f"cd {repo}",
+            "scripts/build_mpos.sh web",
+            "scripts/run_web.sh",
+        ],
+    }
 
 
 def check_generation_result(path: Path | None, fullname: str) -> dict[str, Any]:
@@ -363,7 +459,7 @@ def _terminate_process(proc: subprocess.Popen[str]) -> None:
             pass
 
 
-def run_chrome_web_check(url: str, timeout_seconds: int) -> dict[str, Any]:
+def run_chrome_web_check(repo: Path, url: str, timeout_seconds: int) -> dict[str, Any]:
     check: dict[str, Any] = {
         "requested": True,
         "ok": False,
@@ -382,7 +478,9 @@ def run_chrome_web_check(url: str, timeout_seconds: int) -> dict[str, Any]:
         check["warnings"].append("Chrome/Chromium command was not found; browser automation skipped")
         return check
     check["command"] = chrome
-    with tempfile.TemporaryDirectory(prefix="mpos-web-chrome-") as profile:
+    profile_root = repo / "tmp" / "mpos-test-app" / "chrome-profiles"
+    profile_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="profile-", dir=profile_root) as profile:
         command = [
             chrome,
             "--headless=new",
@@ -501,7 +599,7 @@ def run_web_port_check(
                 if status == 200 and b"MicroPython" in body:
                     check["status"] = "passed_http"
                     if browser_check:
-                        check["browser"] = run_chrome_web_check(url, timeout_seconds)
+                        check["browser"] = run_chrome_web_check(repo, url, timeout_seconds)
                     else:
                         check["browser"] = {
                             "requested": False,
@@ -555,6 +653,7 @@ def smoke(repo: Path, fullname: str, args: argparse.Namespace) -> tuple[dict[str
         },
         "checks": [],
         "artifacts": [],
+        "manual_preview_commands": manual_preview_commands(repo, fullname),
         "blocking_questions": [],
         "handoff": {
             "next_skill": "mpos-gen-app",
@@ -596,6 +695,7 @@ def smoke(repo: Path, fullname: str, args: argparse.Namespace) -> tuple[dict[str
 
     if not desktop_runner_check["ok"]:
         if desktop_runner_check.get("external_blocking"):
+            result["result"] = "blocked"
             desktop_check["status"] = "skipped_after_desktop_runner_failure"
             desktop_check["errors"].append("desktop runner failed before controller smoke could be trusted")
             result["handoff"] = {
@@ -611,6 +711,7 @@ def smoke(repo: Path, fullname: str, args: argparse.Namespace) -> tuple[dict[str
         desktop_check["binary"] = str(binary)
         result["environment"]["binary"] = str(binary)
     except Exception as exc:
+        result["result"] = "blocked"
         desktop_check["errors"].append(f"cannot resolve MicroPythonOS desktop binary: {type(exc).__name__}: {exc}")
         result["handoff"]["reason"] = "Desktop simulator binary/controller is unavailable."
         return result, 1
@@ -645,6 +746,7 @@ print({MARKER!r} + json.dumps({{"ok": "mpos.main" in sys.modules, "modules": mod
             boot = parse_marker(boot_raw)
             desktop_check["boot"] = {k: v for k, v in boot.items() if k != "raw_output"}
             if not boot.get("ok"):
+                result["result"] = "blocked"
                 desktop_check["errors"].append("MicroPythonOS main module did not finish booting in the desktop simulator")
                 desktop_check["boot_stdout_tail"] = boot.get("raw_output", "")[-3000:]
                 result["handoff"] = {
@@ -685,8 +787,12 @@ print({MARKER!r} + json.dumps({{"ok": "mpos.main" in sys.modules, "modules": mod
                         out_dir = repo / out_dir
                     out_dir.mkdir(parents=True, exist_ok=True)
                     shot = out_dir / f"{fullname}.bmp"
-                    shot.write_bytes(mpos.screenshot())
-                    result["artifacts"].append({"kind": "screenshot", "path": str(shot), "format": "bmp"})
+                    bmp = mpos.screenshot()
+                    shot.write_bytes(bmp)
+                    png = out_dir / f"{fullname}.png"
+                    png.write_bytes(bmp_to_png_bytes(bmp))
+                    result["artifacts"].append({"kind": "screenshot_raw", "path": str(shot), "format": "bmp"})
+                    result["artifacts"].append({"kind": "screenshot", "path": str(png), "format": "png", "publish_ready": True})
                 except Exception as exc:
                     desktop_check["warnings"].append(f"screenshot failed: {type(exc).__name__}: {exc}")
     except Exception as exc:
@@ -709,7 +815,7 @@ print({MARKER!r} + json.dumps({{"ok": "mpos.main" in sys.modules, "modules": mod
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run an MPOS app desktop simulator smoke test")
-    parser.add_argument("--repo", default="/home/leeqingshui/MicroPythonOS")
+    parser.add_argument("--repo", help="MicroPythonOS repository root; defaults to MPOS_REPO or current repo root")
     parser.add_argument("--app-fullname", required=True)
     parser.add_argument("--generation-result", help="Optional mpos-gen-app generation_result.json")
     parser.add_argument("--expected-text", action="append", default=[])
@@ -726,7 +832,7 @@ def main() -> int:
     parser.add_argument("--output", help="Write result JSON to this path")
     args = parser.parse_args()
 
-    repo = Path(args.repo).resolve()
+    repo = resolve_repo_arg(args.repo)
     fullname = safe_fullname(args.app_fullname)
     result, rc = smoke(repo, fullname, args)
     payload = json.dumps(result, indent=2, sort_keys=True) + "\n"

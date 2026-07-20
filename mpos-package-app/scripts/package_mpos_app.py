@@ -14,11 +14,10 @@ from pathlib import Path
 from typing import Any
 
 from emit_app_index_entry import DEFAULT_BASE_URL, emit_entry
-from validate_mpos_app import resolve_app_dir, validate_app
+from validate_mpos_app import resolve_app_dir, resolve_repo_arg, validate_app
 from validate_mpk import validate_mpk
 
 
-DEFAULT_REPO = Path("/home/leeqingshui/MicroPythonOS")
 FIXED_ZIP_TIME = (2025, 1, 1, 0, 0, 0)
 COMPRESSION_TYPES = {
     "stored": zipfile.ZIP_STORED,
@@ -49,6 +48,16 @@ def _sha256(path: Path) -> str:
                 break
             h.update(chunk)
     return h.hexdigest()
+
+
+def positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be an integer") from exc
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be >= 1")
+    return parsed
 
 
 def _is_excluded(path: Path, app_dir: Path) -> bool:
@@ -175,7 +184,7 @@ def _check_from_validation(name: str, validation: dict[str, Any], required: bool
 
 
 def package_app(args: argparse.Namespace) -> dict[str, Any]:
-    repo = Path(args.repo).resolve()
+    repo = resolve_repo_arg(args.repo)
     app_dir = resolve_app_dir(repo, args.app_fullname, args.app_dir).resolve()
     output_dir = Path(args.output_dir).resolve() if args.output_dir else (
         repo / "tmp" / "mpos-package-app" / (args.app_fullname or app_dir.name)
@@ -197,6 +206,7 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
     fullname = app_info.get("fullname") or args.app_fullname or app_dir.name
     version = app_info.get("version")
     name = app_info.get("name")
+    publisher = app_info.get("publisher")
 
     gen_check, gen_warnings = _load_optional_result(
         args.generation_result,
@@ -216,7 +226,8 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
     warnings.extend(gen_warnings)
     warnings.extend(test_warnings)
 
-    mpk_path = output_dir / f"{fullname}_{version or 'unknown'}.mpk"
+    revision = args.revision
+    mpk_path = output_dir / f"{fullname}_r{revision}.mpk"
     app_index_path = output_dir / "app_index_entry.json"
     mpk_validation: dict[str, Any] = {
         "ok": False,
@@ -232,6 +243,7 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
             app_dir,
             fullname,
             args.base_url,
+            revision,
         )
         warnings.extend(index_warnings)
         errors.extend(index_errors)
@@ -281,6 +293,8 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
 
     package_info = {
         "mpk_path": _display_path(mpk_path, repo),
+        "revision": revision,
+        "filename_policy": "upystore-release-revision",
         "compression": args.compression,
         "size_bytes": mpk_path.stat().st_size if mpk_path.is_file() else 0,
         "sha256": _sha256(mpk_path) if mpk_path.is_file() else "0" * 64,
@@ -290,6 +304,7 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
         "base_url": args.base_url.rstrip("/"),
         "download_url": app_index_entry.get("download_url") if app_index_entry else "",
         "icon_url": app_index_entry.get("icon_url") if app_index_entry else "",
+        "revision": revision,
     }
 
     required_failed = any(check["required"] and not check["ok"] for check in checks)
@@ -302,6 +317,7 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
         "app": {
             "fullname": fullname,
             "name": name,
+            "publisher": publisher,
             "version": version,
             "app_dir": _display_path(app_dir, repo),
             "manifest": app_info.get("manifest"),
@@ -324,9 +340,9 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
             {"kind": "package_result", "path": _display_path(output_dir / "package_result.json", repo)},
         ],
         "handoff": {
-            "next_skill": "mpos-publish-app" if result in {"success", "partial"} else "mpos-gen-app",
+            "next_skill": "mpos-deploy-app" if result in {"success", "partial"} else "mpos-gen-app",
             "reason": (
-                "MPK and app_index entry were generated and validated; upload is a separate publishing step."
+                "MPK and app_index entry were generated and validated; record a deploy or preview result before publishing."
                 if result in {"success", "partial"}
                 else "Package required checks failed; repair the App or package script before publishing."
             ),
@@ -338,12 +354,13 @@ def package_app(args: argparse.Namespace) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", default=str(DEFAULT_REPO), help="MicroPythonOS repository root")
+    parser.add_argument("--repo", help="MicroPythonOS repository root; defaults to MPOS_REPO or current repo root")
     parser.add_argument("--app-fullname", help="App fullname")
     parser.add_argument("--app-dir", help="Explicit App directory")
     parser.add_argument("--output-dir", help="Package output directory")
     parser.add_argument("--compression", choices=sorted(COMPRESSION_TYPES), default="stored", help="MPK compression")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="Base AppStore URL for app_index_entry.json")
+    parser.add_argument("--revision", type=positive_int, default=1, help="Positive upystore release revision for _rN MPK naming")
     parser.add_argument("--generation-result", help="Optional generation_result.json")
     parser.add_argument("--app-test-result", help="Optional app_test_result.json")
     parser.add_argument("--install-check", action="store_true", help="Temporarily extract MPK and validate installed tree")
@@ -361,8 +378,9 @@ def main() -> int:
     for error in result.get("errors", []):
         print(f"ERROR: {error}", file=sys.stderr)
 
-    package_result_path = Path(args.output_dir).resolve() / "package_result.json" if args.output_dir else (
-        Path(args.repo).resolve() / "tmp" / "mpos-package-app" / (args.app_fullname or result["app"]["fullname"]) / "package_result.json"
+    package_result_path = next(
+        (artifact["path"] for artifact in result.get("artifacts", []) if artifact.get("kind") == "package_result"),
+        "package_result.json",
     )
     print(f"{result['result'].upper()}: {package_result_path}")
     return 0 if result["result"] in {"success", "partial"} else 1

@@ -21,6 +21,10 @@ Do not do downstream work directly. Use the phase skills:
 
 `mpos-gen-app` remains strictly two-phase. This skill must not bypass its write confirmation.
 
+## User-Facing Language
+
+Follow `mpos-dev` language continuity: if the workflow starts in Chinese, keep user-facing planning, questions, and summaries in Chinese; if it starts in English, keep them in English. Keep code, commands, paths, API names, and JSON keys in English.
+
 ## Unified Project Log
 
 Before writing any artifact, determine the active MicroPythonOS repository root:
@@ -28,7 +32,9 @@ Before writing any artifact, determine the active MicroPythonOS repository root:
 - If the user gives a repository path, use that path as `<repo-root>`.
 - Otherwise, use the current working directory when it contains `internal_filesystem/apps` and `scripts`.
 - Never fall back to `/home/leeqingshui/MicroPythonOS` when the user is testing in an isolated clone, worktree, or temporary copy.
-- For build, simulator, desktop-preview, or web-preview operations, prefer an isolated clone/worktree. Do not mutate the user's main MicroPythonOS checkout unless the user explicitly allows it.
+- For build, simulator, desktop-preview, web-preview, or integration-test operations, prefer an isolated clone/worktree/temporary copy. Do not mutate the user's main MicroPythonOS checkout unless the user explicitly allows it.
+
+At workflow start and resume time, read `mpos-dev/reference/mpos_api_summary.json` and `mpos-dev/reference/lvgl_api_summary.json` completely. Every mpos-* phase depends on these references; do not skip them because the next phase looks simple.
 
 Every MPOS app project uses:
 
@@ -89,7 +95,7 @@ Default goal is from request to upystore publishing handoff:
 8. `mpos-deploy-app`
 9. `mpos-publish-app`
 
-If no physical board exists, a `desktop-preview` or `web-preview` `deploy_result.json` is enough to satisfy the publish-chain deployment record. Device copy or MPK install is preferred when hardware is available.
+Before step 8, ask whether a physical device and serial port are available and whether MicroPythonOS is already installed on that device. If yes, route deploy toward `mpk-install` for release verification unless the user chooses another device mode; if MPOS runtime probing fails but filesystem copy is acceptable, route to `device-copy`. If no physical board exists, a `desktop-preview` or `web-preview` `deploy_result.json` is enough to satisfy the publish-chain deployment record, and the result must record `hardware_available=false`.
 
 ## Resumption
 
@@ -102,7 +108,8 @@ For "continue", "resume", "next step", or after context loss:
    - `success`: continue.
    - `partial`: continue with warnings unless the target phase requires success.
    - `failed`: route according to the failing artifact's `handoff.next_skill`.
-5. If the state is stale or missing, reconstruct it from `tmp/mpos-*/*/*.json`, then record a `mpos-plan-app` resume event.
+5. Compare `plan_state.artifact_status[*].result` with the actual artifact file's current `result`. If the JSON was edited after the last record event, trust the actual artifact and immediately call `update_plan_state.py record` again before routing.
+6. If the state is stale or missing, reconstruct it from `tmp/mpos-*/*/*.json`, then record a `mpos-plan-app` resume event.
 
 Do not restart from analyze when enough trustworthy artifacts exist.
 
@@ -144,7 +151,7 @@ After the user confirms, rerun the command with `--confirmed` and continue to th
 - Runtime smoke failed from App code: `mpos-gen-app repair`.
 - Runtime smoke blocked by OS/tooling: report blocked; do not ask `mpos-gen-app` to edit App code.
 - Test success and publish goal active: `mpos-package-app`.
-- Package success or partial with warnings: `mpos-deploy-app` for preview/deploy record.
+- Package success or partial with warnings: ask the physical device/serial-port question, then route to `mpos-deploy-app` for preview/deploy record.
 - Deploy preview or device install result available and publish goal active: `mpos-publish-app`.
 - User only asks to deploy, package, test, or publish: route directly to the named phase but still update `plan_state.json`.
 
