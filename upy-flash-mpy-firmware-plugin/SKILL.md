@@ -1,6 +1,6 @@
 ---
 name: upy-flash-mpy-firmware-plugin
-description: Plugin-based workflow for MicroPython firmware parsing, downloading, flashing, or manual confirmation. Used when Codex receives a phase_complete(select-hw) with next_phase=upy-flash-mpy-firmware-plugin; consumes the select-hw manifest_content, resolves firmware from micropython.org/download or a trusted vendor source, assists with ESP32 esptool flashing, guides Pico/RP2 UF2 copying, or provides manual flash links for other boards, and finally outputs next_phase=upy-scaffold-plugin.
+description: Plugin-based workflow for MicroPython firmware parsing, downloading, flashing, or manual confirmation. Used when Codex receives a phase_complete(select-hw) with next_phase=upy-flash-mpy-firmware-plugin; consumes the select-hw manifest_content, parses firmware from micropython.org/download or a trusted vendor source, assists with ESP32 esptool flashing, guides Pico/RP2 UF2 copying, or provides manual flash links for other boards, and finally outputs next_phase=upy-scaffold-plugin.
 ---
 
 # MicroPython Firmware Flashing Phase
@@ -25,10 +25,10 @@ phase_complete(payload.phase="upy-flash-mpy-firmware-plugin", payload.next_phase
 
 | Branch | Condition | Behavior |
 | --- | --- | --- |
-| ESP32 | `firmware_board_name` starts with `ESP32_`, `firmware.port == "esp32"`, or `chip_family` starts with `esp32` | Resolve the latest `.bin`, parse installation commands from the MicroPython board page, scan/select a real serial port, and run `esp32_flash.py` only after user confirmation. |
-| Pico/RP2 | `firmware.port == "rp2"`, `firmware_board_name` starts with `RPI_PICO`, or `chip_family` is `rp2`/`rp2040`/`rp2350` | Resolve the latest `.uf2`; if the source is a GitHub release ZIP, extract `firmware.uf2` first; prompt the user to hold BOOTSEL and copy the UF2, then wait for user confirmation. |
+| ESP32 | `firmware_board_name` starts with `ESP32_`, `firmware.port == "esp32"`, or `chip_family` starts with `esp32` | Parse the latest `.bin`, parse install commands from the MicroPython board page, scan/select a real serial port, and run `esp32_flash.py` only after user confirmation. |
+| Pico/RP2 | `firmware.port == "rp2"`, `firmware_board_name` starts with `RPI_PICO`, or `chip_family` is `rp2`/`rp2040`/`rp2350` | Parse the latest `.uf2`; if the source is a GitHub release ZIP, extract `firmware.uf2` first; prompt the user to hold BOOTSEL and copy the UF2, then wait for user confirmation. |
 | Vendor direct/manual | `firmware.source == "vendor_direct"` or other non-ESP32/Pico boards | Download/display trusted vendor firmware and show manual flashing instructions, e.g., copy W55MH32L-EVB `.hex` to `WIZLINK`. Do not execute `dfu-util`, `teensy-loader`, ESP8266 esptool, or other tools; only wait for user confirmation. |
-| Manual MicroPython | Other official MicroPython boards | Resolve MicroPython download/install links and show manual flashing instructions. Do not execute `dfu-util`, `teensy-loader`, ESP8266 esptool, or other tools; only wait for user confirmation. |
+| Manual MicroPython | Other MicroPython official boards | Parse MicroPython download/install links and show manual flashing instructions. Do not execute `dfu-util`, `teensy-loader`, ESP8266 esptool, or other tools; only wait for user confirmation. |
 
 Only mock/sample tests may use a fixed `serial_port="COM3"` to validate JSON and command planning. Claude Code live use and real plugin use must scan real serial ports and require user selection.
 
@@ -81,7 +81,7 @@ Field rules:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `source_phase_complete_path` | Required in file mode | Relative path to the upstream `phase_complete.select_hw.json`. |
+| `source_phase_complete_path` | Required for file mode | Relative path to the upstream `phase_complete.select_hw.json`. |
 | `payload.source_phase_complete` | Optional | Full upstream message envelope; used when the host passes JSON directly instead of a path. |
 | `runtime_context.artifact_root` | Yes | Artifact root for resolving relative artifact paths. |
 | `runtime_context.artifact_root_mode` | Yes | `cwd` or `session_root`; do not mix path scopes within the same `phase_complete`. |
@@ -106,7 +106,7 @@ payload.next_phase == "upy-flash-mpy-firmware-plugin"
 payload.manifest_content.phase == "select-hw"
 ```
 
-Only local tests during migration may accept the legacy value `payload.next_phase == "flash-mpy-firmware"` when `--allow-legacy-next-phase` is explicitly passed; formal output must not write the legacy value.
+Only during the migration period, local tests may accept the old value `payload.next_phase == "flash-mpy-firmware"` when `--allow-legacy-next-phase` is explicitly passed; formal output must not use the old value.
 
 ## Board Facts
 
@@ -116,7 +116,7 @@ Field priority:
 
 | Value | Primary Source | Fallback Source |
 | --- | --- | --- |
-| Firmware URL | `hardware_selection.selected_board.firmware.url` | `mcu.firmware_url`; if both are missing, use the firmware board name to match a real download page on the MicroPython download index. |
+| Firmware URL | `hardware_selection.selected_board.firmware.url` | `mcu.firmware_url`; if both are missing, use the firmware board name to match the real download page on the MicroPython download index. |
 | Firmware board name | `hardware_selection.selected_board.firmware.board_name` | `mcu.firmware_board_name` |
 | Firmware source | `hardware_selection.selected_board.firmware.source` | Defaults to `micropython_latest` |
 | Firmware port | `hardware_selection.selected_board.firmware.port` | Inferred from board name |
@@ -124,23 +124,24 @@ Field priority:
 | Flash tool hint | `mcu.flash_tool` | Inferred from board family |
 | Display name | `hardware_selection.selected_board.display_name` | `mcu.display_name` |
 
-Do not trust a cached `latest_version`. When `firmware.source` is missing or equals `micropython_latest`, the runtime must first use the upstream `hardware_selection.selected_board.firmware.url`, then `mcu.firmware_url`, to visit the official MicroPython board page and parse the real `(latest)` firmware and installation instructions. Only when the upstream URL is missing or invalid should `firmware_board_name` be used to match the real download page slug on `https://micropython.org/download/`. Do not construct URLs directly from `display_name`, `board_id`, or MCU model.
+Do not trust a cached `latest_version`. When `firmware.source` is missing or equals `micropython_latest`, the runtime must first use the upstream `hardware_selection.selected_board.firmware.url`, then `mcu.firmware_url`, to visit the official MicroPython board page and parse the real `(latest)` firmware and install instructions. Only when the upstream URL is missing or invalid should `firmware_board_name` be used to match the real download page slug on `https://micropython.org/download/`. Do not construct a URL directly from `display_name`, `board_id`, or MCU model.
 
-When `firmware.source == "github_release_zip"`, do not treat `firmware.url` as a MicroPython download page. Instead, read `repo`, `release_tag`, `asset_pattern`, `archive_member`, `container_type`, and `file_type` from the same `firmware` object. Use `scripts/firmware_source_resolve.py` to resolve the GitHub release asset, then `scripts/firmware_download.py` to download the ZIP and extract the final firmware file. For the WIZnet Pico2 series, the final file is `firmware.uf2` inside the ZIP, not the ZIP itself.
+When `firmware.source == "github_release_zip"`, do not treat `firmware.url` as a MicroPython download page. Must read `repo`, `release_tag`, `asset_pattern`, `archive_member`, `container_type`, and `file_type` from the same `firmware` object, resolve the GitHub release asset via `scripts/firmware_source_resolve.py`, then download the ZIP and extract the final firmware file via `scripts/firmware_download.py`. The final file for the WIZnet Pico2 series is `firmware.uf2` inside the ZIP, not the ZIP itself.
 
-When `firmware.source == "vendor_direct"`, `firmware.url` is a direct link to a trusted vendor firmware. The W55MH32L-EVB currently uses `.hex`; the flashing method is to copy the file to the `WIZLINK`/DAPLINK drive. This branch can only output `manual_confirmed` after user confirmation; do not pretend to perform automatic flashing.
+When `firmware.source == "vendor_direct"`, `firmware.url` is a direct link to a trusted vendor firmware. The W55MH32L-EVB currently uses `.hex`; the flashing method is to copy the file to the `WIZLINK`/DAPLINK drive; this branch can only output `manual_confirmed` after user confirmation, and must not pretend to be automatic flashing.
 
 Firmware page related field meanings:
 
 | Field | Purpose |
 | --- | --- |
-| `firmware.url` / `mcu.firmware_url` | Official MicroPython firmware page URL, the normal main path. |
+| `firmware.url` / `mcu.firmware_url` | MicroPython official firmware page URL, normal main path. |
 | `firmware.source` | Firmware source. Currently supports `micropython_latest`, `github_release_zip`, `vendor_direct`. |
 | `firmware.repo` | GitHub repository used by `github_release_zip`, e.g., `WIZnet-ioNIC/WIZnet-EVB-Pico-micropython`. |
 | `firmware.release_tag` | Release tag used by `github_release_zip`; can be extended to `latest` by subsequent policy. |
 | `firmware.asset_pattern` | Asset matching pattern for `github_release_zip`, e.g., `LWIP_build-W5500_EVB_PICO2.zip`. |
-| `firmware.archive_member` | Path to the final firmware inside the ZIP, e.g., `LWIP_build-W5500_EVB_PICO2/firmware.uf2`. |
+| `firmware.archive_member` | Final firmware path inside the ZIP, e.g., `LWIP_build-W5500_EVB_PICO2/firmware.uf2`. |
 | `firmware.board_name` / `mcu.firmware_board_name` | MicroPython firmware board name, used for display and fallback matching when URL is missing. |
+| `firmware.variant` | Firmware variant on the MicroPython official page, e.g., ESP32-S3 Octal-SPIRAM boards use `spiram-oct`. Passed to `firmware_page_resolve.py --variant`; does not require plugin UI for manual selection. |
 | `display_name` | Board name shown to the user, not used for constructing download URLs. |
 | `board_id` | Local board library ID, not used for constructing download URLs. |
 | `download_slug` | Real MicroPython download page slug extracted from the firmware URL path or matched from the download index. |
@@ -148,14 +149,14 @@ Firmware page related field meanings:
 
 ## JSON Output Language Convention
 
-Explanatory paragraphs, rule descriptions, and field meaning tables in `SKILL.md` should be in Chinese as much as possible; JSON examples must follow the English/Chinese mixed format used in `upy-analyze-plugin`, `upy-select-hw-plugin` samples and real session artifacts.
+Explanatory paragraphs, rule explanations, and field meaning tables in `SKILL.md` should use Chinese as much as possible; JSON examples must maintain a mixed English/Chinese format consistent with the samples and real session artifacts of `upy-analyze-plugin` and `upy-select-hw-plugin`.
 
-- JSON keys, protocol fields, enum values, action values, error codes, file names, script arguments, and paths remain in English or as-is, e.g., `payload`, `result`, `download_and_flash`, `firmware_action_select`, `missing_firmware_url`.
+- JSON keys, protocol fields, enum values, action values, error codes, file names, script parameters, and paths remain in English or as-is, e.g., `payload`, `result`, `download_and_flash`, `firmware_action_select`, `missing_firmware_url`.
 - User-visible UI text uses Chinese, e.g., `header`, `question`, `actions[].label`, `steps[]`, `links[].label`.
-- Project semantic text prefers Chinese, e.g., `summary`, `description`, `message`, `warnings[]`, `notes`, `manual_flash_instructions` where instructions are shown to the user.
+- Project semantic text prefers Chinese, e.g., `summary`, `description`, `message`, `warnings[]`, `notes`, `manual_flash_instructions` shown to the user.
 - Machine classifications and sources remain in English, e.g., `source`, `status`, `action`, `file_type`, `flash_method`, `reason`, `structured_errors[].code`.
-- The upstream `source_phase_complete.payload.manifest_content` must be preserved as-is in the language output by the `select-hw` phase; do not translate project names, device names, driver package names, API names, or user input for the sake of text consistency.
-- `errors[]` can retain the original English error from the script/validator; `structured_errors[].message`, if generated by the plugin/LLM for the user, should prefer Chinese; if directly passing through the original script error, English can be retained.
+- The upstream `source_phase_complete.payload.manifest_content` must preserve the language output of the `select-hw` phase as-is; do not translate project names, device names, driver package names, API names, or user input for the sake of uniform wording.
+- `errors[]` can retain the original English error from the script/validator; `structured_errors[].message`, if generated by the plugin/LLM for the user, prefers Chinese; if directly passing through the original script error, English can be retained.
 
 ## Workflow
 
@@ -165,8 +166,8 @@ Explanatory paragraphs, rule descriptions, and field meaning tables in `SKILL.md
 4. If `firmware_action` is missing, send `approval_request(firmware_action_select)` and wait for user input.
 5. If the user selects `already_flashed`, output `success` and set `firmware.status="skipped_user_confirmed"`.
 6. If the user selects `save_partial`, times out, or cancels, output `partial` with a checkpoint.
-7. If `firmware.source` is `github_release_zip` or `vendor_direct`, use `scripts/firmware_source_resolve.py --board-json <board.json>` to resolve the vendor firmware; otherwise, use `scripts/firmware_page_resolve.py` to parse the MicroPython board page. The official page flow normally passes `--board-url` from the upstream firmware URL; only when the URL is missing should `--download-index-url` and `--board-name` be used as a fallback to match the download page.
-8. Unless `firmware_override.local_path` is provided or the branch is manual-only, download the firmware using `scripts/firmware_download.py`; when the resolved result is a ZIP, both save the ZIP and extract the final firmware pointed to by `latest.archive_member`.
+7. If `firmware.source` is `github_release_zip` or `vendor_direct`, use `scripts/firmware_source_resolve.py --board-json <board.json>` to resolve vendor firmware; otherwise, use `scripts/firmware_page_resolve.py` to parse the MicroPython board page. The official page flow normally passes `--board-url` from the upstream firmware URL; only when the URL is missing should `--download-index-url` and `--board-name` be used for fallback matching of the download page. If `firmware.variant` exists in the upstream board JSON or manifest, `--variant <firmware.variant>` must also be passed, e.g., for LilyGO ESP32-S3 OPI PSRAM boards, pass `--variant spiram-oct`.
+8. Unless `firmware_override.local_path` is provided or the branch is manual-only, download the firmware using `scripts/firmware_download.py`; when the resolved result is a ZIP, both the ZIP must be saved and the final firmware pointed to by `latest.archive_member` must be extracted.
 9. Enter the selected board branch.
 10. Validate the phase output using `scripts/flash_mpy_firmware_manifest.py`.
 11. Output the final `phase_complete`.
@@ -181,7 +182,7 @@ Unless `start_phase.payload.firmware_action` already exists, this approval must 
   "payload": {
     "approval_id": "firmware_action_select",
     "header": "MicroPython Firmware Preparation",
-    "question": "Please select the operation to perform for this firmware phase",
+    "question": "Please select the action to perform for this firmware phase",
     "summary": {
       "board_name": "ESP32_GENERIC_C3",
       "display_name": "ESP32-C3-DevKitM-1",
@@ -201,9 +202,9 @@ Unless `start_phase.payload.firmware_action` already exists, this approval must 
 
 ## Claude Code Local Run Notes
 
-The `approval_request.actions` in the plugin protocol can retain the full set of actions; however, Claude Code's `AskUserQuestion` can only pass a maximum of 4 `options` per question. When running locally in Claude Code, do not map the 6 actions above directly into a single `AskUserQuestion`.
+The `approval_request.actions` in the plugin protocol can retain the full action set; however, Claude Code's `AskUserQuestion` can only pass a maximum of 4 `options` per question. When running locally in Claude Code, do not map the 6 actions above directly into one `AskUserQuestion`.
 
-When running `firmware_action_select` locally, prioritize showing 4 main actions:
+When running `firmware_action_select` locally, prioritize showing the 4 main actions:
 
 ```text
 download_and_flash
@@ -214,20 +215,20 @@ use_local_firmware
 
 `save_partial` and `cancel` are retained in the plugin approval UI; for local Claude Code runs, they can be handled via a secondary confirmation, normal conversation, or subsequent checkpoint writes.
 
-When using a temporary Python one-liner to read JSON on Windows, explicitly specify UTF-8, e.g., `open(path, encoding="utf-8")`, or set `PYTHONUTF8=1` in the runtime environment. Do not use the default `open(path)` to read JSON containing Chinese characters.
+When reading JSON with a temporary Python one-liner on Windows, UTF-8 must be explicitly specified, e.g., `open(path, encoding="utf-8")`, or set `PYTHONUTF8=1` in the runtime environment. Do not use the default `open(path)` to read JSON containing Chinese.
 
 When calling `firmware_download.py`, `--out-dir` must be passed; `--output-json` and `--out-json` are only aliases for the output manifest parameter and cannot replace the download directory.
 
-`phase_complete.payload.artifacts` must be an array containing objects with `type="file_list"`; do not write it as a `{ "file_list": [...] }` object, nor as a flat array of files.
+`phase_complete.payload.artifacts` must be written as an array, and the array must contain an object with `type="file_list"`; do not write it as a `{ "file_list": [...] }` object, nor as a flat file array.
 
-If helper scripts retain native absolute paths for execution purposes, they must also output portable relative artifact fields for consumption by downstream protocols:
+If helper scripts retain local absolute paths for execution purposes, they must also output portable relative artifact fields for consumption by downstream protocols:
 - When `firmware_download.py` receives `--artifact-root <artifact_root>`, it outputs `downloaded_artifact_path`, relative to that artifact root.
 - When `esp32_flash.py` receives `--artifact-root <artifact_root>`, it outputs `firmware_artifact_path`; the artifact path for the execution log itself is declared by the final `phase_complete.payload.firmware.flash_result.log`.
-- Downstream plugins can only consume relative artifact fields and the final `phase_complete`; do not read native absolute execution paths from helper JSONs as project facts.
+- Downstream plugins can only consume relative artifact fields and the final `phase_complete`; do not read local absolute execution paths from helper JSONs as project facts.
 
 ## ESP32 Flow
 
-Must parse the installation instructions from the MicroPython page. Do not use hardcoded offsets as the primary source; for example, `ESP32_GENERIC_C5` currently uses `write_flash 0x2000`, so a fixed C-series offset is incorrect.
+Must first parse the install instructions from the MicroPython page. Do not use hardcoded offsets as the primary source; for example, `ESP32_GENERIC_C5` currently uses `write_flash 0x2000`, so a fixed C-series offset is incorrect.
 
 Script order:
 
@@ -237,7 +238,7 @@ script_run(firmware_download.py --resolved-json ... --out-dir ... --output-json 
 script_run(list_serial_ports.py --output-json ...)  # Real/plugin mode
 approval_request(esp32_flash_confirm)
 script_run(bootstrap_esptool.py --output-json ...)  # Check; status=missing means install permission needed, not failure
-script_run(bootstrap_esptool.py --install --output-json ...)  # Only run if install is needed and permission is granted
+script_run(bootstrap_esptool.py --install --output-json ...)  # Only run if install is needed and permission granted
 script_run(esp32_flash.py --plan-only --output-json ...)
 script_run(esp32_flash.py --execute --output-json ...)  # Only allowed after explicit user confirmation
 ```
@@ -247,8 +248,8 @@ script_run(esp32_flash.py --execute --output-json ...)  # Only allowed after exp
 - Firmware file name and MicroPython board page.
 - Erase/write commands and `write_offset` parsed from the page.
 - Serial port options from real scanning in real/plugin mode.
-- Download mode hint: typically hold BOOT, press EN/RESET, release BOOT; if the board instructions differ, remind the user to follow the board's instructions.
-- Explicit warning: flashing will erase and rewrite the MicroPython firmware.
+- Download mode hint: typically hold BOOT, press EN/RESET, then release BOOT; if the board instructions differ, remind the user to follow the board instructions.
+- Explicit warning: Flashing will erase and rewrite the MicroPython firmware.
 
 Expected approval response:
 
@@ -264,11 +265,11 @@ Expected approval response:
 }
 ```
 
-The `COM3` above is just a Windows example; common Linux values are like `/dev/ttyUSB0` or `/dev/ttyACM0`, and common macOS values are like `/dev/cu.usbmodem1101` or `/dev/cu.usbserial-0001`. Real usage must use a scanned and user-selected serial port; do not hardcode port names based on the operating system.
+The `COM3` above is just a Windows example; common Linux values are like `/dev/ttyUSB0` or `/dev/ttyACM0`, and common macOS values are like `/dev/cu.usbmodem1101` or `/dev/cu.usbserial-0001`. Real usage must use a scanned and user-selected serial port; do not hardcode a port name based on the operating system.
 
 ## Pico Flow
 
-Resolve and download the latest `.uf2`; do not run flashing commands.
+Parse and download the latest `.uf2`; do not run flash commands.
 
 ```json
 {
@@ -300,22 +301,22 @@ In V0, user confirmation of `copied_uf2` is sufficient for success.
 
 Cross-platform mount paths are only hints and optional auxiliary discovery; they do not change the V0 manual copy contract:
 
-- Windows typically shows as a removable disk with volume label `RPI-RP2`.
+- Windows typically shows as a removable disk with label `RPI-RP2`.
 - macOS is typically `/Volumes/RPI-RP2`.
-- Common Linux paths are `/media/$USER/RPI-RP2`, `/run/media/$USER/RPI-RP2`, or `/mnt/RPI-RP2`.
+- Linux common paths are `/media/$USER/RPI-RP2`, `/run/media/$USER/RPI-RP2`, or `/mnt/RPI-RP2`.
 - Optionally run `scripts/find_uf2_mount.py --output-json ...` to help locate the mount point; do not automatically fail the Pico flow because the mount point was not found, unless the user also did not confirm `copied_uf2`.
 
 ## Manual Board Flow
 
-For non-ESP32/Pico boards, only resolve the MicroPython board link and display manual instructions. Do not execute tool hints like `dfu-util`, `teensy-loader`, or ESP8266 esptool.
+For non-ESP32/Pico boards, only parse the MicroPython board link and display manual instructions. Do not execute tool hints like `dfu-util`, `teensy-loader`, ESP8266 esptool, etc.
 
 ```json
 {
   "type": "approval_request",
   "payload": {
     "approval_id": "manual_firmware_flash_confirm",
-    "header": "Please Manually Flash the MicroPython Firmware According to the Instructions",
-    "question": "Please open the link below and follow the official instructions to complete the firmware flashing; click confirm when done.",
+    "header": "Please Manually Flash the MicroPython Firmware",
+    "question": "Please open the link below and follow the official instructions to complete the firmware flash; click confirm when done.",
     "summary": {
       "board_name": "PYBV11",
       "firmware_page": "https://micropython.org/download/PYBV11/",
@@ -328,7 +329,7 @@ For non-ESP32/Pico boards, only resolve the MicroPython board link and display m
     "steps": [
       "Download the firmware marked as latest on the page.",
       "Put the board into firmware flashing mode according to the official instructions.",
-      "Use the tool recommended on the page or by the manufacturer to complete the flashing.",
+      "Use the tool recommended on the page or by the vendor to complete the flash.",
       "After the device restarts, return to the plugin window and click confirm."
     ],
     "actions": [
@@ -346,18 +347,18 @@ Manual flash approval field meanings:
 | --- | --- |
 | `approval_id` | Fixed to `manual_firmware_flash_confirm`. |
 | `summary.board_name` | Upstream firmware board name. |
-| `summary.download_slug` | The actually resolved MicroPython download page slug, optional. |
+| `summary.download_slug` | The actual resolved MicroPython download page slug, optional. |
 | `summary.firmware_page` | MicroPython official board page URL. |
-| `summary.latest_firmware_url` | Main firmware link marked as latest on the page. |
+| `summary.latest_firmware_url` | The main firmware link marked as latest on the page. |
 | `summary.latest_version` | Latest firmware version, e.g., `v1.28.0`. |
 | `summary.latest_date` | Latest firmware date, e.g., `2026-04-06`. |
 | `summary.file_type` | Firmware type, e.g., `dfu`, `uf2`, `bin`, `hex`, or `zip`. |
 | `summary.flash_method` | Fixed to `manual`. |
 | `summary.tool_hint` | Tool or method extracted from the page instructions, e.g., `dfu-util`, `st-flash`, `uf2-drag-drop`, `teensy-loader`, `ftp-copy`, or `manual`. |
 | `links[]` | Links to the download page, latest firmware, official documentation, tool documentation, etc. |
-| `steps[]` | User-facing steps in Chinese, summarized from the official installation instructions. |
-| `commands[]` | Optional; only display page commands, do not auto-execute; each item must be marked with `execute_allowed=false`. |
-| `warnings[]` | Manual flashing risk warnings. |
+| `steps[]` | User-facing Chinese steps, derived from the official install instructions summary. |
+| `commands[]` | Optional; only display page commands, do not execute automatically; each item must be marked with `execute_allowed=false`. |
+| `warnings[]` | Manual flash risk warnings. |
 | `actions[]` | `confirm_flashed`, `save_partial`, `cancel`. |
 
 ## Scripts
@@ -366,17 +367,17 @@ Allowed whitelist scripts:
 
 | Script | Purpose |
 | --- | --- |
-| `scripts/firmware_page_resolve.py` | Parse MicroPython download page, latest firmware URL, and installation instructions; supports `--html-file` for mock testing. |
+| `scripts/firmware_page_resolve.py` | Parse MicroPython download page, latest firmware URL, and install instructions; supports `--variant` for selecting firmware variants under the same official board page; supports `--html-file` for mock testing. |
 | `scripts/firmware_source_resolve.py` | Parse vendor firmware sources declared in the board JSON; supports `github_release_zip` and `vendor_direct`. |
 | `scripts/firmware_download.py` | Download resolved firmware artifacts, or output a plan without downloading; when the resolved result is a ZIP, save the original ZIP and extract the final firmware file. |
 | `scripts/list_serial_ports.py` | Enumerate serial ports for ESP32 real/plugin mode; prefer pyserial, fall back to platform-specific methods on Windows/macOS/Linux on failure. |
-| `scripts/find_uf2_mount.py` | Optionally discover Pico/RP2040 UF2 mount point; only report candidate paths like `RPI-RP2`, do not automatically copy firmware. |
-| `scripts/bootstrap_esptool.py` | Create/check the skill-internal `.venv-esptool`, and install a pinned version of esptool after permission is granted. |
-| `scripts/esptool_runner.py` | Run `python -m esptool` from within the skill, independent of the global PATH. |
+| `scripts/find_uf2_mount.py` | Optionally discover Pico/RP2040 UF2 mount points; only report candidate paths like `RPI-RP2`, do not automatically copy firmware. |
+| `scripts/bootstrap_esptool.py` | Create/check the skill-internal `.venv-esptool` and install a pinned version of esptool after permission is granted. |
+| `scripts/esptool_runner.py` | Run the skill-internal `python -m esptool`, independent of the global PATH. |
 | `scripts/esp32_flash.py` | Plan or execute ESP32 erase/write using commands parsed from the MicroPython page. |
 | `scripts/flash_mpy_firmware_manifest.py` | Validate start/state/phase_complete message envelopes and artifact paths. |
 
-Minimum validation mode:
+Minimal validation mode:
 
 ```text
 flash_mpy_firmware_manifest.py --validate-start-phase --input <start_phase.json>
@@ -387,9 +388,9 @@ flash_mpy_firmware_manifest.py --validate-phase-complete --input <phase_complete
 
 `scripts/requirements-esptool.txt` pins the esptool package version. Do not require the plugin to call the global `esptool` directly.
 
-Script argument conventions:
+Script parameter conventions:
 
-| Script | Required Inputs | Output Parameter |
+| Script | Required Input | Output Parameter |
 | --- | --- | --- |
 | `firmware_page_resolve.py` | `--board-name`, `--board-family`, typically also `--board-url` | `--out-json`; also compatible with `--output-json`. |
 | `firmware_source_resolve.py` | `--board-json`; mock tests can add `--release-json-file` | `--out-json`; also compatible with `--output-json`. |
@@ -418,26 +419,26 @@ manual_flash_instructions.json
 phase_complete.upy_flash_mpy_firmware_plugin.json
 ```
 
-For debugging, `flash_mpy_firmware_phase_log.md` can be written additionally for local review of the complete execution process; it is not a required artifact and does not need to be included in `phase_complete.payload.artifacts`.
+For debugging, `flash_mpy_firmware_phase_log.md` can be written additionally for local review of the full execution process; it is not a required artifact and does not need to be included in `phase_complete.payload.artifacts`.
 
-`esptool_bootstrap.json` is a local auxiliary debugging file for recording the results of the skill-internal esptool environment check or installation; it is not a formal phase artifact and should not be included in `phase_complete.payload.artifacts` unless explicitly required by a subsequent protocol.
+`esptool_bootstrap.json` is a local auxiliary debug file for recording the result of the esptool environment check or installation within the skill; it is not a formal phase artifact and should not be included in `phase_complete.payload.artifacts` unless explicitly required by a subsequent protocol.
 
-`phase_complete.payload.artifacts` must contain a `file_list` and list all formal artifacts produced by the current branch. Files referenced by `firmware.file`, `firmware.flash_result.log`, or `checkpoint.state_file` (such as firmware files, flash logs, checkpoint states) must be declared in the artifacts. Artifact paths must be relative to `artifact_root`; do not write native skill installation paths into formal artifact paths.
+`phase_complete.payload.artifacts` must contain a `file_list` and list all formal artifacts produced by the current branch. Files referenced by `firmware.file`, `firmware.flash_result.log`, or `checkpoint.state_file` (such as firmware files, flash logs, checkpoint state) must be declared in the artifacts. Artifact paths must be relative to `artifact_root`; do not write the local skill installation path into the formal artifact path.
 
-The phase name in `phase_complete.payload.artifacts[].files[].description` must use the formal plugin name `upy-flash-mpy-firmware-plugin`. Do not write the old name `flash-mpy-firmware`; for example, the state file description should read `upy-flash-mpy-firmware-plugin phase state file`.
+The phase name in `phase_complete.payload.artifacts[].files[].description` must use the formal plugin name `upy-flash-mpy-firmware-plugin`. Do not use the old name `flash-mpy-firmware`; for example, the state file description should be `upy-flash-mpy-firmware-plugin phase state file`.
 
-`bootstrap_esptool.py` without `--install` is a check mode; if the skill-internal `.venv-esptool` does not exist, the script outputs `status="missing"`, `action_required="install"` and returns 0. This is a recoverable state, not a phase failure. Only run `bootstrap_esptool.py --install` after the user confirms installation is allowed. The recommended order for the ESP32 branch is: confirm flash -> bootstrap check/install -> `esp32_flash.py --plan-only` -> `esp32_flash.py --execute`, so that `esptool_plan.json.tool_version` reflects the real environment.
+`bootstrap_esptool.py` without `--install` is in check mode; if the skill-internal `.venv-esptool` does not exist, the script outputs `status="missing"`, `action_required="install"` and returns 0. This is a recoverable state and should not be treated as a phase failure. Only run `bootstrap_esptool.py --install` after the user confirms permission to install. The recommended order for the ESP32 branch is: confirm flash -> bootstrap check/install -> `esp32_flash.py --plan-only` -> `esp32_flash.py --execute`, so that `esptool_plan.json.tool_version` reflects the real environment.
 
 ## State File
 
 `flash_mpy_firmware_state.json` is used for recovery, retry, and troubleshooting; it is not a phase completion message. Do not write `status` as `phase_complete`; phase completion is expressed by the final `type="phase_complete"` file.
 
-The state top-level fields must include:
+The top-level fields of the state must include:
 
 | Field | Meaning |
 | --- | --- |
 | `protocol_version` | Fixed to `1.0`. |
-| `msg_id` | Optional but recommended, unique message ID. |
+| `msg_id` | Optional but recommended to write, unique message ID. |
 | `session_id` | Current session ID. |
 | `phase` | Fixed to `upy-flash-mpy-firmware-plugin`. |
 | `status` | `in_progress`, `partial`, `success`, `failed`, or `cancelled`. |
@@ -521,11 +522,11 @@ Structured error fields:
 | Field | Meaning |
 | --- | --- |
 | `code` | Stable, machine-readable error code. |
-| `message` | Error description for the user or developer; prefer Chinese when generated by the plugin/LLM, can retain English when directly passing through the original script error. |
+| `message` | Error description for the user or developer; prefers Chinese when generated by the plugin/LLM, can retain English when directly passing through the original script error. |
 | `severity` | `info`, `warning`, `error`, or `fatal`. |
 | `recoverable` | Whether it can be retried/recovered. |
 | `retryable` | Whether it can be retried with the same action and parameters. |
-| `source` | Script or phase step that generated the error. |
+| `source` | The script or phase step that generated the error. |
 | `field` | Optional JSON field path. |
 
 Recommended error codes:
@@ -555,19 +556,19 @@ phase_complete_invalid
 
 ## `phase_complete`
 
-A successful payload must include both `firmware` and the complete `manifest_content`:
+The success payload must include both `firmware` and the complete `manifest_content`:
 
-- `firmware` is the summary for this phase, retained for UI, logs, and lightweight validation.
-- `manifest_content` must be copied from the upstream `select-hw`'s full `payload.manifest_content`; do not discard project facts like `project_name`, `requirements`, `devices`, `mcu`, `hardware_selection`.
-- On success, append/overwrite the copied `manifest_content` with:
+- `firmware` is the summary of this phase, retained for UI, logs, and lightweight validation.
+- `manifest_content` must be copied from the complete `payload.manifest_content` of the upstream `select-hw`; do not discard project facts like `project_name`, `requirements`, `devices`, `mcu`, `hardware_selection`.
+- On success, the following must be appended/overwritten on the copied `manifest_content`:
   - `phase="upy-flash-mpy-firmware-plugin"`
   - `firmware_flash=<equivalent firmware facts from payload.firmware>`
   - `final_status="firmware_ready"`
   - `updated_at="<runtime-utc-now>"`
-- `manifest_content.firmware_flash` must be consistent with the key fields of `payload.firmware`, including at least `status`, `action`, `board_name`, `board_url`, `source`, `flash_method`; if `latest_url`, `file`, `file_type`, `flash_result` have been resolved or generated, they must also be retained and consistent.
-- A successful payload must include the source chain: `source_phase="select-hw"` and `source_phase_complete_path="sessions/<session_id>/phase_complete.select_hw.json"`.
+- `manifest_content.firmware_flash` must be consistent with the key fields of `payload.firmware`, at least including `status`, `action`, `board_name`, `board_url`, `source`, `flash_method`; if `latest_url`, `file`, `file_type`, `flash_result` have been resolved or generated, they must also be retained and kept consistent.
+- The success payload must include the source chain: `source_phase="select-hw"` and `source_phase_complete_path="sessions/<session_id>/phase_complete.select_hw.json"`.
 - When the latest firmware has been resolved, `payload.firmware` and `manifest_content.firmware_flash` must include `latest_version` and `latest_date`.
-- On successful ESP32 flash, `payload.firmware.flash_result` and `manifest_content.firmware_flash.flash_result` must include `baud`, `chip`, and a consistent `write_offset`; `write_offset` uses the original command parameter value parsed from the MicroPython page, e.g., `"0"`; do not mix `"0"` and `"0x0"` within the same phase.
+- On successful ESP32 flash, `payload.firmware.flash_result` and `manifest_content.firmware_flash.flash_result` must include `baud`, `chip`, and a unified `write_offset`; `write_offset` uses the original value of the command parameter parsed from the MicroPython page, e.g., `"0"`; do not mix `"0"` and `"0x0"` within the same phase.
 - `partial` and `failed` may omit `manifest_content`, but if they include it, `next_phase` must not be set to `upy-scaffold-plugin`.
 
 ```json
